@@ -1,0 +1,30 @@
+[project]
+name = "osprey"
+description = "osprey prototyp"
+version = "0.0.1a"
+authors = [
+    { name = "Valerie Hayot-Sasson", email = "vhayot@uchicago.edu" }
+]
+dependencies = [
+    "proxystore",
+    "requests",
+    "pandas"
+]
+
+[project.optional-dependencies]
+dev = [
+    "proxystore[endpoints]",
+    "flask",
+    "pre-commit",
+    "tox"
+]
+server = [
+    "proxystore[endpoints]",
+    "flask==2.1.0",
+]
+
+[build-system]
+# These are the assumed default build requirements from pip:
+# https://pip.pypa.io/en/stable/reference/pip/#pep-517-and-518-support
+requires = ["setuptools>=43.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
