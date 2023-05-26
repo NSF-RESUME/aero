@@ -30,12 +30,12 @@ class Metadata(NamedTuple):
 
 _avail_data: dict[str, list[Metadata]] = {}
 
-_CLIENT_ID: str = 'c78511ef-8cf7-4802-a7e1-7d56e27b1bf8'
-_FLOW_UUID: str = '6c2f7e41-00d0-4dc7-8c2b-2daea17edf2e'
-_FUNCTION_UUID: str = '439b3807-20b7-469f-8680-586c57bb3817'
-_ENDPOINT_UUID: str = '73e17ae1-03f6-4c3c-9d54-18035e617642'
-_TIMER_CLIENT_UUID: str = '524230d7-ea86-4a52-8312-86065a9e0417'
-_REDIRECT_URI = 'https://auth.globus.org/v2/web/auth-code'
+_CLIENT_ID: str = "c78511ef-8cf7-4802-a7e1-7d56e27b1bf8"
+_FLOW_UUID: str = "6c2f7e41-00d0-4dc7-8c2b-2daea17edf2e"
+_FUNCTION_UUID: str = "439b3807-20b7-469f-8680-586c57bb3817"
+_ENDPOINT_UUID: str = "73e17ae1-03f6-4c3c-9d54-18035e617642"
+_TIMER_CLIENT_UUID: str = "524230d7-ea86-4a52-8312-86065a9e0417"
+_REDIRECT_URI = "https://auth.globus.org/v2/web/auth-code"
 
 
 # TODO: store in actual databases
@@ -72,11 +72,6 @@ def scrape_database() -> None:
                 Metadata(m.name, m.url, new_hash, last_modif, m["version"] + 1)
             )
 
-def create_action_request(endpoint_uuid, function_uuid):
-    return {
-            "endpoint": endpoint_uuid,
-            "function": function_uuid,
-           }
 
 def authenticate(scope: str):
     timer_scope = TimerScopes.make_mutable("timer")
@@ -84,19 +79,16 @@ def authenticate(scope: str):
 
     client = NativeAppAuthClient(client_id=_CLIENT_ID)
     client.oauth2_start_flow(
-        redirect_uri=_REDIRECT_URI,
-        refresh_tokens=True,
-        requested_scopes=timer_scope
+        redirect_uri=_REDIRECT_URI, refresh_tokens=True, requested_scopes=timer_scope
     )
 
     url = client.oauth2_get_authorize_url()
-    print('Please visit the following url to authenticate:')
+    print("Please visit the following url to authenticate:")
     print(url)
 
-    auth_code = input('Enter the auth code:')
+    auth_code = input("Enter the auth code:")
     auth_code = auth_code.strip()
     return client.oauth2_exchange_code_for_tokens(auth_code)
-
 
 
 def set_timer():
@@ -107,16 +99,16 @@ def set_timer():
     tokens = authenticate(scope=specific_flow_scope)
     timer_access_token = tokens.by_resource_server[_TIMER_CLIENT_UUID]["access_token"]
     authorizer = AccessTokenAuthorizer(access_token=timer_access_token)
-    timer_client = TimerClient(authorizer=authorizer, app_name='osprey-prototype')
+    timer_client = TimerClient(authorizer=authorizer, app_name="osprey-prototype")
 
-    run_input = {'endpoint': _ENDPOINT_UUID, 'function': _FUNCTION_UUID}
+    run_input = {"endpoint": _ENDPOINT_UUID, "function": _FUNCTION_UUID}
     run_label = "Osprey prototype"
 
     url = slash_join(sfc.base_url, f"/flows/{_FLOW_UUID}/run")
 
     start = datetime.datetime.utcnow()
     interval = datetime.timedelta(days=1)
-    name = 'osprey-prototype-scraper'
+    name = "osprey-prototype-scraper"
     number_of_runs = 3
 
     job = TimerJob(
@@ -128,7 +120,7 @@ def set_timer():
         name=name,
         scope=specific_flow_scope,
     )
-    
+
     response = timer_client.create_job(job)
     assert response.http_status == 201
     job_id = response["job_id"]
@@ -138,8 +130,10 @@ def set_timer():
 def scrape():
     from osprey.server.scraper import available_databases
     from osprey.server.scraper import scrape_database
+
     available_databases()
     scrape_database()
 
-if __name__=='__main__':
+
+if __name__ == "__main__":
     set_timer()
