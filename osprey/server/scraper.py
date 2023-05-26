@@ -22,7 +22,7 @@ _avail_data: dict[str, list[Metadata]] = {}
 
 
 # TODO: store in actual databases
-def available_tables() -> None:
+def table_sources() -> None:
     """Determine which source tables should be scraped."""
     path = "osprey/server/databases"
     for fn in os.listdir(path):
@@ -34,7 +34,7 @@ def available_tables() -> None:
             ]
 
 
-def scrape_database() -> None:
+def get_tables() -> None:
     """Provided list of all source tables, scrape and proxy data."""
     for key, v in _avail_data.items():
         m = v[-1]  # Get last update in list of files
@@ -53,8 +53,10 @@ def scrape_database() -> None:
                 Metadata(m.name, m.url, new_hash, last_modif, m["version"] + 1)
             )
 
+        validate()
         proxify(m.name, data)
 
-def validation() -> None:
+
+def validate() -> None:
     """Validate the recently modified data to ensure it meets standards"""
     pass
