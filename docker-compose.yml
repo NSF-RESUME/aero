@@ -1,0 +1,31 @@
+services:
+  web:
+    build:
+      dockerfile: ./Dockerfile.server.dev
+    ports:
+      - "5001:80"
+    environment:
+      - DATABASE_PORT=5432
+      - DATABASE_PASSWORD=postgres
+      - DATABASE_USER=postgres
+      - DATABASE_HOST=osprey-postgres-database-1 # NOTE: Make sure it is the same as the database-name
+      - DATABASE_NAME=osprey_development
+      - FLASK_APP=server.py
+    volumes:
+      - ./osprey/server:/app/osprey/server/
+
+  postgres-database:
+    restart: always
+    image: postgres:15.3
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - osprey-postgres-data:/var/lib/postgresql/data
+      # - ./server/migrations/database_init.sql:/docker-entrypoint-initdb.d/database_init.sql
+
+volumes:
+  osprey-postgres-data:
+    external: true

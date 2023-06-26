@@ -1,3 +1,6 @@
 .venv/
 **/__pycache__
 osprey.egg-info
+
+postgres-data
+database_init.sql

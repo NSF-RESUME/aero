@@ -3,7 +3,7 @@ import datetime
 import json
 import hashlib
 import os
-import psycopg
+import psycopg2 as psycopg
 import requests
 
 from typing import NamedTuple

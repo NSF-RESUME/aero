@@ -1,0 +1,7 @@
+Flask-SQLAlchemy
+Flask-Migrate
+psycopg2
+flask
+requests
+pandas
+proxystore
