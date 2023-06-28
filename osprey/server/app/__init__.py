@@ -15,6 +15,6 @@ migrate.init_app(app, db)
 # from app.posts import bp as posts_bp
 # app.register_blueprint(posts_bp, url_prefix='/posts')
 
-from app import models, routes
+from app import models, routes, error_handler
 
 app.register_blueprint(routes.all_routes)

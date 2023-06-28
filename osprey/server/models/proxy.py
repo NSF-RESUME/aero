@@ -18,3 +18,10 @@ class Proxy(db.Model):
             return
 
         return self.source_version.source
+
+    def toJSON(self):
+        return { 
+            'id': self.id,
+            'serial_repr': self.representation,
+            'source_version': self.source_version.toJSON() 
+        }
