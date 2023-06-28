@@ -13,15 +13,15 @@ class Source(db.Model):
     versions      = db.relationship("SourceVersion", back_populates="source")
     tags          = db.relationship("Tag", secondary=SourceTagTable, back_populates="sources")
 
-    # NOTE: Add validation
+    # TODO: Validate duplicates and everything else
     def __init__(self, **kwargs):
         kwargs = self._set_defaults(**kwargs)
         self._validate(**kwargs)
         super().__init__(**kwargs)
 
     def __repr__(self):
-        return "<Source(id={}, name='{}', url='{}', description={})>"\
-                .format(self.id, self.name, self.url, self.description)
+        return "<Source(id={}, name='{}', url='{}', descrip˝tion={})>"\
+            .format(self.id, self.name, self.url, self.description)
 
     # TODO: Should send hash_id instead of id
     def toJSON(self):
@@ -29,7 +29,8 @@ class Source(db.Model):
             'id': self.id, 
             'name': self.name, 
             'url': self.url, 
-            'description': self.description 
+            'description': self.description,
+            'timer': self.timer
         }
 
     def _validate(self, **kwargs):

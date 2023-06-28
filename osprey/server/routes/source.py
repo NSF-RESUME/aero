@@ -31,7 +31,7 @@ def create_source():
 def get_data(id):
     s = Source.query.get(id)
     if s is None:
-        return jsonify({}), 404
+        return jsonify({'code': 404, 'message': 'Not found'}), 404
 
     return jsonify(s.toJSON()), 200
 
@@ -40,15 +40,3 @@ def get_data(id):
 #     # oh we have created a new version
 #     # we run a job somehow, to pull the data? and then run verifier, and store it in Proxystore (or) Globus | path?
 #     pass
-
-
-"""
-
-    1. CLI (me) -> API Endpoint
-        i) Creating source
-    2. DIFF
-    3. Verifier (me)
-    4. Timer 
-    5. Globus Data
-    6. Run on chameleon -> Create an instance | docker install | docker run
-"""

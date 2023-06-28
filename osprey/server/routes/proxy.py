@@ -19,7 +19,6 @@ def create_proxy():
 def get_data(id):
     p = Proxy.query.get(id)
     if p is None:
-        return jsonify({}), 404
+        return jsonify({'code': 404, 'message': 'Not found'}), 404
 
     return jsonify(p.toJSON()), 200
-
