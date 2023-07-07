@@ -1,7 +1,7 @@
 services:
   web:
     build:
-      dockerfile: ./Dockerfile.server.dev
+      dockerfile: ./Dockerfiles/Dockerfile.server.dev
     ports:
       - "5001:80"
     environment:
@@ -24,8 +24,15 @@ services:
       - "5432:5432"
     volumes:
       - osprey-postgres-data:/var/lib/postgresql/data
-      # - ./server/migrations/database_init.sql:/docker-entrypoint-initdb.d/database_init.sql
+
+  globus-endpoint:
+    build:
+        dockerfile: ./Dockerfiles/Dockerfile.endpoint.dev
+    volumes:
+      - osprey-endpoint-data:/root/.globus_compute
 
 volumes:
   osprey-postgres-data:
+    external: true
+  osprey-endpoint-data:
     external: true

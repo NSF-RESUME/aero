@@ -1,9 +1,10 @@
-FROM python:3
+FROM python:3.10
 WORKDIR /app
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 COPY . .
 WORKDIR /app/osprey/server
 
+# RUN python jobs/timer/timer.py
 # CMD ["flask", "run", "--port", "80", "--host", "0.0.0.0", "--debug"]
 CMD ["flask", "run", "--port", "80", "--host", "0.0.0.0"]

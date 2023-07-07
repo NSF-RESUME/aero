@@ -8,7 +8,7 @@ import requests
 
 from typing import NamedTuple
 from unittest import mock
-from osprey.server.proxies import proxify
+from osprey.server.lib.proxies import proxify
 
 user = 'valeriehayot-sasson'
 
