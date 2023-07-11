@@ -1,4 +1,4 @@
-from app import db
+from osprey.server.app import db
 from sqlalchemy import Column, Integer, String
 
 class Function(db.Model):

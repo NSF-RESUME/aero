@@ -1,4 +1,4 @@
-from app import db
+from osprey.server.app import db
 from sqlalchemy import Column, Integer, String
 
 # NOTE: Does not auto-increment id, need to add migration

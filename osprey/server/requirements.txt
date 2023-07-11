@@ -6,3 +6,5 @@ requests
 pandas
 proxystore
 dill
+globus_compute_sdk
+globus_sdk

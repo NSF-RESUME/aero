@@ -1,4 +1,4 @@
-from app import db
+from osprey.server.app import db
 from sqlalchemy import Column, Integer
 
 ProvenanceDerivation = db.Table("provenance_derivation",

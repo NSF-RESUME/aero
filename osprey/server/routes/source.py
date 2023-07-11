@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
-from app import db
-from app.models import Source
-from app.error import ServiceError
+from osprey.server.app import db
+from osprey.server.app.models import Source
+from osprey.server.app.error import ServiceError
 
 source_routes = Blueprint('source_routes', __name__, url_prefix='/source')
 

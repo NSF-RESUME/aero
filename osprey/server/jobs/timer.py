@@ -1,12 +1,7 @@
 import datetime, json, os, sys
 
-current = os.path.dirname(os.path.realpath(__file__))
-parent = os.path.dirname(f"{current}/../../lib/")
-sys.path.append(parent)
+from osprey.server.lib.globus_auth import create_token_file, TOKENS_FILE, _CLIENT_ID
 
-from globus import create_token_file, TOKENS_FILE, _CLIENT_ID
-
-from globus_compute_sdk import Client
 from globus_sdk import RefreshTokenAuthorizer
 from globus_sdk import NativeAppAuthClient
 from globus_sdk import SpecificFlowClient
@@ -74,6 +69,5 @@ if __name__ == "__main__":
         exit()
 
     endpoint_uuid = sys.argv[1]
-    gcc = Client()
-    func_uuid = gcc.register_function(scrape)
+    
     set_timer(func_uuid, endpoint_uuid)

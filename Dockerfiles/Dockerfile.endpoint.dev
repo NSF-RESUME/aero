@@ -1,7 +1,12 @@
 
-FROM python:3
+FROM python:3.10
 RUN pip install globus-compute-endpoint
 RUN globus-compute-endpoint configure
+WORKDIR /app
+COPY osprey/worker/requirements.txt requirements.txt
+RUN pip install -r requirements.txt
+COPY . .
+RUN pip install -e .
 
 # Keeping it alive after starting endpoint
 CMD globus-compute-endpoint start default && tail -f /root/.globus_compute/default/endpoint.log

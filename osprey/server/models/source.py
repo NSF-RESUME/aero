@@ -1,7 +1,7 @@
-from app import db
-from app.error import ServiceError, MODEL_INSUFFICIENT_ATTRS
+from osprey.server.app import db
+from osprey.server.app.error import ServiceError, MODEL_INSUFFICIENT_ATTRS
 from sqlalchemy import Column, Integer, String
-from models.tag import SourceTagTable
+from osprey.server.models.tag import SourceTagTable
 
 class Source(db.Model):
     id            = Column(Integer, primary_key=True)

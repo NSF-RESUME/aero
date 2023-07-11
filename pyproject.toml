@@ -3,7 +3,8 @@ name = "osprey"
 description = "osprey prototyp"
 version = "0.0.1a"
 authors = [
-    { name = "Valerie Hayot-Sasson", email = "vhayot@uchicago.edu" }
+    { name = "Valerie Hayot-Sasson", email = "vhayot@uchicago.edu"    },
+    { name = "Sudershan Sridhar",    email = "sudershan@uchicago.edu" }
 ]
 dependencies = [
     "proxystore",
@@ -28,3 +29,6 @@ server = [
 # https://pip.pypa.io/en/stable/reference/pip/#pep-517-and-518-support
 requires = ["setuptools>=43.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+exclude = ["Dockerfiles*"]

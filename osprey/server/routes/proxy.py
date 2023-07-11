@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from app.models import Proxy
+from osprey.server.app.models import Proxy
 
 proxy_routes = Blueprint('proxy_routes', __name__, url_prefix='/proxies')
 

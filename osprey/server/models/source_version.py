@@ -1,7 +1,7 @@
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import Column, Integer, String, Date
-from app import db
-from models.proxy import Proxy
+from osprey.server.app import db
+from osprey.server.models.proxy import Proxy
 
 class SourceVersion(db.Model):
     id            = Column(Integer, primary_key=True)

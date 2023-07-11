@@ -1,6 +1,6 @@
-from app import db
+from osprey.server.app import db
 from sqlalchemy import Column, Integer, String
-from models.provenance import ProvenanceDerivation
+from osprey.server.models.provenance import ProvenanceDerivation
 
 class Proxy(db.Model):
     id                = Column(Integer, primary_key=True)

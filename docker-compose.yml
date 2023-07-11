@@ -12,7 +12,7 @@ services:
       - DATABASE_NAME=osprey_development
       - FLASK_APP=server.py
     volumes:
-      - ./osprey/server:/app/osprey/server/
+      - ./osprey/server:/app/osprey/server
 
   postgres-database:
     restart: always
@@ -30,6 +30,16 @@ services:
         dockerfile: ./Dockerfiles/Dockerfile.endpoint.dev
     volumes:
       - osprey-endpoint-data:/root/.globus_compute
+      - ./osprey/worker:/app/osprey/worker
+      
+    
+    # TODO: Make a different user
+    environment:
+      - DATABASE_PORT=5432
+      - DATABASE_PASSWORD=postgres
+      - DATABASE_USER=postgres
+      - DATABASE_HOST=osprey-postgres-database-1
+      - DATABASE_NAME=osprey_development
 
 volumes:
   osprey-postgres-data:
