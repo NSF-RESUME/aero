@@ -1,7 +1,7 @@
 import datetime, json, os, sys
 
 from osprey.server.lib.globus_auth import create_token_file, TOKENS_FILE, _CLIENT_ID
-
+from osprey.server.lib.globus_compute import register_function
 from globus_sdk import RefreshTokenAuthorizer
 from globus_sdk import NativeAppAuthClient
 from globus_sdk import SpecificFlowClient
@@ -43,7 +43,7 @@ def set_timer(func_uuid: str, endpoint_uuid: str) -> None:
     url = slash_join(sfc.base_url, f"/flows/{_FLOW_UUID}/run")
 
     start = datetime.datetime.utcnow()
-    interval = datetime.timedelta(minutes=1.5)
+    interval = datetime.timedelta(minutes=2)
     name = "osprey-prototype-scraper"
 
     job = TimerJob(
@@ -58,10 +58,11 @@ def set_timer(func_uuid: str, endpoint_uuid: str) -> None:
     response = timer_client.create_job(job)
     assert response.http_status == 201
     job_id = response["job_id"]
-    print(f"Response: {response}")
+    print(f"Response: {response} | job_id {job_id}")
 
 def scrape():
-    return 0
+    from osprey.worker.jobs.ingestion import query_all_sources
+    query_all_sources()
 
 if __name__ == "__main__":
     if(len(sys.argv) != 2):
@@ -69,5 +70,5 @@ if __name__ == "__main__":
         exit()
 
     endpoint_uuid = sys.argv[1]
-    
+    func_uuid = register_function(scrape)
     set_timer(func_uuid, endpoint_uuid)

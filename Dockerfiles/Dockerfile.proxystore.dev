@@ -1,0 +1,7 @@
+
+FROM python:3.10
+RUN pip install proxystore[endpoints]
+RUN proxystore-endpoint configure default
+RUN touch /root/.local/share/proxystore/default/log.txt
+
+CMD proxystore-endpoint start default && tail -f /root/.local/share/proxystore/default/log.txt

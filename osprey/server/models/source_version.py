@@ -11,6 +11,7 @@ class SourceVersion(db.Model):
     source_id     = Column(Integer, db.ForeignKey('source.id'))
     source        = db.relationship("Source", back_populates="versions", uselist=False)
     proxy         = db.relationship("Proxy", back_populates="source_version", uselist=False)
+    source_file   = db.relationship("SourceFile", back_populates="source_version", uselist=False)
 
     # TODO: Make sure to have created_at as current time if it is not passed as an argument
     # NOTE: Also create a proxy automatically ig?

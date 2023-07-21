@@ -41,8 +41,16 @@ services:
       - DATABASE_HOST=osprey-postgres-database-1
       - DATABASE_NAME=osprey_development
 
+  globus-proxystore:
+    build:
+      dockerfile: ./Dockerfiles/Dockerfile.proxystore.dev
+    volumes:
+      - osprey-proxystore-data:/root/.local/share/proxystore
+
 volumes:
   osprey-postgres-data:
     external: true
   osprey-endpoint-data:
+    external: true
+  osprey-proxystore-data:
     external: true

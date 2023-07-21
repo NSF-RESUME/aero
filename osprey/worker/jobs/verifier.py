@@ -1,7 +1,5 @@
-from osprey.server.app.models import Source
-from osprey.server.app.error import ServiceError, DESERIALIZATION_ERROR, SERIALIZATION_ERROR
-import dill
-import codecs
+from osprey.server.lib.globus_compute import execute_function, get_result
+from osprey.worker.lib.serializer     import serialize, deserialize
 
 """
 
@@ -23,43 +21,23 @@ TODO:  'Discuss'
 
 """
 
-def serialize(obj) -> str:
-    """
-        Takes a function and returns a serialized string
-    """
-    try:
-        return codecs.encode(dill.dumps(obj), "base64").decode()
-    except Exception:
-        raise ServiceError(code=SERIALIZATION_ERROR, message="Cannot serialize verifier")
-
-
-def deserialize(obj: str):
-    """
-        Takes a string and returns a function
-    """
-    try:
-        return dill.loads(codecs.decode(obj.encode(), "base64"))
-    except Exception:
-        raise ServiceError(code=DESERIALIZATION_ERROR, message="Cannot deserailize verifier")
-    
-
-""" Maybe use funcX to execute this? """
 def verify(proxy, verifier):
+    # NOTE: Assuming dill and codecs was used to serialize it
+    # TODO: Extend it to use multiple serializers
     f = deserialize(verifier)
     try:
         return eval('f(proxy)') == True
     except Exception as e:
         return False
 
-def verifier_microservice(source_id):
-    source = Source.query.get(source_id)
-    print(source)
-    if source is not None and source.verifier is not None:
-        # NOTE: Assuming dill and codecs was used to serialize it
-        # TODO: Extend it to use multiple serializers
+def verifier_microservice(data, verifier):
+    """ Maybe use funcX to execute this? """
+    if data is None:
+        return False
 
-        proxy = None # Get proxy for the source?? # NOTE: Change this
-        return verify(proxy, source.verifier)
+    if verifier is not None:
+        # TODO: Maybe use proxy for this?
+        return verify(proxy=data, verifier=verifier)    # TODO: Use globus_compute
 
     return True
 

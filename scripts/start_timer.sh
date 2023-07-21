@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# TODO: Make sure to change how to check if service is alive to 
+# docker compose exec web ........ Eg. Check if echo works or raises error
+
+
 endpoint_docker=$(docker ps -aq --filter status=running --filter name=osprey-globus-endpoint)
 if [ -z "$endpoint_docker" ]
 then
@@ -21,4 +25,4 @@ then
     return 0
 fi
 
-docker exec -it $server_docker python /app/osprey/server/jobs/timer/timer.py $endpoint_id
+docker compose exec -it web python /app/osprey/server/jobs/timer.py $endpoint_id

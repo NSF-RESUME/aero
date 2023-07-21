@@ -10,5 +10,8 @@ class ServiceError(Exception):
 
     def toJSON(self) -> dict:
         return {'code': self.code, 'message': self.message}
-    
-MODEL_INSUFFICIENT_ATTRS = 601
+
+SERIALIZATION_ERROR      = 700
+DESERIALIZATION_ERROR    = 701
+ENCODING_ERROR           = 702
+DECODING_ERROR           = 703
