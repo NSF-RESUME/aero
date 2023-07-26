@@ -12,3 +12,4 @@ class ServiceError(Exception):
         return {'code': self.code, 'message': self.message}
     
 MODEL_INSUFFICIENT_ATTRS = 601
+FLOW_TIMER_ERROR         = 602

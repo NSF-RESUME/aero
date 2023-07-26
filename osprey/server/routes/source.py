@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from osprey.server.app import db
 from osprey.server.app.models import Source
-from osprey.server.app.error import ServiceError
+from osprey.server.lib.error import ServiceError
 
 source_routes = Blueprint('source_routes', __name__, url_prefix='/source')
 
@@ -18,8 +18,6 @@ def create_source():
     try:
         json_data = request.json
         s = Source(**json_data)
-        db.session.add(s)
-        db.session.commit()
         return jsonify(s.toJSON()), 200
     except ServiceError as s:
         return jsonify(s.toJSON()), s.code

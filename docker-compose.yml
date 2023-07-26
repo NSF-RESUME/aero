@@ -11,6 +11,8 @@ services:
       - DATABASE_HOST=osprey-postgres-database-1 # NOTE: Make sure it is the same as the database-name
       - DATABASE_NAME=osprey_development
       - FLASK_APP=server.py
+      - TIMER_FUNCTION_UUID=d5bd5a1c-7b16-479b-bda6-7509b78f9d60
+      - TIMER_ENDPOINT_UUID=7591d0fb-3d12-4ff8-b8fb-7a51146c4871
     volumes:
       - ./osprey/server:/app/osprey/server
 

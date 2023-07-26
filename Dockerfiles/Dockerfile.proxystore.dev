@@ -4,4 +4,5 @@ RUN pip install proxystore[endpoints]
 RUN proxystore-endpoint configure default
 RUN touch /root/.local/share/proxystore/default/log.txt
 
-CMD proxystore-endpoint start default && tail -f /root/.local/share/proxystore/default/log.txt
+# TODO: Change the `rm`
+CMD rm -f /root/.local/share/proxystore/default/daemon.pid && proxystore-endpoint start default && tail -f /root/.local/share/proxystore/default/log.txt

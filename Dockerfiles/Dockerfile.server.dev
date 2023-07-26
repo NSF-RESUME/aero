@@ -5,6 +5,7 @@ RUN pip install -r requirements.txt
 COPY . .
 RUN pip install -e .
 WORKDIR /app/osprey/server
+# RUN flask db upgrade | TODO: Figure out if you can do it in `CMD`
 
 # CMD ["flask", "run", "--port", "80", "--host", "0.0.0.0", "--debug"]
 CMD ["flask", "run", "--port", "80", "--host", "0.0.0.0"]

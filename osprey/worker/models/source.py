@@ -25,7 +25,6 @@ class Source(Base):
 
     def check_new_version(self):
         # NOTE : Ideally should check if its a new version, just by looking a field ig?
-        # or should it do a checksum comparison?
 
         new_data, format = self.download()
         if not verifier_microservice(new_data, self.verifier):
@@ -57,6 +56,11 @@ class Source(Base):
             return None
 
         return str(datetime.timedelta(seconds=self.timer))
+
+    # @classmethod
+    # def nearest_refresh(cls):       # Assume that it runs every 5 mins
+    #     with Session() as s:
+    #         return s.query(cls).count()
 
 """
 
