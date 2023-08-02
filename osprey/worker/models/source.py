@@ -31,7 +31,7 @@ class Source(Base):
             raise Exception('Need to send an email that new version failed')
 
         with Session() as session:
-            new_version             = SourceVersion(version=self.last_verison() + 1, source_id= self.id)
+            new_version             = SourceVersion(version=self.last_version() + 1, source_id= self.id)
             new_version.source_file = SourceFile(file=encode(new_data, format), encoding=format)
             session.add(new_version)
             session.commit()
