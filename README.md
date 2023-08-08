@@ -1,11 +1,29 @@
-## Prototype
+# Data Streaming as a Service (DSaaS)
 
-Example of a scraper that retrieves (once) data from the City of Chicago portal, stores data into a ProxyStore endpoint
-and provides a REST API for client to retrieve ProxyStore data.
+A prototype for the extraction, storage, validation and distribution of public epidemiological data for analysis.
 
-### Installation
+## Installation
 
-Clone this repo and install by running:
+### Server
+
+All the server components are made available within a series of dockerfiles provided in Dockerfile.
+To install the components, the following steps can be followed:
+
+```
+# Build and create necessary volumes
+docker compose build
+docker volume create osprey-postgres-data
+docker volume create osprey-endpoint-data
+docker volume create osprey-proxystore-data
+
+
+# 
+docker compose run 
+
+```
+
+
+Clone this repo and install  by running:
 `python -m pip install -e .[dev]`
 
 ### Starting the server
