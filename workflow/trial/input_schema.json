@@ -1,0 +1,34 @@
+{
+    "type": "object",
+    "required": ["endpoint", "function"],
+    "properties": {
+        "args": {
+            "type": "string",
+            "description": "args to the task, ie. 123, \"hello world\" or [456, \"my string\"]"
+        },
+        "tasks": {
+            "type": "string",
+            "description": "Additional task inputs as a JSON array, if desired, i.e. [{'endpoint':'...', 'function':'...', 'args':[...], 'kwargs':{...}}]"
+        },
+        "kwargs": {
+            "type": "string",
+            "description": "kwargs to the task, ie. {\"first\": 123, \"second\": \"my string\"}"
+        },
+        "endpoint": {
+            "type": "string",
+            "description": "The endpoint UUID"
+        },
+        "function": {
+            "type": "string",
+            "description": "The function UUID, ie from client.register_function()"
+        }
+    },
+    "propertyOrder": [
+        "endpoint",
+        "function",
+        "args",
+        "kwargs",
+        "tasks"
+    ],
+    "additionalProperties": true
+}

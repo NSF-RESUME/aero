@@ -1,0 +1,55 @@
+{
+    "type": "object",
+    "required": [
+        "osprey-worker-endpoint",
+        "database-commit-function",
+        "download-function",
+        "user-endpoint",
+        "user-function"
+    ],
+    "properties": {
+        "args": {
+            "type": "string",
+            "description": "args to the task, ie. 123, \"hello world\" or [456, \"my string\"]"
+        },
+        "tasks": {
+            "type": "string",
+            "description": "Additional task inputs as a JSON array, if desired, i.e. [{'endpoint':'...', 'function':'...', 'args':[...], 'kwargs':{...}}]"
+        },
+        "kwargs": {
+            "type": "string",
+            "description": "kwargs to the task, ie. {\"first\": 123, \"second\": \"my string\"}"
+        },
+        "osprey-worker-endpoint": {
+            "type": "string",
+            "description": "The endpoint UUID that has the osprey library"
+        },
+        "user-endpoint": {
+            "type": "string",
+            "description": "The endpoint UUID that user has provided for their function to run on"
+        },
+        "user-function": {
+            "type": "string",
+            "description": "The function UUID, ie from client.register_function()"
+        },
+        "database-commit-function": {
+            "type": "string",
+            "description": "The function UUID that is used for commiting to database"
+        },
+        "download-function": {
+            "type": "string",
+            "description": "The function UUID that downloads and passes files to the next stage"
+        }
+    },
+    "propertyOrder": [
+        "osprey-worker-endpoint",
+        "database-commit-function",
+        "download-function",
+        "user-endpoint",
+        "user-function",
+        "args",
+        "kwargs",
+        "tasks"
+    ],
+    "additionalProperties": true
+}

@@ -1,6 +1,7 @@
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import Column, Integer, String, Date
 from osprey.server.app import db
+from osprey.server.models.provenance import ProvenanceDerivation
 from osprey.server.models.proxy import Proxy
 
 class SourceVersion(db.Model):
@@ -12,6 +13,8 @@ class SourceVersion(db.Model):
     source        = db.relationship("Source", back_populates="versions", uselist=False)
     proxy         = db.relationship("Proxy", back_populates="source_version", uselist=False)
     source_file   = db.relationship("SourceFile", back_populates="source_version", uselist=False)
+    provenance    = db.relationship("Provenance", back_populates='source_version', uselist=False)
+    contributed_to= db.relationship("Provenance", secondary=ProvenanceDerivation, back_populates='derived_from')
 
     # TODO: Make sure to have created_at as current time if it is not passed as an argument
     # NOTE: Also create a proxy automatically ig?
@@ -21,7 +24,7 @@ class SourceVersion(db.Model):
     #     2. super()
 
     def __repr__(self):
-        return "<SourceVersion(id={}, version='{}', source_id='{}')>"\
+        return "<SourceVersion(id={}, version={}, source_id={})>"\
                 .format(self.id, self.version, self.source_id)
 
     def toJSON(self):

@@ -13,3 +13,4 @@ class ServiceError(Exception):
     
 MODEL_INSUFFICIENT_ATTRS = 601
 FLOW_TIMER_ERROR         = 602
+PROXYIFY_ERROR           = 603

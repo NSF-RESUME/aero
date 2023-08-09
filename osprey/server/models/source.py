@@ -2,7 +2,8 @@ from osprey.server.app import db
 from osprey.server.lib.error import ServiceError, MODEL_INSUFFICIENT_ATTRS, FLOW_TIMER_ERROR
 from sqlalchemy import Column, Integer, String, Date
 from osprey.server.models.tag import SourceTagTable
-from osprey.server.jobs.timer import set_timer
+from osprey.server.jobs.timer import set_timer, FlowEnum, FLOW_IDS
+from osprey.server.lib.globus_flow import get_job
 
 class Source(db.Model):
     id            = Column(Integer, primary_key=True)
@@ -10,18 +11,22 @@ class Source(db.Model):
     url           = Column(String)
     description   = Column(String)
     timer         = Column(Integer) # in seconds
-    verifier      = Column(String)
+    verifier      = Column(String)  # TODO Modify them to use UUIDs instead of pickled functions
+    modifier      = Column(String)
+    user_endpoint = Column(String)
     timer_job_id  = Column(String)
-    last_refreshed= Column(Date)    # NOTE: Remove this, cause we can find it using timer_job_id
+    flow_kind     = Column(Integer)
     versions      = db.relationship("SourceVersion", back_populates="source")
     tags          = db.relationship("Tag", secondary=SourceTagTable, back_populates="sources")
 
-    # TODO: Validate duplicates and everything else
+    # TODO: Validate duplicate source links and everything else
     def __init__(self, **kwargs):
         # validate
         kwargs = self._set_defaults(**kwargs)
         self._validate(**kwargs)
 
+        # sets the uuids for verifiers and modifiers
+        kwargs = self._register_funcs(**kwargs)
         # create
         super().__init__(**kwargs)
         db.session.add(self)
@@ -41,7 +46,9 @@ class Source(db.Model):
             'name': self.name, 
             'url': self.url, 
             'description': self.description,
-            'timer': self.timer
+            'timer': self.timer,
+            'verifier': self.verifier,
+            'modifier': self.modifier
         }
 
     def _validate(self, **kwargs):
@@ -52,6 +59,14 @@ class Source(db.Model):
     def _set_defaults(self, **kwargs):
         if 'timer' not in kwargs:
             kwargs['timer'] = 86400 # 1 day
+        if 'flow_kind' not in kwargs:
+            if kwargs.get('verifier') is not None and kwargs.get('modifier') is not None:
+                kwargs['flow_kind'] = FlowEnum.VERIFY_AND_MODIFY
+            elif kwargs.get('verifier') is not None or kwargs.get('modifier') is not None:
+                kwargs['flow_kind'] = FlowEnum.VERIFY_OR_MODIFY
+            else:
+                kwargs['flow_kind'] = FlowEnum.NONE
+
         return kwargs
 
     def _start_timer_flow(self, flush = False):
@@ -61,6 +76,21 @@ class Source(db.Model):
         if not flush and self.timer_job_id is not None:
             raise ServiceError(FLOW_TIMER_ERROR, "source already has a flow timer")
 
-        self.timer_job_id = set_timer(self.timer, self.name, self.id)
+        self.timer_job_id = set_timer(self.timer, self.id, self.flow_kind)
         db.session.add(self)
         db.session.commit()
+    
+    def get_timer_job(self):
+        return get_job(FLOW_IDS[self.flow_kind], self.timer_job_id)
+
+    def last_refreshed_at(self):
+        timer_job = self.get_timer_job()
+        if timer_job is None:
+            return
+        return timer_job.get('last_ran_at')
+    
+    # TODO: Assuming the users are giving function UUID for now, and not getting us to register
+    # NOTE: If they are registering their own functions, then they have to make sure to give our group access
+    # Hence we need have a seperate routes for the to register functions or we enable `client.py` to hold the group_id, and hope the group_id doesnt change 
+    def _register_funcs(self, **kwargs):
+        return kwargs

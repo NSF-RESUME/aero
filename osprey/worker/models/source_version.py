@@ -12,7 +12,7 @@ class SourceVersion(Base):
     created_at    = Column(Date)
     source_id     = Column(Integer, ForeignKey('source.id'))
     source        = relationship("Source", back_populates="versions", uselist=False)
-    source_file   = relationship("SourceFile", back_populates="source_version", uselist=False)
+    source_file   = relationship("SourceFile", back_populates="source_version", uselist=False, lazy=False)
 
     def __init__(self, **kwargs):
         kwargs = self._set_defaults(**kwargs)

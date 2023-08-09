@@ -1,0 +1,37 @@
+{
+    "Comment": "Direct download and commit to database",
+    "StartAt": "download",
+    "States": {
+        "download": {
+            "Type": "Action",
+            "ActionUrl": "https://compute.actions.globus.org/",
+            "Parameters": {
+                "tasks.=": "getattr('tasks')"
+            },
+            "ResultPath": "$.DownloadResult",
+            "Next": "prepare-commit"
+        },
+        "prepare-commit":{
+            "Type": "ExpressionEval",
+            "Comment": "Set details for database commit process",
+            "Parameters": {
+                "tasks": [{
+                    "endpoint.$": "$.osprey-worker-endpoint",
+                    "function.$": "$.database-commit-function",
+                    "args.$": "$.DownloadResult.details.result[0][0]",
+                    "kwargs.$": "$.DownloadResult.details.result[0][1]"
+                }]
+            },
+            "ResultPath": "$.CommitParams",
+            "Next": "database-commit"
+        },
+        "database-commit": {
+            "Type": "Action",
+            "ActionUrl": "https://compute.actions.globus.org/",
+            "Parameters": {
+                "tasks.$": "$.CommitParams.tasks"
+            },
+            "End": true
+        }
+    }
+}

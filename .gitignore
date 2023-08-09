@@ -4,3 +4,4 @@ osprey.egg-info
 
 postgres-data
 database_init.sql
+.DS_Store

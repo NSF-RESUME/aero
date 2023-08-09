@@ -18,23 +18,26 @@ class Source(Base):
     description   = Column(String)
     timer         = Column(Integer) # in seconds
     verifier      = Column(String)
-    versions      = relationship("SourceVersion", back_populates="source")
+    versions      = relationship("SourceVersion", back_populates="source", lazy=False)
 
     def __repr__(self):
         return f"Source(id={self.id}, name={self.name}, url={self.url}, timer={self.timer_readable()})"
 
-    def check_new_version(self):
-        # NOTE : Ideally should check if its a new version, just by looking a field ig?
-
-        new_data, format = self.download()
-        if not verifier_microservice(new_data, self.verifier):
-            raise Exception('Need to send an email that new version failed')
-
+    def add_new_version(self, new_data, format):
         with Session() as session:
             new_version             = SourceVersion(version=self.last_version() + 1, source_id= self.id)
             new_version.source_file = SourceFile(file=encode(new_data, format), encoding=format)
             session.add(new_version)
             session.commit()
+    
+    # NOTE: Going to be deprecated, moving it to work with GLOBUS Flows
+    def check_new_version(self):
+        # NOTE : Ideally should check if its a new version, just by looking a json key in http request ig?
+        new_data, format = self.download()
+        if not verifier_microservice(new_data, self.verifier):
+            raise Exception('Need to send an email that new version failed')
+
+        self.add_new_version(new_data, format)
 
     def download(self):
         """ 
@@ -56,6 +59,12 @@ class Source(Base):
             return None
 
         return str(datetime.timedelta(seconds=self.timer))
+    
+    @classmethod
+    def get(cls, source_id):
+        with Session() as session:
+            source = session.query(Source).get(source_id)
+        return source
 
     # @classmethod
     # def nearest_refresh(cls):       # Assume that it runs every 5 mins

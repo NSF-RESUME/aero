@@ -33,8 +33,3 @@ def get_data(id):
 
     return jsonify(s.toJSON()), 200
 
-
-# def create_new_version():
-#     # oh we have created a new version
-#     # we run a job somehow, to pull the data? and then run verifier, and store it in Proxystore (or) Globus | path?
-#     pass

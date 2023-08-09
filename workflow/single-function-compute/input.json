@@ -1,0 +1,8 @@
+{
+    "osprey-worker-endpoint": "7591d0fb-3d12-4ff8-b8fb-7a51146c4871",
+    "database-commit-function": "1bb6a755-edd9-4746-8ec5-4a0e8b7f4e80",
+    "download-function": "7313ad59-912b-4891-a749-711c245cdb94",
+    "user-endpoint": "7591d0fb-3d12-4ff8-b8fb-7a51146c4871",
+    "user-function": "f40d5d04-3531-4b46-b95c-ad123ce74985",
+    "tasks": "[{\"endpoint\": \"7591d0fb-3d12-4ff8-b8fb-7a51146c4871\", \"function\": \"f40d5d04-3531-4b46-b95c-ad123ce74985\", \"kwargs\": {\"source_id\": 1}}]"
+}

@@ -1,0 +1,44 @@
+{
+    "Comment": "Verifier/Modifier with a database-commit step",
+    "StartAt": "download",
+    "States": {
+        "download": {
+            "Type": "Action",
+            "ActionUrl": "https://compute.actions.globus.org/",
+            "Parameters": {
+                "args.=": "getattr('args')",
+                "tasks.=": "getattr('tasks')",
+                "kwargs.=": "getattr('kwargs')",
+                "endpoint.=": "getattr('osprey-worker-endpoint')",
+                "function.=": "getattr('download-function')"
+            },
+            "ResultPath": "$.DownloadResult",
+            "Next": "custom-user-function"
+        },
+        "custom-user-function": {
+            "Type": "Action",
+            "ActionUrl": "https://compute.actions.globus.org/",
+            "Parameters": {
+                "args.=": "DownloadResult.details.result",
+                "tasks.=": "getattr('tasks')",
+                "kwargs.=": "getattr('kwargs')",
+                "endpoint.=": "getattr('user-endpoint')",
+                "function.=": "getattr('user-function')"
+            },
+            "ResultPath": "$.CustomFunctionResult",
+            "Next": "database-commit"
+        },
+        "database-commit": {
+            "Type": "Action",
+            "ActionUrl": "https://compute.actions.globus.org/",
+            "Parameters": {
+                "args.=": "CustomFunctionResult.details.result",
+                "kwargs.=": "getattr('kwargs')",
+                "tasks.=": "getattr('tasks')",
+                "endpoint.=": "getattr('osprey-worker-endpoint')",
+                "function.=": "getattr('database-commit-function')"
+            },
+            "End": true
+        }
+    }
+}

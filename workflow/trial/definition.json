@@ -1,0 +1,31 @@
+{
+    "Comment": "Funcx with results passing to the second function",
+    "StartAt": "S1",
+    "States": {
+        "S1": {
+            "Type": "Action",
+            "ActionUrl": "https://compute.actions.globus.org/",
+            "Parameters": {
+                "args.=": "getattr('args')",
+                "tasks.=": "getattr('tasks')",
+                "kwargs.=": "getattr('kwargs')",
+                "endpoint.=": "getattr('endpoint')",
+                "function.=": "getattr('function')"
+            },
+            "ResultPath": "$.RunResult",
+            "Next": "S2"
+        },
+        "S2": {
+            "Type": "Action",
+            "ActionUrl": "https://compute.actions.globus.org/",
+            "Parameters": {
+                "args.=": "RunResult.details.result",
+                "tasks.=": "getattr('tasks')",
+                "endpoint.=": "getattr('endpoint')",
+                "function.=": "getattr('function')"
+            },
+            "ResultPath": "$.RunResult2",
+            "End": true
+        }
+    }
+}
