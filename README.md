@@ -11,13 +11,9 @@ To install the components, the following steps can be followed:
 
 ```
 # Build and create necessary volumes
-docker compose build
-docker volume create osprey-postgres-data
-docker volume create osprey-endpoint-data
-docker volume create osprey-proxystore-data
 
+source scripts/prepare_start.sh
 
-# 
 docker compose run 
 
 ```

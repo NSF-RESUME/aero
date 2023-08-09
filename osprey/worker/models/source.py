@@ -3,7 +3,7 @@ import requests, datetime
 from sqlalchemy.orm                import relationship
 from sqlalchemy                    import Column, Integer, String
 from osprey.worker.models.database import Base, Session
-from osprey.worker.jobs.verifier   import verifier_microservice
+# from osprey.worker.jobs.verifier   import verifier_microservice
 from osprey.worker.lib.serializer  import encode
 
 from osprey.worker.models.source_version import SourceVersion
@@ -31,13 +31,13 @@ class Source(Base):
             session.commit()
     
     # NOTE: Going to be deprecated, moving it to work with GLOBUS Flows
-    def check_new_version(self):
-        # NOTE : Ideally should check if its a new version, just by looking a json key in http request ig?
-        new_data, format = self.download()
-        if not verifier_microservice(new_data, self.verifier):
-            raise Exception('Need to send an email that new version failed')
+    # def check_new_version(self):
+    #     # NOTE : Ideally should check if its a new version, just by looking a json key in http request ig?
+    #     new_data, format = self.download()
+    #     if not verifier_microservice(new_data, self.verifier):
+    #         raise Exception('Need to send an email that new version failed')
 
-        self.add_new_version(new_data, format)
+    #     self.add_new_version(new_data, format)
 
     def download(self):
         """ 

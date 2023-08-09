@@ -37,5 +37,5 @@ def database_commit(*args, **kwargs):
 
 
 if __name__ == "__main__":
-    print("Workflow download",        register_function(download))
-    print("Workflow database commit", register_function(database_commit))
+    print("Globus Flow download",        register_function(download))
+    print("Globus Flow database commit", register_function(database_commit))
