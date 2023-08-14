@@ -2,7 +2,7 @@ from osprey.server.app import db
 from sqlalchemy import Column, Integer, String
 from osprey.server.models.source_file import SourceFile
 from osprey.server.lib.error import ServiceError, MODEL_INSUFFICIENT_ATTRS, PROXYIFY_ERROR
-from osprey.server.lib.proxies import proxify
+# from osprey.server.lib.proxies import proxify
 
 class Proxy(db.Model):
     id                = Column(Integer, primary_key=True)
@@ -42,4 +42,5 @@ class Proxy(db.Model):
         if source_file is None:
             raise ServiceError(PROXYIFY_ERROR, "Missing source file for source_version")
 
-        self.representation = proxify(source_file.file)
+        # self.representation = proxify(source_file.file)
+        self.representation = 'proxy-repr'

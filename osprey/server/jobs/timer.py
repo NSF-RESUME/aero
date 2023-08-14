@@ -36,11 +36,11 @@ def set_timer(interval_in_sec: int, id: int, flow_type: FlowEnum) -> None:
 
     run_input = {
                  "osprey-worker-endpoint": Config.GLOBUS_WORKER_UUID,
-                 "download-function": Config.WORKFLOW_DOWNLOAD_FUNCTION, 
-                 "database-commit-function": Config.WORKFLOW_COMMIT_FUNCTION,
+                 "download-function": Config.GLOBUS_FLOW_DOWNLOAD_FUNCTION, 
+                 "database-commit-function": Config.GLOBUS_FLOW_COMMIT_FUNCTION,
                  "tasks": [{
                      "endpoint": Config.GLOBUS_WORKER_UUID,
-                     "function": Config.WORKFLOW_DOWNLOAD_FUNCTION,
+                     "function": Config.GLOBUS_FLOW_DOWNLOAD_FUNCTION,
                      "kwargs": {
                         "source_id": id
                      }}]
@@ -64,26 +64,6 @@ def set_timer(interval_in_sec: int, id: int, flow_type: FlowEnum) -> None:
     job_id = response["job_id"]
     return job_id
 
-def scrape(id):
-    from osprey.worker.models import Source
-    from osprey.worker.models.database import Session
-    with Session() as s:
-        source = s.query(Source).get(id)
-        # TODO: Error handle here
-        source.check_new_version()
-
 if __name__ == "__main__":
-    if(len(sys.argv) != 2):
-        print("Usage: python timer.py <endpoint_id>")
-        exit()
-
-    endpoint_uuid = sys.argv[1]
-    func_uuid = register_function(scrape)
-    # TODO: Fix this, maybe use `export`
-    os.environ['TIMER_FUNCTION_UUID'] = func_uuid
-    os.environ['TIMER_ENDPOINT_UUID'] = endpoint_uuid
-
-    # TODO: what to do?
     flow_id = FLOW_IDS[FlowEnum.NONE]
     create_authorizer(flow_id)
-    print(f"TIMER_FUNCTION_UUID: {func_uuid} \n | TIMER_ENDPOINT_UUID : {endpoint_uuid}")
