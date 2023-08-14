@@ -48,6 +48,12 @@ services:
       - DATABASE_HOST=osprey-postgres-database-1
       - DATABASE_NAME=osprey_development
 
+  globus-connect:
+      build:
+        dockerfile: ./Dockerfiles/Dockerfile.connect-server.dev
+      tty: true
+      stdin_open: true
+
   # globus-proxystore:
   #   build:
   #     dockerfile: ./Dockerfiles/Dockerfile.proxystore.dev
