@@ -14,13 +14,12 @@ services:
       - GLOBUS_WORKER_UUID=7591d0fb-3d12-4ff8-b8fb-7a51146c4871
       - GLOBUS_FLOW_DOWNLOAD_FUNCTION=42c28e4c-eb4b-407d-a4a4-6c12fde1187e
       - GLOBUS_FLOW_COMMIT_FUNCTION=9f21ae75-69d5-4b4e-af20-33ba87411494
-      # - PROXYSTORE_ENDPOINT_UUID=f7da4f10-4fba-4d32-8b59-cc199b93acb7
     volumes:
       - ./osprey/server:/app/osprey/server
+      - ./data:/app/osprey/data
     depends_on:
         - postgres-database
         - globus-endpoint
-        # - globus-proxystore
 
   postgres-database:
     restart: always
@@ -39,6 +38,7 @@ services:
     volumes:
       - osprey-endpoint-data:/root/.globus_compute
       - ./osprey/worker:/app/osprey/worker
+      - ./data:/app/osprey/data
 
     # TODO: Make a different user
     environment:
@@ -48,11 +48,16 @@ services:
       - DATABASE_HOST=osprey-postgres-database-1
       - DATABASE_NAME=osprey_development
 
-  globus-connect:
-      build:
-        dockerfile: ./Dockerfiles/Dockerfile.connect-server.dev
-      tty: true
-      stdin_open: true
+  # globus-connect:
+  #     build:
+  #       dockerfile: ./Dockerfiles/Dockerfile.connect-server.dev
+  #     volumes:
+  #       - ./osprey/:/app/osprey/
+  #     ports:
+  #       - "443:443"
+  #       - "80:80"
+  #     tty: true
+  #     stdin_open: true
 
   # globus-proxystore:
   #   build:

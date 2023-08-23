@@ -12,6 +12,7 @@ from osprey.worker.models.source_file    import SourceFile
 # Assume that this is sa read-only class
 class Source(Base):
     __tablename__ = 'source'
+    __table_args__ = {'extend_existing': True}
     id            = Column(Integer, primary_key=True)
     name          = Column(String)
     url           = Column(String)
@@ -25,8 +26,15 @@ class Source(Base):
 
     def add_new_version(self, new_data, format):
         with Session() as session:
-            new_version             = SourceVersion(version=self.last_version() + 1, source_id= self.id)
-            new_version.source_file = SourceFile(file=encode(new_data, format), encoding=format)
+            version_number = self.last_version() + 1
+            new_version             = SourceVersion(version=version_number, source_id= self.id)
+            new_version.source_file = SourceFile(encoding='utf-8',
+                                                 file_type=format,
+                                                 args={
+                                                     'file': new_data,
+                                                     'version': version_number,
+                                                     'source_id': self.id
+                                                     })
             session.add(new_version)
             session.commit()
     
@@ -46,10 +54,10 @@ class Source(Base):
             But assuming that it is gonna be in JSON for now
         """
         data = requests.get(self.url)
-        return data.json(), 'json'
+        return data.content.decode('utf-8'), 'csv'
 
-    def last_verison(self):
-        l_version = self.versions[len(self.versions) - 1]
+    def last_version(self):
+        l_version = self.versions[len(self.versions) - 1] if len(self.versions) !=0 else None
         if not(l_version):
             return 0
         return l_version.version

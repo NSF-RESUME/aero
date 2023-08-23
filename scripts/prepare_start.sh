@@ -7,6 +7,9 @@ docker volume create osprey-postgres-data
 docker volume create osprey-endpoint-data
 docker volume create osprey-proxystore-data
 
+echo "\n\nSetting up Globus Web"
+docker compose run -it globus login --no-local-server
+
 echo "\n\nSetting up Globus Compute Endpoint"
 
 echo "\nThe Globus Endpoint UUID is : "

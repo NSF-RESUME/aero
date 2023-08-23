@@ -4,7 +4,7 @@ from globus_sdk import NativeAppAuthClient, AccessTokenAuthorizer
 # Permanent
 # OSPREY_DIR = os.path.join(os.path.expanduser("~"), ".local/share/osprey")
 # TODO: Change this 
-OSPREY_DIR = '/Users/sudershan/Documents/GlobusIntern/osprey/'
+OSPREY_DIR = '/app/osprey/server/'
 TOKENS_FILE = os.path.join(OSPREY_DIR, "tokens.json")
 
 _TIMER_CLIENT_UUID: str = "524230d7-ea86-4a52-8312-86065a9e0417"

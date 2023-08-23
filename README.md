@@ -14,7 +14,7 @@ To install the components, the following steps can be followed:
 
 source scripts/prepare_start.sh
 
-docker compose run 
+docker compose up
 
 ```
 

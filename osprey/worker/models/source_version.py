@@ -5,7 +5,8 @@ import datetime
 
 # Assume that this is sa read-only class
 class SourceVersion(Base):
-    __tablename__ = 'source_version'
+    __tablename__  = 'source_version'
+    __table_args__ = {'extend_existing': True}
     id            = Column(Integer, primary_key=True)
     version       = Column(Integer)
     checksum      = Column(String)

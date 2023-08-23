@@ -8,3 +8,4 @@ proxystore
 dill
 globus_compute_sdk
 globus_sdk
+globus-cli
