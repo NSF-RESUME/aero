@@ -34,6 +34,7 @@ class Source(db.Model):
 
         # after_create
         self._start_timer_flow()
+        self._fake_flow()
 
     def __repr__(self):
         return "<Source(id={}, name='{}', url='{}', description={})>"\
@@ -79,6 +80,11 @@ class Source(db.Model):
         self.timer_job_id = set_timer(self.timer, self.id, self.flow_kind)
         db.session.add(self)
         db.session.commit()
+    
+    def _fake_flow(self):
+        import osprey.worker.lib.globus_flow_helper as helper
+        a, k = helper.download(source_id=self.id)
+        helper.database_commit(*a, **k)
     
     def get_timer_job(self):
         return get_job(FLOW_IDS[self.flow_kind], self.timer_job_id)
