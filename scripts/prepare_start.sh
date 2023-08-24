@@ -15,8 +15,16 @@ echo "\n\nSetting up Globus Compute Endpoint"
 echo "\nThe Globus Endpoint UUID is : "
 docker compose run -it globus-endpoint globus-compute-endpoint start default
 
+out=`docker compose run -it globus-endpoint globus-compute-endpoint list`
+endpoint_uuid=`echo $out | grep -i 'default' | awk '{print $2}'`
+
 echo "\nThe Globus Flow Functions UUIDs are : "
-docker compose run -it globus-endpoint python /app/osprey/worker/lib/globus_flow_helper.py
+out=`docker compose run -it globus-endpoint python /app/osprey/worker/lib/globus_flow_helper.py`
+
+flow_download_uuid=`echo ${out} | grep -i 'download' | awk '{print $NF}'`
+flow_database_uuid=`echo ${out} | grep -i 'database' | awk '{print $NF}'`
+
+echo "${out}"
 
 echo "\n\nRunning migrations"
 docker compose run -it web flask db upgrade
@@ -24,10 +32,8 @@ docker compose run -it web flask db upgrade
 echo "\n\nSetting up Globus Flow Worker"
 docker compose run -it web python /app/osprey/server/jobs/timer.py
 
-echo "\n\nGo to docker-compose.yml and replace
+sed -i '' "s/GLOBUS_WORKER_UUID=.*/GLOBUS_WORKER_UUID=${endpoint_uuid}/g" docker-compose.yml
+sed -i '' "s/GLOBUS_FLOW_DOWNLOAD_FUNCTION=.*/GLOBUS_FLOW_DOWNLOAD_FUNCTION=${flow_download_uuid}/g" docker-compose.yml
+sed -i '' "s/GLOBUS_FLOW_COMMIT_FUNCTION=.*/GLOBUS_FLOW_COMMIT_FUNCTION=${flow_database_uuid}/g" docker-compose.yml
 
-- GLOBUS_WORKER_UUID= <globus-endpoint-uuid>
-- GLOBUS_FLOW_DOWNLOAD_FUNCTION= <download-uuid>
-- GLOBUS_FLOW_COMMIT_FUNCTION= <commit-uuid>
-
-"
+echo "\n\nUpdated docker-compose.yml"

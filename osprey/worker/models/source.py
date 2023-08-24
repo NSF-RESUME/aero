@@ -57,10 +57,11 @@ class Source(Base):
         return data.content.decode('utf-8'), 'csv'
 
     def last_version(self):
-        l_version = self.versions[len(self.versions) - 1] if len(self.versions) !=0 else None
-        if not(l_version):
+        try:
+            l_version = self.versions[len(self.versions) - 1]
+            return l_version.version
+        except IndexError:
             return 0
-        return l_version.version
 
     def timer_readable(self):
         if not(self.timer):

@@ -1,4 +1,5 @@
 import datetime, os, sys
+import json
 
 from osprey.server.lib.globus_compute import register_function
 from globus_sdk import TimerClient
@@ -38,12 +39,12 @@ def set_timer(interval_in_sec: int, id: int, flow_type: FlowEnum) -> None:
                  "osprey-worker-endpoint": Config.GLOBUS_WORKER_UUID,
                  "download-function": Config.GLOBUS_FLOW_DOWNLOAD_FUNCTION, 
                  "database-commit-function": Config.GLOBUS_FLOW_COMMIT_FUNCTION,
-                 "tasks": [{
+                 "tasks": json.dumps([{
                      "endpoint": Config.GLOBUS_WORKER_UUID,
                      "function": Config.GLOBUS_FLOW_DOWNLOAD_FUNCTION,
                      "kwargs": {
                         "source_id": id
-                     }}]
+                     }}])
                  }
 
     run_label = f"Osprey Demo | Source {id}"
