@@ -22,6 +22,14 @@ def set_timer(interval_in_sec: int, id: int, flow_type: FlowEnum) -> None:
     authorizer, specific_flow_scope = create_authorizer(flow_id)
     timer_client = TimerClient(authorizer=authorizer, app_name="osprey-prototype")
 
+    task_entry = [{
+                    "endpoint": Config.GLOBUS_WORKER_UUID,
+                    "function": Config.GLOBUS_FLOW_DOWNLOAD_FUNCTION,
+                    "kwargs": {
+                        "source_id": id
+                    }
+                }]
+
     run_input = {
                  "osprey-worker-endpoint": Config.GLOBUS_WORKER_UUID,
                  "download-function": Config.GLOBUS_FLOW_DOWNLOAD_FUNCTION, 
