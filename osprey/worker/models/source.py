@@ -37,15 +37,6 @@ class Source(Base):
                                                      })
             session.add(new_version)
             session.commit()
-    
-    # NOTE: Going to be deprecated, moving it to work with GLOBUS Flows
-    # def check_new_version(self):
-    #     # NOTE : Ideally should check if its a new version, just by looking a json key in http request ig?
-    #     new_data, format = self.download()
-    #     if not verifier_microservice(new_data, self.verifier):
-    #         raise Exception('Need to send an email that new version failed')
-
-    #     self.add_new_version(new_data, format)
 
     def download(self):
         """ 
@@ -54,6 +45,7 @@ class Source(Base):
             But assuming that it is gonna be in JSON for now
         """
         data = requests.get(self.url)
+        # TODO: Change this to automatically pick
         return data.content.decode('utf-8'), 'csv'
 
     def last_version(self):

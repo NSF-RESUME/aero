@@ -34,7 +34,7 @@ class Source(db.Model):
 
         # after_create
         self._start_timer_flow()
-        self._fake_flow()
+        # self._fake_flow()
 
     def __repr__(self):
         return "<Source(id={}, name='{}', url='{}', description={})>"\
