@@ -25,8 +25,6 @@ class Source(db.Model):
         kwargs = self._set_defaults(**kwargs)
         self._validate(**kwargs)
 
-        # sets the uuids for verifiers and modifiers
-        kwargs = self._register_funcs(**kwargs)
         # create
         super().__init__(**kwargs)
         db.session.add(self)
@@ -34,7 +32,6 @@ class Source(db.Model):
 
         # after_create
         self._start_timer_flow()
-        # self._fake_flow()
 
     def __repr__(self):
         return "<Source(id={}, name='{}', url='{}', description={})>"\
@@ -81,10 +78,10 @@ class Source(db.Model):
         db.session.add(self)
         db.session.commit()
     
-    def _fake_flow(self):
-        import osprey.worker.lib.globus_flow_helper as helper
-        a, k = helper.download(source_id=self.id)
-        helper.database_commit(*a, **k)
+    # def _fake_flow(self):
+    #     import osprey.worker.lib.globus_flow_helper as helper
+    #     a, k = helper.download(source_id=self.id)
+    #     helper.database_commit(*a, **k)
     
     def get_timer_job(self):
         return get_job(FLOW_IDS[self.flow_kind], self.timer_job_id)
@@ -98,5 +95,3 @@ class Source(db.Model):
     # TODO: Assuming the users are giving function UUID for now, and not getting us to register
     # NOTE: If they are registering their own functions, then they have to make sure to give our group access
     # Hence we need have a seperate routes for the to register functions or we enable `client.py` to hold the group_id, and hope the group_id doesnt change 
-    def _register_funcs(self, **kwargs):
-        return kwargs

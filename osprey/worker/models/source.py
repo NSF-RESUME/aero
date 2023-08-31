@@ -19,6 +19,10 @@ class Source(Base):
     description   = Column(String)
     timer         = Column(Integer) # in seconds
     verifier      = Column(String)
+    modifier      = Column(String)
+    user_endpoint = Column(String)
+    timer_job_id  = Column(String)
+    flow_kind     = Column(Integer)
     versions      = relationship("SourceVersion", back_populates="source", lazy=False)
 
     def __repr__(self):

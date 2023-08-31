@@ -1,5 +1,20 @@
 
+"""
+
+NOTE:
+
+1. Stop download if its the same file
+2. Wrapper function for executing both verifier and modifier - DONE
+3. Globus Workflow for single function - DONE
+4. Globus Workflow Integration for type 2 - ???
+5. Update README with create db
+6. Expose an endpoint to register a function - DONE
+7. Direct download using HTTPS using gcs
+
+"""
+
 from osprey.server.lib.globus_compute import register_function, execute_function, get_result
+from osprey.server.lib.error import ServiceError, CUSTOM_FUNCTION_ERROR
 
 def download(*args, **kwargs):
     from osprey.worker.models.source import Source
@@ -14,16 +29,32 @@ def download(*args, **kwargs):
         kwargs['file_format']= file_format
         kwargs['download']   = True
         return args, kwargs
-    
 
-# def user_function_wrapper(*args, **kwargs):
-#     try:
-#         tracker = execute_function(kwargs['function_uuid'], kwargs['endpoint_uuid'])
-#         args, kwargs = get_result(tracker)
-#     except:
-#         pass
+def user_function_wrapper(*args, **kwargs):
+    from osprey.worker.models.source import Source
+    from osprey.worker.models.database import Session
 
-#     return args, kwargs
+    source_id = kwargs['source_id']
+    with Session() as session:
+        source = session.query(Source).get(source_id)
+
+    # Verifier
+    if source.verifier is not None:
+        try:
+            tracker = execute_function(source.verifier, source.user_endpoint, *args, **kwargs)
+            args, kwargs = get_result(tracker, block=True)
+        except:
+            raise ServiceError(CUSTOM_FUNCTION_ERROR, "Verifier failed")
+
+    # Modifier
+    if source.modifier is not None:
+        try:
+            tracker = execute_function(source.modifier, source.user_endpoint, *args, **kwargs)
+            args, kwargs = get_result(tracker, block=True)
+        except:
+            raise ServiceError(CUSTOM_FUNCTION_ERROR, "Modifier failed")
+
+    return args, kwargs
 
 
 def database_commit(*args, **kwargs):
@@ -39,3 +70,4 @@ def database_commit(*args, **kwargs):
 if __name__ == "__main__":
     print("Globus Flow download",        register_function(download))
     print("Globus Flow database commit", register_function(database_commit))
+    print("Globus Flow user function commit", register_function(user_function_wrapper))

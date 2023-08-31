@@ -1,42 +1,62 @@
 {
-    "Comment": "Verifier/Modifier with a database-commit step",
+    "Comment": "Download, executes a function and commits to database",
     "StartAt": "download",
     "States": {
         "download": {
             "Type": "Action",
             "ActionUrl": "https://compute.actions.globus.org/",
             "Parameters": {
-                "args.=": "getattr('args')",
-                "tasks.=": "getattr('tasks')",
-                "kwargs.=": "getattr('kwargs')",
-                "endpoint.=": "getattr('osprey-worker-endpoint')",
-                "function.=": "getattr('download-function')"
+                "tasks.=": "getattr('tasks')"
             },
             "ResultPath": "$.DownloadResult",
+            "Next": "prepare-custom-function"
+        },
+        "prepare-custom-function": {
+            "Type": "ExpressionEval",
+            "Comment": "Set details for custom process",
+            "Parameters": {
+                "tasks": [
+                    {
+                        "endpoint.$": "$.osprey-worker-endpoint",
+                        "function.$": "$.user-wrapper-function",
+                        "args.$": "$.DownloadResult.details.result[0][0]",
+                        "kwargs.$": "$.DownloadResult.details.result[0][1]"
+                    }
+                ]
+            },
+            "ResultPath": "$.CustomFuncParams",
             "Next": "custom-user-function"
         },
         "custom-user-function": {
             "Type": "Action",
             "ActionUrl": "https://compute.actions.globus.org/",
             "Parameters": {
-                "args.=": "DownloadResult.details.result",
-                "tasks.=": "getattr('tasks')",
-                "kwargs.=": "getattr('kwargs')",
-                "endpoint.=": "getattr('user-endpoint')",
-                "function.=": "getattr('user-function')"
+                "tasks.$": "$.CustomFuncParams.tasks"
             },
             "ResultPath": "$.CustomFunctionResult",
+            "Next": "prepare-commit"
+        },
+        "prepare-commit": {
+            "Type": "ExpressionEval",
+            "Comment": "Set details for database commit process",
+            "Parameters": {
+                "tasks": [
+                    {
+                        "endpoint.$": "$.osprey-worker-endpoint",
+                        "function.$": "$.database-commit-function",
+                        "args.$": "$.CustomFunctionResult.details.result[0][0]",
+                        "kwargs.$": "$.CustomFunctionResult.details.result[0][1]"
+                    }
+                ]
+            },
+            "ResultPath": "$.CommitParams",
             "Next": "database-commit"
         },
         "database-commit": {
             "Type": "Action",
             "ActionUrl": "https://compute.actions.globus.org/",
             "Parameters": {
-                "args.=": "CustomFunctionResult.details.result",
-                "kwargs.=": "getattr('kwargs')",
-                "tasks.=": "getattr('tasks')",
-                "endpoint.=": "getattr('osprey-worker-endpoint')",
-                "function.=": "getattr('database-commit-function')"
+                "tasks.$": "$.CommitParams.tasks"
             },
             "End": true
         }

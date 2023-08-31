@@ -1,8 +1,7 @@
 {
-    "osprey-worker-endpoint": "7591d0fb-3d12-4ff8-b8fb-7a51146c4871",
-    "database-commit-function": "1bb6a755-edd9-4746-8ec5-4a0e8b7f4e80",
-    "download-function": "7313ad59-912b-4891-a749-711c245cdb94",
-    "user-endpoint": "7591d0fb-3d12-4ff8-b8fb-7a51146c4871",
-    "user-function": "f40d5d04-3531-4b46-b95c-ad123ce74985",
-    "tasks": "[{\"endpoint\": \"7591d0fb-3d12-4ff8-b8fb-7a51146c4871\", \"function\": \"f40d5d04-3531-4b46-b95c-ad123ce74985\", \"kwargs\": {\"source_id\": 1}}]"
+    "osprey-worker-endpoint": "341dda3d-5b98-46a8-9d47-2070bc12b1db",
+    "database-commit-function": "aaa9bddd-ef65-429f-b31b-663c135af5a0",
+    "download-function": "63e2ae67-ed2a-44c7-87ee-b5a325a6344a",
+    "user-wrapper-function": "f359efec-293f-4d9c-89cc-fa394d6fa3ee",
+    "tasks": "[{\"endpoint\": \"341dda3d-5b98-46a8-9d47-2070bc12b1db\", \"function\": \"63e2ae67-ed2a-44c7-87ee-b5a325a6344a\", \"kwargs\": {\"source_id\": 23}}]"
 }

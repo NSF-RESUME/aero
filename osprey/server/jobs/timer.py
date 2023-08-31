@@ -19,7 +19,7 @@ class FlowEnum(IntEnum):
 # PERMANENT
 FLOW_IDS = {
     FlowEnum.NONE: 'ad25e819-ec70-4d30-aaad-a828447da332',
-    FlowEnum.VERIFY_OR_MODIFY: ''
+    FlowEnum.VERIFY_OR_MODIFY: 'b54d0c7f-cb37-4332-a17f-7cf80b9afb81'
 }
 
 def set_timer(interval_in_sec: int, id: int, flow_type: FlowEnum) -> None:

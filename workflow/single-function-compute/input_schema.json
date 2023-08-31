@@ -4,8 +4,8 @@
         "osprey-worker-endpoint",
         "database-commit-function",
         "download-function",
-        "user-endpoint",
-        "user-function"
+        "user-wrapper-function",
+        "tasks"
     ],
     "properties": {
         "args": {
@@ -24,11 +24,7 @@
             "type": "string",
             "description": "The endpoint UUID that has the osprey library"
         },
-        "user-endpoint": {
-            "type": "string",
-            "description": "The endpoint UUID that user has provided for their function to run on"
-        },
-        "user-function": {
+        "user-wrapper-function": {
             "type": "string",
             "description": "The function UUID, ie from client.register_function()"
         },
@@ -45,8 +41,7 @@
         "osprey-worker-endpoint",
         "database-commit-function",
         "download-function",
-        "user-endpoint",
-        "user-function",
+        "user-wrapper-function",
         "args",
         "kwargs",
         "tasks"
