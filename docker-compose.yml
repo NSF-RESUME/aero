@@ -31,6 +31,7 @@ services:
     volumes:
       - ./osprey:/app/osprey
       - ./data:/app/osprey/data
+      - ./globus_compute/:/root/.globus_compute/
     depends_on:
         - postgres-database
         - globus-endpoint

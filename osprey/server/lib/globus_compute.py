@@ -24,3 +24,11 @@ def get_result(tracker_uuid : str, block: bool = False):
             continue # NOTE: How do i know the function result was not the exception??
 
     return result
+
+
+if __name__ == '__main__':
+    def temp():
+        pass
+
+    if register_function(temp):
+        print('Done!')

@@ -3,6 +3,7 @@
 osprey.egg-info
 
 postgres-data
+globus_compute/
 database_init.sql
 .DS_Store
 

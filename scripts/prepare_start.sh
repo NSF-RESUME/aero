@@ -34,6 +34,7 @@ docker compose down postgres-database
 
 echo "\n\nSetting up Globus Flow Worker"
 docker compose run -it web python /app/osprey/server/jobs/timer.py
+docker compose run -it web python /app/osprey/server/lib/globus_compute.py
 
 sed -i '' "s/GLOBUS_WORKER_UUID=.*/GLOBUS_WORKER_UUID=${endpoint_uuid}/g" docker-compose.yml
 sed -i '' "s/GLOBUS_FLOW_DOWNLOAD_FUNCTION=.*/GLOBUS_FLOW_DOWNLOAD_FUNCTION=${flow_download_uuid}/g" docker-compose.yml
