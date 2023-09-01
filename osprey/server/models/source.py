@@ -11,8 +11,9 @@ class Source(db.Model):
     url           = Column(String)
     description   = Column(String)
     timer         = Column(Integer) # in seconds
-    verifier      = Column(String)  # TODO Modify them to use UUIDs instead of pickled functions
+    verifier      = Column(String)
     modifier      = Column(String)
+    # Ensure to delete timer_job_id when either `verifier` or `modifier` is altered
     user_endpoint = Column(String)
     timer_job_id  = Column(String)
     flow_kind     = Column(Integer)

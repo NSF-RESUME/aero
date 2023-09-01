@@ -13,13 +13,13 @@ services:
       - FLASK_APP=server.py
 
       # Project owner registers this
-      - GLOBUS_FLOW_DOWNLOAD_FUNCTION=63e2ae67-ed2a-44c7-87ee-b5a325a6344a
-      - GLOBUS_FLOW_COMMIT_FUNCTION=aaa9bddd-ef65-429f-b31b-663c135af5a0
-      - GLOBUS_FLOW_USER_COMMIT_FUNCTION=f359efec-293f-4d9c-89cc-fa394d6fa3ee
+      - GLOBUS_FLOW_DOWNLOAD_FUNCTION=2f7a2bd6-39ee-4866-b64e-abc290110d98
+      - GLOBUS_FLOW_COMMIT_FUNCTION=5a5cd5e5-bfd5-4a86-8344-d31d226ab8a4
+      - GLOBUS_FLOW_USER_COMMIT_FUNCTION=957ca7fc-aafe-4c10-b40a-469e6ff494aa
 
       # User functions are registered in this client
-      - FUNCX_SDK_CLIENT_ID=638156ef-7332-4ab1-8d92-304b27bdd270
-      - FUNCX_SDK_CLIENT_SECRET=zUtPdMO1HDdRI3Qjkjehgn6YA85griFVJlwgu/HLbl4=
+      # - FUNCX_SDK_CLIENT_ID=638156ef-7332-4ab1-8d92-304b27bdd270
+      # - FUNCX_SDK_CLIENT_SECRET=zUtPdMO1HDdRI3Qjkjehgn6YA85griFVJlwgu/HLbl4=
 
       - GLOBUS_WORKER_UUID=341dda3d-5b98-46a8-9d47-2070bc12b1db
       - GCS_ENDPOINT_UUID=ede1f1ef-8c15-42fd-a3ce-3ca6109bce42
@@ -61,8 +61,8 @@ services:
       - DATABASE_USER=postgres
       - DATABASE_HOST=osprey-postgres-database-1
       - DATABASE_NAME=osprey_development
-      - FUNCX_SDK_CLIENT_ID=638156ef-7332-4ab1-8d92-304b27bdd270
-      - FUNCX_SDK_CLIENT_SECRET=zUtPdMO1HDdRI3Qjkjehgn6YA85griFVJlwgu/HLbl4=
+      # - FUNCX_SDK_CLIENT_ID=638156ef-7332-4ab1-8d92-304b27bdd270
+      # - FUNCX_SDK_CLIENT_SECRET=zUtPdMO1HDdRI3Qjkjehgn6YA85griFVJlwgu/HLbl4=
 
   # globus-connect:
   #     build:
