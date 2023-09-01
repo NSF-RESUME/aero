@@ -13,9 +13,9 @@ services:
       - FLASK_APP=server.py
 
       # Project owner registers this
-      - GLOBUS_FLOW_DOWNLOAD_FUNCTION=efa11c4c-26ae-42e0-9aa9-d81f3ea4c3e1
-      - GLOBUS_FLOW_COMMIT_FUNCTION=31adbc04-3a38-422d-9c44-7e983d0941f8
-      - GLOBUS_FLOW_USER_COMMIT_FUNCTION=b82ea6d4-98b2-4d11-a91c-4ebd91d0f466
+      - GLOBUS_FLOW_DOWNLOAD_FUNCTION=6151fc8d-c38b-4a88-8bd7-0c1cd84c7a9f
+      - GLOBUS_FLOW_COMMIT_FUNCTION=c035e58d-a3b9-46b6-a00e-b163a9e48ba7
+      - GLOBUS_FLOW_USER_COMMIT_FUNCTION=2b44ab23-7c1c-4f2d-9754-ed77af05a899
 
       # User functions are registered in this client
       # - FUNCX_SDK_CLIENT_ID=638156ef-7332-4ab1-8d92-304b27bdd270
