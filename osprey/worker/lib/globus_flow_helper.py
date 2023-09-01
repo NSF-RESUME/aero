@@ -4,17 +4,14 @@
 NOTE:
 
 1. Stop download if its the same file
-2. Wrapper function for executing both verifier and modifier - DONE
-3. Globus Workflow for single function - DONE
-4. Globus Workflow Integration for type 2 - ???
-5. Update README with create db
-6. Expose an endpoint to register a function - DONE
-7. Direct download using HTTPS using gcs
+2. Direct download using HTTPS using gcs
+3. Work on authentication
+    i) Use Funcx credentials to register all functions
+    ii) Avoid using sudershan@uchicago.edu identity for all globus services
 
 """
 
-from osprey.server.lib.globus_compute import register_function, execute_function, get_result
-from osprey.server.lib.error import ServiceError, CUSTOM_FUNCTION_ERROR
+from osprey.server.lib.globus_compute import register_function
 
 def download(*args, **kwargs):
     from osprey.worker.models.source import Source
@@ -33,6 +30,8 @@ def download(*args, **kwargs):
 def user_function_wrapper(*args, **kwargs):
     from osprey.worker.models.source import Source
     from osprey.worker.models.database import Session
+    from osprey.server.lib.error import ServiceError, CUSTOM_FUNCTION_ERROR
+    from osprey.server.lib.globus_compute import execute_function, get_result
 
     source_id = kwargs['source_id']
     with Session() as session:

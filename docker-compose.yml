@@ -13,15 +13,15 @@ services:
       - FLASK_APP=server.py
 
       # Project owner registers this
-      - GLOBUS_FLOW_DOWNLOAD_FUNCTION=2f7a2bd6-39ee-4866-b64e-abc290110d98
-      - GLOBUS_FLOW_COMMIT_FUNCTION=5a5cd5e5-bfd5-4a86-8344-d31d226ab8a4
-      - GLOBUS_FLOW_USER_COMMIT_FUNCTION=957ca7fc-aafe-4c10-b40a-469e6ff494aa
+      - GLOBUS_FLOW_DOWNLOAD_FUNCTION=efa11c4c-26ae-42e0-9aa9-d81f3ea4c3e1
+      - GLOBUS_FLOW_COMMIT_FUNCTION=31adbc04-3a38-422d-9c44-7e983d0941f8
+      - GLOBUS_FLOW_USER_COMMIT_FUNCTION=b82ea6d4-98b2-4d11-a91c-4ebd91d0f466
 
       # User functions are registered in this client
       # - FUNCX_SDK_CLIENT_ID=638156ef-7332-4ab1-8d92-304b27bdd270
       # - FUNCX_SDK_CLIENT_SECRET=zUtPdMO1HDdRI3Qjkjehgn6YA85griFVJlwgu/HLbl4=
 
-      - GLOBUS_WORKER_UUID=341dda3d-5b98-46a8-9d47-2070bc12b1db
+      - GLOBUS_WORKER_UUID=dedce258-023b-426c-8451-b40c8d6d517b
       - GCS_ENDPOINT_UUID=ede1f1ef-8c15-42fd-a3ce-3ca6109bce42
       - GCS_MANAGER_DOMAIN_NAME=6073d3.08cc.data.globus.org
       - GCS_STORAGE_GATEWAY_ID=88cba8d2-5a8b-439c-8a53-74a2f0332128

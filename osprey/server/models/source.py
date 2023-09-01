@@ -2,8 +2,9 @@ from osprey.server.app import db
 from osprey.server.lib.error import ServiceError, MODEL_INSUFFICIENT_ATTRS, FLOW_TIMER_ERROR
 from sqlalchemy import Column, Integer, String, Date
 from osprey.server.models.tag import SourceTagTable
-from osprey.server.jobs.timer import set_timer, FlowEnum, FLOW_IDS
-from osprey.server.lib.globus_flow import get_job
+from osprey.server.jobs.timer import set_timer
+from osprey.server.lib.globus_flow import get_job, FlowEnum, FLOW_IDS
+from osprey.server.config import Config
 
 class Source(db.Model):
     id            = Column(Integer, primary_key=True)
@@ -65,6 +66,9 @@ class Source(db.Model):
                 kwargs['flow_kind'] = FlowEnum.VERIFY_OR_MODIFY
             else:
                 kwargs['flow_kind'] = FlowEnum.NONE
+        
+        if 'user_endpoint' not in kwargs:
+            kwargs['user_endpoint'] = Config.GLOBUS_WORKER_UUID
 
         return kwargs
 

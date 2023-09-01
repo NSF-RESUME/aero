@@ -1,26 +1,14 @@
-import datetime, os, sys
+import datetime
 import json
 
 from osprey.server.lib.globus_compute import register_function
 from globus_sdk import TimerClient
 from globus_sdk import TimerJob
 from globus_sdk.utils import slash_join
-from osprey.server.lib.error import ServiceError, FLOW_TIMER_ERROR
 from globus_sdk import SpecificFlowClient
-from osprey.server.lib.globus_flow import create_authorizer
-from enum import IntEnum
+from osprey.server.lib.globus_flow import create_authorizer, FLOW_IDS, FlowEnum
 from osprey.server.config import Config
 
-class FlowEnum(IntEnum):
-    NONE              = 0
-    VERIFY_OR_MODIFY  = 1
-    VERIFY_AND_MODIFY = 2
-
-# PERMANENT
-FLOW_IDS = {
-    FlowEnum.NONE: 'ad25e819-ec70-4d30-aaad-a828447da332',
-    FlowEnum.VERIFY_OR_MODIFY: 'b54d0c7f-cb37-4332-a17f-7cf80b9afb81'
-}
 
 def set_timer(interval_in_sec: int, id: int, flow_type: FlowEnum) -> None:
     """Set a Globus Timer for daily retrieval of updated tables from sources.
@@ -30,7 +18,6 @@ def set_timer(interval_in_sec: int, id: int, flow_type: FlowEnum) -> None:
     """
     flow_id       = FLOW_IDS[flow_type]
 
-    # client, sfc, timer_scope = create_context(_FLOW_UUID)
     sfc = SpecificFlowClient(flow_id=flow_id)
     authorizer, specific_flow_scope = create_authorizer(flow_id)
     timer_client = TimerClient(authorizer=authorizer, app_name="osprey-prototype")
@@ -39,6 +26,7 @@ def set_timer(interval_in_sec: int, id: int, flow_type: FlowEnum) -> None:
                  "osprey-worker-endpoint": Config.GLOBUS_WORKER_UUID,
                  "download-function": Config.GLOBUS_FLOW_DOWNLOAD_FUNCTION, 
                  "database-commit-function": Config.GLOBUS_FLOW_COMMIT_FUNCTION,
+                 "user-wrapper-function": Config.GLOBUS_FLOW_USER_WRAPPER_FUNC,
                  "tasks": json.dumps([{
                      "endpoint": Config.GLOBUS_WORKER_UUID,
                      "function": Config.GLOBUS_FLOW_DOWNLOAD_FUNCTION,
