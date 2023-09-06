@@ -8,7 +8,7 @@ A prototype for the extraction, storage, validation and distribution of public e
 Prerequisite:
 
 ```
-pip install -e . # Ensure you are in the root reposity
+pip install -e . # Ensure you are in the root repository
 ```
 
 Examples:
