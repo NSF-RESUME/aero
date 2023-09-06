@@ -31,7 +31,7 @@ python osprey/client/client.py -get_file --source_id <source_id>
 
 # NOTE:
 
-# The function must have:
+# The function must:
 #   1.    Take (*args, **kwargs)
 #   2.    Return args, kwargs
 #   3.    For verifier: raise `Exception` if the verifier is failed
