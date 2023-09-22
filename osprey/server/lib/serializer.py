@@ -4,6 +4,16 @@ import dill
 import codecs
 from osprey.server.lib.error import ServiceError, SERIALIZE_ERR, DESERIALIZE_ERR
 
+"""
+
+    This module helps serializing, and deserializing functions for creating modifiers/verifiers in the client side
+
+
+    They can be pickled, and sent as part of the request body
+
+"""
+
+
 def serialize(obj) -> str:
     try:
         return codecs.encode(dill.dumps(obj), "base64").decode()

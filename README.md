@@ -65,7 +65,7 @@ All the server components are made available within a series of dockerfiles prov
 To install the components, the following steps can be followed:
 
 ```
-# Build and create necessary volumes
+# Running the script to create necessary volumes, and build projects
 
 source scripts/prepare_start.sh
 
@@ -73,8 +73,19 @@ docker compose up
 
 ```
 
-### Starting the server
+## Contributions
 
-Create a ProxyStore endpoint and modify the endpoint ID in `osprey/server/proxies.py`. 
-Then, the server can be started by running `osprey/server/server.py`.
+### Updating Models
 
+flask_sqlalchemy is the library of choice for handling migrations for tables. Docs can be found at https://flask-migrate.readthedocs.io/en/latest/
+
+1. When creating a new model, create in `osprey/server`. Ensure that the new model inherits from db.Model, so that the flask_sqlalchemy can automatically detect the changes to the model variables.
+2. When a new column is added, run `flask db migrate -m <-message->` to commit the changes. The command automatically creates a migration file, which can be reused to recreate the database schema.
+3. Docker Exec into the WEB application container and then run `flask db upgrade` to run the migrations. Ensure that the database docker container is running, so the migration can be successful
+4. All models in `osprey/worker` serve just extensions. So you can load the same values that server models have created, and write custom worker related functions
+
+
+### Adding New config
+
+1. You can add editable configs in docker-compose.yml to the respective application
+2. Non-editable configs for the worker/server can be added to osprey/<-service-name->/config.py

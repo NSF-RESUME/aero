@@ -9,7 +9,15 @@ from globus_sdk import SpecificFlowClient
 from osprey.server.lib.globus_flow import create_authorizer, FLOW_IDS, FlowEnum
 from osprey.server.config import Config
 
+"""
 
+This module creates a job that gets triggered by Globus Timer.
+
+-> The flow IDs stored in lib.globus_flow can be recreated in `globus.org` by using the files from osprey/workflow/
+
+-> To run the TimerJob, there should be authentication file that should store the token with the scope ( Ensure it run before starting the project )
+
+"""
 def set_timer(interval_in_sec: int, id: int, flow_type: FlowEnum) -> None:
     """Set a Globus Timer for daily retrieval of updated tables from sources.
 
@@ -21,14 +29,6 @@ def set_timer(interval_in_sec: int, id: int, flow_type: FlowEnum) -> None:
     sfc = SpecificFlowClient(flow_id=flow_id)
     authorizer, specific_flow_scope = create_authorizer(flow_id)
     timer_client = TimerClient(authorizer=authorizer, app_name="osprey-prototype")
-
-    task_entry = [{
-                    "endpoint": Config.GLOBUS_WORKER_UUID,
-                    "function": Config.GLOBUS_FLOW_DOWNLOAD_FUNCTION,
-                    "kwargs": {
-                        "source_id": id
-                    }
-                }]
 
     run_input = {
                  "osprey-worker-endpoint": Config.GLOBUS_WORKER_UUID,
