@@ -8,7 +8,7 @@ services:
       - DATABASE_PORT=5432
       - DATABASE_PASSWORD=postgres
       - DATABASE_USER=postgres
-      - DATABASE_HOST=osprey-postgres-database-1 # NOTE: Make sure it is the same as the database-name
+      - DATABASE_HOST=dsaas-postgres-database-1 # NOTE: Make sure it is the same as the database-name
       - DATABASE_NAME=osprey_development
       - FLASK_APP=server.py
 
@@ -60,7 +60,7 @@ services:
       - DATABASE_PORT=5432
       - DATABASE_PASSWORD=postgres
       - DATABASE_USER=postgres
-      - DATABASE_HOST=osprey-postgres-database-1
+      - DATABASE_HOST=dsaas-postgres-database-1
       - DATABASE_NAME=osprey_development
       # - FUNCX_SDK_CLIENT_ID=638156ef-7332-4ab1-8d92-304b27bdd270
       # - FUNCX_SDK_CLIENT_SECRET=zUtPdMO1HDdRI3Qjkjehgn6YA85griFVJlwgu/HLbl4=

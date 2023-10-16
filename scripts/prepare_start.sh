@@ -37,9 +37,10 @@ echo "\n\nSetting up Globus Flow Worker"
 docker compose run -it web python /app/osprey/server/jobs/timer.py
 docker compose run -it web python /app/osprey/server/lib/globus_compute.py
 
-sed -i '' "s/GLOBUS_WORKER_UUID=.*/GLOBUS_WORKER_UUID=${endpoint_uuid}/g" docker-compose.yml
-sed -i '' "s/GLOBUS_FLOW_DOWNLOAD_FUNCTION=.*/GLOBUS_FLOW_DOWNLOAD_FUNCTION=${flow_download_uuid}/g" docker-compose.yml
-sed -i '' "s/GLOBUS_FLOW_COMMIT_FUNCTION=.*/GLOBUS_FLOW_COMMIT_FUNCTION=${flow_database_uuid}/g" docker-compose.yml
-sed -i '' "s/GLOBUS_FLOW_USER_COMMIT_FUNCTION=.*/GLOBUS_FLOW_USER_COMMIT_FUNCTION=${flow_user_function_uuid}/g" docker-compose.yml
+# TODO: make MacOS compatible by adding conditional. ...sed -i '' "s.. 
+sed -i "s/GLOBUS_WORKER_UUID=.*/GLOBUS_WORKER_UUID=${endpoint_uuid}/g" docker-compose.yml
+sed -i "s/GLOBUS_FLOW_DOWNLOAD_FUNCTION=.*/GLOBUS_FLOW_DOWNLOAD_FUNCTION=${flow_download_uuid}/g" docker-compose.yml
+sed -i "s/GLOBUS_FLOW_COMMIT_FUNCTION=.*/GLOBUS_FLOW_COMMIT_FUNCTION=${flow_database_uuid}/g" docker-compose.yml
+sed -i "s/GLOBUS_FLOW_USER_COMMIT_FUNCTION=.*/GLOBUS_FLOW_USER_COMMIT_FUNCTION=${flow_user_function_uuid}/g" docker-compose.yml
 
 echo "\n\nUpdated docker-compose.yml"

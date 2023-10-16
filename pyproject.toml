@@ -1,6 +1,6 @@
 [project]
-name = "osprey"
-description = "osprey prototyp"
+name = "DSaaS"
+description = "Data streams as a service"
 version = "0.0.1a"
 authors = [
     { name = "Valerie Hayot-Sasson", email = "vhayot@uchicago.edu"    },
@@ -24,6 +24,9 @@ server = [
     "flask==2.1.0",
 ]
 
+[project.scripts]
+dsaas = "osprey.client.client:main"
+
 [build-system]
 # These are the assumed default build requirements from pip:
 # https://pip.pypa.io/en/stable/reference/pip/#pep-517-and-518-support
@@ -32,3 +35,4 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 exclude = ["Dockerfiles*", "scripts*", "workflow*"]
+

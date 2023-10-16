@@ -1,6 +1,8 @@
-.venv/
+**/*venv/
+**/.ipynb_checkpoints
 **/__pycache__
-osprey.egg-info
+*.egg-info
+.python-version
 
 postgres-data
 globus_compute/
@@ -8,3 +10,12 @@ database_init.sql
 .DS_Store
 
 data/
+
+
+# vhs - local stuff i should maybe remove
+osprey/server/config_db.py
+osprey/server/lib/test_flow.py
+
+scope.json
+secrets.txt
+source
