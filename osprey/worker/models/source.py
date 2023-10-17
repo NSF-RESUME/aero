@@ -1,4 +1,6 @@
-import requests, datetime
+import datetime
+import requests
+import os
 
 from sqlalchemy.orm                import relationship
 from sqlalchemy                    import Column, Integer, String
@@ -8,6 +10,9 @@ from osprey.worker.lib.serializer  import encode
 
 from osprey.worker.models.source_version import SourceVersion
 from osprey.worker.models.source_file    import SourceFile
+
+
+DOWNLOAD_DIR = os.path.abspath('tmpdata')
 
 # Assume that this is sa read-only class
 class Source(Base):
@@ -28,10 +33,13 @@ class Source(Base):
     def __repr__(self):
         return f"Source(id={self.id}, name={self.name}, url={self.url}, timer={self.timer_readable()})"
 
-    def add_new_version(self, new_data, format):
+    def add_new_version(self, new_file, format):
         with Session() as session:
             version_number = self.last_version() + 1
             new_version             = SourceVersion(version=version_number, source_id= self.id)
+
+            with open(new_file, 'r') as f:
+                new_data = f.read()
             new_version.source_file = SourceFile(encoding='utf-8',
                                                  file_type=format,
                                                  args={
@@ -48,9 +56,19 @@ class Source(Base):
 
             But assuming that it is gonna be in JSON for now
         """
-        data = requests.get(self.url)
+        response = requests.get(self.url)
+        content_type = response.headers['content-type']
+        
+        bn = os.path.basename(self.url)
+        fn = os.path.join(DOWNLOAD_DIR, bn)
+        
+        os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+
+        with open(fn, 'w+') as f:
+            f.write(response.content.decode('utf-8'))
+        
         # TODO: Change this to automatically pick
-        return data.content.decode('utf-8'), 'csv'
+        return fn, content_type
 
     def last_version(self):
         try:

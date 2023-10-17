@@ -15,8 +15,8 @@ class FlowEnum(IntEnum):
 
 # PERMANENT
 FLOW_IDS = {
-    FlowEnum.NONE: 'ad25e819-ec70-4d30-aaad-a828447da332',
-    FlowEnum.VERIFY_OR_MODIFY: 'b54d0c7f-cb37-4332-a17f-7cf80b9afb81'
+    FlowEnum.NONE: '58862f48-f2f1-4620-b5a0-64550acc7fc0',
+    FlowEnum.VERIFY_OR_MODIFY: '6f04c927-d319-41ae-a027-561329e4c2d1'
 }
 
 def create_context(flow_id):
