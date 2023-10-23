@@ -1,7 +1,7 @@
 {
-    "osprey-worker-endpoint": "341dda3d-5b98-46a8-9d47-2070bc12b1db",
-    "database-commit-function": "aaa9bddd-ef65-429f-b31b-663c135af5a0",
-    "download-function": "63e2ae67-ed2a-44c7-87ee-b5a325a6344a",
-    "user-wrapper-function": "f359efec-293f-4d9c-89cc-fa394d6fa3ee",
-    "tasks": "[{\"endpoint\": \"341dda3d-5b98-46a8-9d47-2070bc12b1db\", \"function\": \"63e2ae67-ed2a-44c7-87ee-b5a325a6344a\", \"kwargs\": {\"source_id\": 23}}]"
+    "osprey-worker-endpoint": "c6a1783a-7efb-43bc-ae3a-76df06ce68cb",
+    "database-commit-function": "2feffb9b-ffba-4c76-a9fc-b5d057cb218b",
+    "download-function": "299579a6-82ae-4bdd-aa2e-a23459bec524",
+    "user-wrapper-function": "c34d2888-8c3f-4131-8def-fb851ee3a3bc",
+    "tasks": "[{\"endpoint\": \"c6a1783a-7efb-43bc-ae3a-76df06ce68cb\", \"function\": \"299579a6-82ae-4bdd-aa2e-a23459bec524\", \"kwargs\": {\"source_id\": 14}}]"
 }
