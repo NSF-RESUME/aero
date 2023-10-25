@@ -1,4 +1,16 @@
 services:
+  smtp-server:
+    env_file: ./smtp/.env
+    build:
+      dockerfile: ./Dockerfiles/Dockerfile.smtp.dev
+      args:
+        EMAIL: ${EMAIL}
+        EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+        MAIL_NAME: ${MAIL_NAME}
+        SMTP_DOMAIN: ${SMTP_DOMAIN}
+        SMTP_PORT: ${SMTP_PORT}
+    ports:
+      - ${PORT}:25
   web:
     build:
       dockerfile: ./Dockerfiles/Dockerfile.server.dev
@@ -8,20 +20,20 @@ services:
       - DATABASE_PORT=5432
       - DATABASE_PASSWORD=postgres
       - DATABASE_USER=postgres
-      - DATABASE_HOST=dsaas-postgres-database-1 # NOTE: Make sure it is the same as the database-name
+      - DATABASE_HOST=osprey-postgres-database-1 # NOTE: Make sure it is the same as the database-name
       - DATABASE_NAME=osprey_development
       - FLASK_APP=server.py
 
       # Project owner registers this
-      - GLOBUS_FLOW_DOWNLOAD_FUNCTION=6151fc8d-c38b-4a88-8bd7-0c1cd84c7a9f
-      - GLOBUS_FLOW_COMMIT_FUNCTION=c035e58d-a3b9-46b6-a00e-b163a9e48ba7
-      - GLOBUS_FLOW_USER_COMMIT_FUNCTION=2b44ab23-7c1c-4f2d-9754-ed77af05a899
+      - GLOBUS_FLOW_DOWNLOAD_FUNCTION=acafb28d-7925-4b0f-92f0-301193c1a204
+      - GLOBUS_FLOW_COMMIT_FUNCTION=52d4fca5-e1b8-4ba2-bec3-4149c9bbb8ce
+      - GLOBUS_FLOW_USER_COMMIT_FUNCTION=3307825c-00c0-4e46-ae01-00482fb8e351
 
       # User functions are registered in this client
       # - FUNCX_SDK_CLIENT_ID=638156ef-7332-4ab1-8d92-304b27bdd270
       # - FUNCX_SDK_CLIENT_SECRET=zUtPdMO1HDdRI3Qjkjehgn6YA85griFVJlwgu/HLbl4=
 
-      - GLOBUS_WORKER_UUID=dedce258-023b-426c-8451-b40c8d6d517b
+      - GLOBUS_WORKER_UUID=28054165-5187-4d29-9ba8-451478e4eb7c
       - GCS_ENDPOINT_UUID=ede1f1ef-8c15-42fd-a3ce-3ca6109bce42
       - GCS_MANAGER_DOMAIN_NAME=6073d3.08cc.data.globus.org
       - GCS_STORAGE_GATEWAY_ID=88cba8d2-5a8b-439c-8a53-74a2f0332128
@@ -60,7 +72,7 @@ services:
       - DATABASE_PORT=5432
       - DATABASE_PASSWORD=postgres
       - DATABASE_USER=postgres
-      - DATABASE_HOST=dsaas-postgres-database-1
+      - DATABASE_HOST=osprey-postgres-database-1
       - DATABASE_NAME=osprey_development
       # - FUNCX_SDK_CLIENT_ID=638156ef-7332-4ab1-8d92-304b27bdd270
       # - FUNCX_SDK_CLIENT_SECRET=zUtPdMO1HDdRI3Qjkjehgn6YA85griFVJlwgu/HLbl4=
