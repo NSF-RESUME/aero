@@ -12,7 +12,7 @@ from osprey.worker.models.source_version import SourceVersion
 from osprey.worker.models.source_file    import SourceFile
 
 
-DOWNLOAD_DIR = os.path.abspath('tmpdata')
+DOWNLOAD_DIR = os.path.join(os.getcwd(), 'tempdata')
 
 # Assume that this is sa read-only class
 class Source(Base):
@@ -67,7 +67,6 @@ class Source(Base):
         with open(fn, 'w+') as f:
             f.write(response.content.decode('utf-8'))
         
-        # TODO: Change this to automatically pick
         return fn, content_type
 
     def last_version(self):
