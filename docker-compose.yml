@@ -1,16 +1,4 @@
 services:
-  smtp-server:
-    env_file: ./smtp/.env
-    build:
-      dockerfile: ./Dockerfiles/Dockerfile.smtp.dev
-      args:
-        EMAIL: ${EMAIL}
-        EMAIL_PASSWORD: ${EMAIL_PASSWORD}
-        MAIL_NAME: ${MAIL_NAME}
-        SMTP_DOMAIN: ${SMTP_DOMAIN}
-        SMTP_PORT: ${SMTP_PORT}
-    ports:
-      - ${PORT}:25
   web:
     build:
       dockerfile: ./Dockerfiles/Dockerfile.server.dev
