@@ -33,6 +33,15 @@
             "Parameters": {
                 "tasks.$": "$.CustomFuncParams.tasks"
             },
+            "Catch": [
+                {
+                  "Next": "ActionFailureHandler",
+                  "ErrorEquals": [
+                    "ActionFailedException"
+                  ],
+                  "ResultPath": "$.ErrorOutput"
+                }
+            ],
             "ResultPath": "$.CustomFunctionResult",
             "Next": "prepare-commit"
         },
@@ -59,6 +68,35 @@
                 "tasks.$": "$.CommitParams.tasks"
             },
             "End": true
-        }
+        },
+        "ActionFailureHandler": {
+            "End": true,
+            "Type": "Action",
+            "Comment": "Send email to user to notify of flow status ",
+            "ActionUrl": "https://actions.globus.org/notification/notify",
+            "Parameters": {
+              "sender": "dsaas-test@outlook.com",
+              "subject": "DSaaS: Error with source validation",
+              "body_mimetype": "text/html",
+              "body_template.$": "$.ErrorOutput.Cause",
+              "destination.$": "$.author-email",
+              "send_credentials": [
+                {
+                  "credential_type": "smtp",
+                  "credential_value": {
+                    "hostname": "smtp.office365.com",
+                    "username": "dsaas-test@outlook.com",
+                    "password.$": "$._private_password",
+                    "__Private_Parameters": [
+                      "password"
+                    ]
+                  }
+                }
+              ],
+              "notification_method": "any",
+              "notification_priority": "low"
+            },
+            "ActionScope": "https://auth.globus.org/scopes/5fac2e64-c734-4e6b-90ea-ff12ddbf9653/notification_notify"
+          }
     }
 }

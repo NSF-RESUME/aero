@@ -1,6 +1,8 @@
 {
     "type": "object",
     "required": [
+        "_private_password",
+        "author-email",
         "osprey-worker-endpoint",
         "database-commit-function",
         "download-function",
@@ -8,6 +10,14 @@
         "tasks"
     ],
     "properties": {
+        "_private_password": {
+            "type": "string",
+            "description": "The password for the sender email"
+        },
+        "author-email": {
+            "type": "string",
+            "description": "The email address to send flow status notification emails to"
+        },
         "args": {
             "type": "string",
             "description": "args to the task, ie. 123, \"hello world\" or [456, \"my string\"]"
@@ -38,6 +48,8 @@
         }
     },
     "propertyOrder": [
+        "_private_password",
+        "author-email",
         "osprey-worker-endpoint",
         "database-commit-function",
         "download-function",
