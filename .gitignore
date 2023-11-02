@@ -3,6 +3,7 @@
 **/__pycache__
 *.egg-info
 .python-version
+.coverage
 
 postgres-data
 globus_compute/
@@ -16,6 +17,9 @@ data/
 osprey/server/config_db.py
 osprey/server/lib/test_flow.py
 
+tokens.json
 scope.json
 secrets.txt
 source
+
+workflow/send-email-test
