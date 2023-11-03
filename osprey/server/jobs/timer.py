@@ -1,5 +1,6 @@
 import datetime
 import json
+import os
 
 from osprey.server.lib.globus_compute import register_function
 from globus_sdk import TimerClient
@@ -18,7 +19,7 @@ This module creates a job that gets triggered by Globus Timer.
 -> To run the TimerJob, there should be authentication file that should store the token with the scope ( Ensure it run before starting the project )
 
 """
-def set_timer(interval_in_sec: int, id: int, flow_type: FlowEnum) -> None:
+def set_timer(interval_in_sec: int, id: int, email: str, flow_type: FlowEnum) -> None:
     """Set a Globus Timer for daily retrieval of updated tables from sources.
 
     Arguments:
@@ -40,7 +41,9 @@ def set_timer(interval_in_sec: int, id: int, flow_type: FlowEnum) -> None:
                      "function": Config.GLOBUS_FLOW_DOWNLOAD_FUNCTION,
                      "kwargs": {
                         "source_id": id
-                     }}])
+                     }}]),
+                 "author-email": email,
+                 "_private_password": os.environ.get('DSAAS_EMAIL_PASSWORD') 
                  }
 
     run_label = f"Osprey Demo | Source {id}"

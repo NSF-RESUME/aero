@@ -32,8 +32,17 @@ def test_list_sources():
     name = 'test-1'
     url = 'https://dummyjson.com/products/1'
     validator = register(failing_validator)
-    create_source(name=name, url=url, verifier=validator)
-    exp_resp = [{'description': None, 'id': 1, 'modifier': None, 'name': name, 'timer': 86400, 'url': url, 'verifier': validator}]
+    create_source(name=name, url=url, verifier=validator, email='valeriehayot@gmail.com')
+    exp_resp = [{
+        'description': None,
+        'id': 1,
+        'modifier': None,
+        'name': name,
+        'timer': 86400,
+        'url': url,
+        'verifier': validator,
+        'email': 'valeriehayot@gmail.com'
+    }]
     assert all_sources() == exp_resp
 
 def test_create_source():

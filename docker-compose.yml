@@ -8,26 +8,30 @@ services:
       - DATABASE_PORT=5432
       - DATABASE_PASSWORD=postgres
       - DATABASE_USER=postgres
-      - DATABASE_HOST=osprey-postgres-database-1 # NOTE: Make sure it is the same as the database-name
+      - DATABASE_HOST=dsaas-postgres-database-1 # NOTE: Make sure it is the same as the database-name
       - DATABASE_NAME=osprey_development
       - FLASK_APP=server.py
 
       # Project owner registers this
-      - GLOBUS_FLOW_DOWNLOAD_FUNCTION=2d04731d-576a-4c51-8191-9478f49b7473
-      - GLOBUS_FLOW_COMMIT_FUNCTION=7fef1c63-9df1-4301-a7aa-a61b8d948f1b
-      - GLOBUS_FLOW_USER_COMMIT_FUNCTION=3e78084a-9529-467b-a823-188ba2e78b76
+      - GLOBUS_FLOW_DOWNLOAD_FUNCTION=ab0cb88c-0a1c-454c-b6ee-c00002ce9e47
+      - GLOBUS_FLOW_COMMIT_FUNCTION=3119fd0e-a61d-41dc-a87d-b126c8f7f608
+      - GLOBUS_FLOW_USER_COMMIT_FUNCTION=e4c17bca-1408-4770-8e01-9358757e7259
 
       # User functions are registered in this client
       # - FUNCX_SDK_CLIENT_ID=638156ef-7332-4ab1-8d92-304b27bdd270
       # - FUNCX_SDK_CLIENT_SECRET=zUtPdMO1HDdRI3Qjkjehgn6YA85griFVJlwgu/HLbl4=
 
-      - GLOBUS_WORKER_UUID=28054165-5187-4d29-9ba8-451478e4eb7c
+      - GLOBUS_WORKER_UUID=1fd0c595-e656-4078-af6c-f922e9a7e038
       - GCS_ENDPOINT_UUID=ede1f1ef-8c15-42fd-a3ce-3ca6109bce42
       - GCS_MANAGER_DOMAIN_NAME=6073d3.08cc.data.globus.org
       - GCS_STORAGE_GATEWAY_ID=88cba8d2-5a8b-439c-8a53-74a2f0332128
       - GCS_MAPPED_COLLECTION_ID=f36c1eb6-7d6a-4bf0-973f-e4adf052b34e
-      - GCS_SERVICE_USER=sudershan
+      - GCS_SERVICE_USER=vhayot
       - CONNECTOR_ID=88cba8d2-5a8b-439c-8a53-74a2f0332128
+
+      # For timer email
+      - DSAAS_EMAIL_PASSWORD=$DSAAS_EMAIL_PASSWORD
+
     volumes:
       - ./osprey:/app/osprey
       - ./data:/app/osprey/data
@@ -60,7 +64,7 @@ services:
       - DATABASE_PORT=5432
       - DATABASE_PASSWORD=postgres
       - DATABASE_USER=postgres
-      - DATABASE_HOST=osprey-postgres-database-1
+      - DATABASE_HOST=dsaas-postgres-database-1
       - DATABASE_NAME=osprey_development
       # - FUNCX_SDK_CLIENT_ID=638156ef-7332-4ab1-8d92-304b27bdd270
       # - FUNCX_SDK_CLIENT_SECRET=zUtPdMO1HDdRI3Qjkjehgn6YA85griFVJlwgu/HLbl4=

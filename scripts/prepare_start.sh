@@ -1,11 +1,22 @@
 #!/bin/bash
 
+#set -e
 docker compose build
+
 echo "\n\nCreating docker volumes\n"
 
 docker volume create osprey-postgres-data
 docker volume create osprey-endpoint-data
 docker volume create osprey-proxystore-data
+
+echo "\n\nRunning migrations"
+docker compose up postgres-database -d
+
+sleep 5 # sleep required otherwise attempts to create db before postgres server is started
+
+docker compose exec -it postgres-database bash -c "psql -U postgres -c \"CREATE DATABASE osprey_development;\"; exit;"
+docker compose run -it web flask db upgrade
+docker compose down
 
 # echo "\n\nSetting up Globus Web"
 # docker compose run -it globus login --no-local-server
@@ -30,11 +41,6 @@ echo "${flow_download_uuid}"
 echo "${flow_database_uuid}"
 echo "${flow_user_function_uuid}"
 
-echo "\n\nRunning migrations"
-docker compose up postgres-database -d
-docker compose exec -it postgres-database bash -c "psql -U postgres -c \"CREATE DATABASE osprey_development;\"; exit;"
-docker compose run -it web flask db upgrade
-docker compose down
 
 echo "\n\nSetting up Globus Flow Worker"
 docker compose run -it web python /app/osprey/server/jobs/timer.py

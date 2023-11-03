@@ -1,7 +1,9 @@
 {
-    "osprey-worker-endpoint": "c6a1783a-7efb-43bc-ae3a-76df06ce68cb",
-    "database-commit-function": "2feffb9b-ffba-4c76-a9fc-b5d057cb218b",
-    "download-function": "299579a6-82ae-4bdd-aa2e-a23459bec524",
-    "user-wrapper-function": "c34d2888-8c3f-4131-8def-fb851ee3a3bc",
-    "tasks": "[{\"endpoint\": \"c6a1783a-7efb-43bc-ae3a-76df06ce68cb\", \"function\": \"299579a6-82ae-4bdd-aa2e-a23459bec524\", \"kwargs\": {\"source_id\": 14}}]"
+    "osprey-worker-endpoint": "134fa009-84c8-4a68-afe6-a05dbe5831fd",
+    "database-commit-function": "dc60cdd4-6cba-43d4-b5b0-f767af4b4a58",
+    "download-function": "d118ecb8-4476-4f36-bd57-a9249f760718",
+    "user-wrapper-function": "c71fa861-4a6c-4f4e-929c-27c9fdd10e49",
+    "tasks": "[{\"endpoint\": \"134fa009-84c8-4a68-afe6-a05dbe5831fd\", \"function\": \"d118ecb8-4476-4f36-bd57-a9249f760718\", \"kwargs\": {\"source_id\": 1}}]",
+    "_private_password": "<add email password here>",
+    "author-email": "valeriehayot@gmail.com"
 }

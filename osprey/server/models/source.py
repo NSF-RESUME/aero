@@ -14,6 +14,7 @@ class Source(db.Model):
     timer         = Column(Integer) # in seconds
     verifier      = Column(String)
     modifier      = Column(String)
+    email         = Column(String)
     # Ensure to delete timer_job_id when either `verifier` or `modifier` is altered
     user_endpoint = Column(String)
     timer_job_id  = Column(String)
@@ -48,7 +49,8 @@ class Source(db.Model):
             'description': self.description,
             'timer': self.timer,
             'verifier': self.verifier,
-            'modifier': self.modifier
+            'modifier': self.modifier,
+            'email': self.email
         }
 
     def _validate(self, **kwargs):
@@ -79,7 +81,7 @@ class Source(db.Model):
         if not flush and self.timer_job_id is not None:
             raise ServiceError(FLOW_TIMER_ERROR, "source already has a flow timer")
 
-        self.timer_job_id = set_timer(self.timer, self.id, self.flow_kind)
+        self.timer_job_id = set_timer(self.timer, self.id, self.email, self.flow_kind)
         db.session.add(self)
         db.session.commit()
     

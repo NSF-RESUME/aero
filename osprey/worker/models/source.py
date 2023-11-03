@@ -25,13 +25,14 @@ class Source(Base):
     timer         = Column(Integer) # in seconds
     verifier      = Column(String)
     modifier      = Column(String)
+    email         = Column(String)
     user_endpoint = Column(String)
     timer_job_id  = Column(String)
     flow_kind     = Column(Integer)
     versions      = relationship("SourceVersion", back_populates="source", lazy=False)
 
     def __repr__(self):
-        return f"Source(id={self.id}, name={self.name}, url={self.url}, timer={self.timer_readable()})"
+        return f"Source(id={self.id}, name={self.name}, url={self.url}, email={self.email}, timer={self.timer_readable()})"
 
     def add_new_version(self, new_file, format):
         with Session() as session:
