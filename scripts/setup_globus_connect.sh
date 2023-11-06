@@ -11,11 +11,11 @@ sudo apt install globus-connect-server54
 # Setup
 sudo globus-connect-server endpoint setup "Osprey GCS Staging" \
     --organization “OspreyDev” \
-    --owner sudershan@uchicago.edu \
-    --contact-email sudershan@uchicago.edu \
-    --project-id ff6bae42-f7a6-4833-ac92-792e5b9a69fa
+    --owner vhayot@uchicago.edu \
+    --contact-email vhayot@uchicago.edu \
+    --project-id 3d66123c-327c-4c22-8c41-a1662b623b83
 
-sudo globus-connect-server node setup --ip-address 192.5.87.217
+sudo globus-connect-server node setup # --ip-address 127.0.0.1
 
 sudo systemctl reload apache2
 
@@ -24,17 +24,17 @@ sudo globus-connect-server login localhost
 # Sanity
 sudo globus-connect-server endpoint show
 
-sudo globus-connect-server storage-gateway create posix "Posix /home/cc/globus_connect" \
+sudo globus-connect-server storage-gateway create posix "Posix /dsaas_storage" \
     --domain uchicago.edu \
-    --user-allow sudershan
+    --user-allow vhayot
     # --restrict-paths file:path-restriction.json \
 
 
 sudo globus-connect-server collection create \
-    0a2f6511-ac8a-4211-8130-53b0f8b3bdd6 \
+    9476821a-2a10-47aa-be57-453a3617d69f \
     / "POSIX uchicago.org only directory" \
     --organization 'UChicago Org' \
-    --contact-email sudershan@uchicago.edu \
+    --contact-email vhayot@uchicago.edu \
     --keywords uchicago.org,home \
     --allow-guest-collections \
     --sharing-restrict-paths file:sharing_restrictions.json \

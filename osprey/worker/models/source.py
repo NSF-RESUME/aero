@@ -2,6 +2,8 @@ import datetime
 import requests
 import os
 
+from pathlib import Path
+
 from sqlalchemy.orm                import relationship
 from sqlalchemy                    import Column, Integer, String
 from osprey.worker.models.database import Base, Session
@@ -12,7 +14,8 @@ from osprey.worker.models.source_version import SourceVersion
 from osprey.worker.models.source_file    import SourceFile
 
 
-DOWNLOAD_DIR = os.path.join(os.getcwd(), 'tempdata')
+DOWNLOAD_DIR =Path('/dsaas_storage') 
+TEMP_DIR = DOWNLOAD_DIR / 'temp'
 
 # Assume that this is sa read-only class
 class Source(Base):
@@ -39,12 +42,15 @@ class Source(Base):
             version_number = self.last_version() + 1
             new_version             = SourceVersion(version=version_number, source_id= self.id)
 
-            with open(new_file, 'r') as f:
-                new_data = f.read()
+            # Move file from temp storage to main storage
+            new_file = Path(new_file)
+            persist_path = Path(DOWNLOAD_DIR, os.path.basename(new_file))
+            new_file.rename(persist_path)
+            
             new_version.source_file = SourceFile(encoding='utf-8',
                                                  file_type=format,
+                                                 file_name=new_file,
                                                  args={
-                                                     'file': new_data,
                                                      'version': version_number,
                                                      'source_id': self.id
                                                      })
@@ -61,9 +67,9 @@ class Source(Base):
         content_type = response.headers['content-type']
         
         bn = os.path.basename(self.url)
-        fn = os.path.join(DOWNLOAD_DIR, bn)
+        fn = os.path.join(TEMP_DIR, bn)
         
-        os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+        os.makedirs(TEMP_DIR, exist_ok=True)
 
         with open(fn, 'w+') as f:
             f.write(response.content.decode('utf-8'))
