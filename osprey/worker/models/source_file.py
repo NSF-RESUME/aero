@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from osprey.worker.models.database import Base
 from pathlib import Path
 from osprey.worker.lib.serializer import decode
+from osprey.worker.models.utils import DOWNLOAD_DIR
 
 # Assume that this is sa read-only class
 class SourceFile(Base):
@@ -16,25 +17,22 @@ class SourceFile(Base):
     source_version    = relationship("SourceVersion", back_populates="source_file", uselist=False)
 
     def __init__(self, **kwargs):
-        kwargs = self._file_processing(**kwargs)
+        kwargs = self._write_file(**kwargs)
         super().__init__(**kwargs)
 
     def _write_file(self, **kwargs):
         args = kwargs['args']
-        file_name = kwargs.get('file_name', 'testing.csv')
+        file_name = kwargs['file_name']
+        basename = Path(file_name).name
+        ext = kwargs['file_type']
 
-        file_path = f"/app/osprey/data/source/{args['source_id']}/{args['version']}"
-        Path(file_path).mkdir(parents=True, exist_ok=True)
-        with open(file_path + '/' + file_name, 'w+') as f:
-            f.write(args['file'])
+        file_path = Path(DOWNLOAD_DIR, f"source/{args['source_id']}/{args['version']}")
+        file_path.mkdir(parents=True, exist_ok=True)
+        fn = (file_path / basename).with_suffix(f'.{kwargs["file_type"]}')
+        Path(file_name).rename(fn)
 
-        kwargs['file_name'] = file_name
+        kwargs['file_name'] = fn
         kwargs.pop('args')
-        return kwargs
-
-    def _file_processing(self, **kwargs):
-        kwargs = self._write_file(**kwargs)
-        kwargs['file_type'] = kwargs['file_name'].split('.')[-1] # TODO: Change this from not using extension
         return kwargs
 
     def __repr__(self):

@@ -19,10 +19,10 @@ def download(*args, **kwargs):
 
     source_id = kwargs['source_id']
     with Session() as session:
-        source = session.query(Source).get(source_id)
-        file, file_format = source.download()
+        source = session.get(Source, source_id)
+        fn, file_format = source.download()
 
-        kwargs['file']       = file
+        kwargs['file']       = fn
         kwargs['file_format']= file_format
         kwargs['download']   = True
         return args, kwargs

@@ -13,15 +13,15 @@ services:
       - FLASK_APP=server.py
 
       # Project owner registers this
-      - GLOBUS_FLOW_DOWNLOAD_FUNCTION=ab0cb88c-0a1c-454c-b6ee-c00002ce9e47
-      - GLOBUS_FLOW_COMMIT_FUNCTION=3119fd0e-a61d-41dc-a87d-b126c8f7f608
-      - GLOBUS_FLOW_USER_COMMIT_FUNCTION=e4c17bca-1408-4770-8e01-9358757e7259
+      - GLOBUS_FLOW_DOWNLOAD_FUNCTION=13a38ae2-97e7-4fca-b596-f6a1f8d7388f
+      - GLOBUS_FLOW_COMMIT_FUNCTION=13a38ae2-97e7-4fca-b596-f6a1f8d7388f
+      - GLOBUS_FLOW_USER_COMMIT_FUNCTION=13a38ae2-97e7-4fca-b596-f6a1f8d7388f
 
       # User functions are registered in this client
       # - FUNCX_SDK_CLIENT_ID=638156ef-7332-4ab1-8d92-304b27bdd270
       # - FUNCX_SDK_CLIENT_SECRET=zUtPdMO1HDdRI3Qjkjehgn6YA85griFVJlwgu/HLbl4=
 
-      - GLOBUS_WORKER_UUID=1fd0c595-e656-4078-af6c-f922e9a7e038
+      - GLOBUS_WORKER_UUID=|
       - GCS_ENDPOINT_UUID=ede1f1ef-8c15-42fd-a3ce-3ca6109bce42
       - GCS_MANAGER_DOMAIN_NAME=6073d3.08cc.data.globus.org
       - GCS_STORAGE_GATEWAY_ID=88cba8d2-5a8b-439c-8a53-74a2f0332128
@@ -33,6 +33,7 @@ services:
       - DSAAS_EMAIL_PASSWORD=$DSAAS_EMAIL_PASSWORD
 
     volumes:
+      - ${GCS_ROOT_DIR}:/dsaas_storage  
       - ./osprey:/app/osprey
       - ./data:/app/osprey/data
       - ./globus_compute/:/root/.globus_compute/
@@ -55,6 +56,7 @@ services:
     build:
         dockerfile: ./Dockerfiles/Dockerfile.endpoint.dev
     volumes:
+      - ${GCS_ROOT_DIR}:/dsaas_storage
       - osprey-endpoint-data:/root/.globus_compute
       - ./osprey:/app/osprey
       - ./data:/app/osprey/data

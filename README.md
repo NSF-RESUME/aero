@@ -66,7 +66,7 @@ To install the components, the following steps can be followed:
 
 ```
 # Running the script to create necessary volumes, and build projects
-
+export DSAAS_EMAIL_PASSWORD="<password>" GCS_ROOT_DIR="<dir>"
 source scripts/prepare_start.sh
 
 docker compose up

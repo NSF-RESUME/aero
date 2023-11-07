@@ -14,8 +14,9 @@ class FlowEnum(IntEnum):
     VERIFY_AND_MODIFY = 1
 
 # PERMANENT
+#TODO: Remove None as it is uneccessary
 FLOW_IDS = {
-    FlowEnum.NONE: '58862f48-f2f1-4620-b5a0-64550acc7fc0',
+    FlowEnum.NONE: '6f04c927-d319-41ae-a027-561329e4c2d1',
     FlowEnum.VERIFY_OR_MODIFY: '6f04c927-d319-41ae-a027-561329e4c2d1'
 }
 

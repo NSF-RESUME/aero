@@ -2,6 +2,7 @@ import datetime
 import requests
 import os
 
+from mimetypes import guess_extension
 from pathlib import Path
 
 from sqlalchemy.orm                import relationship
@@ -12,10 +13,8 @@ from osprey.worker.lib.serializer  import encode
 
 from osprey.worker.models.source_version import SourceVersion
 from osprey.worker.models.source_file    import SourceFile
+from osprey.worker.models.utils import TEMP_DIR
 
-
-DOWNLOAD_DIR =Path('/dsaas_storage') 
-TEMP_DIR = DOWNLOAD_DIR / 'temp'
 
 # Assume that this is sa read-only class
 class Source(Base):
@@ -42,11 +41,6 @@ class Source(Base):
             version_number = self.last_version() + 1
             new_version             = SourceVersion(version=version_number, source_id= self.id)
 
-            # Move file from temp storage to main storage
-            new_file = Path(new_file)
-            persist_path = Path(DOWNLOAD_DIR, os.path.basename(new_file))
-            new_file.rename(persist_path)
-            
             new_version.source_file = SourceFile(encoding='utf-8',
                                                  file_type=format,
                                                  file_name=new_file,
@@ -65,6 +59,7 @@ class Source(Base):
         """
         response = requests.get(self.url)
         content_type = response.headers['content-type']
+        ext = guess_extension(content_type.split(';')[0])
         
         bn = os.path.basename(self.url)
         fn = os.path.join(TEMP_DIR, bn)
@@ -74,7 +69,7 @@ class Source(Base):
         with open(fn, 'w+') as f:
             f.write(response.content.decode('utf-8'))
         
-        return fn, content_type
+        return fn, ext
 
     def last_version(self):
         try:
