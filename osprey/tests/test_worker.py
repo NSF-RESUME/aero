@@ -23,11 +23,10 @@ def test_download():
 
 def test_commit(mocker):
     with Session() as session:
-        with mocker.patch('sqlalchemy.orm.session.Session.commit') as mock_commit:
-            s = Source(id=1, name='test', url=DUMMY_URL)
-            new_path = Path(TEMP_DIR, os.path.basename(DUMMY_URL))
-            s.add_new_version(new_file=new_path, format='json')
+        _ = mocker.patch('sqlalchemy.orm.session.Session.commit')
 
-            output_path = Path("./dsaas_storage/source/1/1/1.json")
-            
-            assert output_path.is_file()
+        s = Source(id=1, name='test', url=DUMMY_URL)
+        new_path = Path(TEMP_DIR, os.path.basename(DUMMY_URL))
+        s.add_new_version(new_file=new_path, format='.json')
+        output_path = Path("./dsaas_storage/source/1/1/1.json")
+        assert output_path.is_file()

@@ -28,7 +28,7 @@ class SourceFile(Base):
 
         file_path = Path(DOWNLOAD_DIR, f"source/{args['source_id']}/{args['version']}")
         file_path.mkdir(parents=True, exist_ok=True)
-        fn = (file_path / basename).with_suffix(f'.{kwargs["file_type"]}')
+        fn = (file_path / basename).with_suffix(ext)
         Path(file_name).rename(fn)
 
         kwargs['file_name'] = fn

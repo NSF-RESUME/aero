@@ -60,11 +60,11 @@ class Source(Base):
         response = requests.get(self.url)
         content_type = response.headers['content-type']
         ext = guess_extension(content_type.split(';')[0])
+
+        bn = Path(self.url).name
+        fn = Path(TEMP_DIR, bn)
         
-        bn = os.path.basename(self.url)
-        fn = os.path.join(TEMP_DIR, bn)
-        
-        os.makedirs(TEMP_DIR, exist_ok=True)
+        TEMP_DIR.mkdir(exist_ok=True)
 
         with open(fn, 'w+') as f:
             f.write(response.content.decode('utf-8'))
