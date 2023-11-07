@@ -26,17 +26,23 @@ echo "\n\nSetting up Globus Compute Endpoint"
 echo "\nThe Globus Endpoint UUID is : "
 docker compose run -it globus-endpoint globus-compute-endpoint start default
 
-out=`docker compose run -it globus-endpoint globus-compute-endpoint list`
-endpoint_uuid=`echo $out | grep -i 'default' | awk '{print $2}'`
+# out=`docker compose run -it globus-endpoint globus-compute-endpoint list`
+# endpoint_uuid=`echo ${out} | grep -i 'default' | awk '{print $2}'`
+
+# create file due to weird issue when storing into variable. Need to test variable method further
+endpoint_out="endpoint.out"
+docker compose run -it globus-endpoint globus-compute-endpoint list > ${endpoint_out}
+endpoint_uuid=`cat ${endpoint_out} | grep -i 'default' | awk '{print $2}'`
 
 echo "\nThe Globus Flow Functions UUIDs are : "
 out=`docker compose run -it globus-endpoint python /app/osprey/worker/lib/globus_flow_helper.py`
 
-flow_download_uuid=`echo ${out} | grep -i 'download' | awk '{print $NF}'`
-flow_database_uuid=`echo ${out} | grep -i 'database' | awk '{print $NF}'`
-flow_user_function_uuid=`echo ${out} | grep -i 'user' | awk '{print $NF}'`
+flow_download_uuid=`echo ${out} | grep -i 'download' | awk '{print $4}' | tr -d '\r'`
+flow_database_uuid=`echo ${out} | grep -i 'database' | awk '{print $9}' | tr -d '\r'`
+flow_user_function_uuid=`echo ${out} | grep -i 'user' | awk '{print $NF}' | tr -d '\r'`
 
 echo "${out}"
+echo "${endpoint_uuid}"
 echo "${flow_download_uuid}"
 echo "${flow_database_uuid}"
 echo "${flow_user_function_uuid}"
