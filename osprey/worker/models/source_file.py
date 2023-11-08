@@ -1,5 +1,8 @@
+import os
+
 from sqlalchemy import Column, Integer, String, LargeBinary, ForeignKey
 from sqlalchemy.orm import relationship
+
 from osprey.worker.models.database import Base
 from pathlib import Path
 from osprey.worker.lib.serializer import decode
@@ -20,22 +23,29 @@ class SourceFile(Base):
         kwargs = self._write_file(**kwargs)
         super().__init__(**kwargs)
 
-    def _write_file(self, **kwargs):
+    def _write_file(self, file_name: str, file_type: str, **kwargs) -> dict:
+        """_summary_
+
+        Args:
+            file_name (str): Path to the temporary path that needs to be committed
+            file_type (str): File extension
+        Returns:
+            dict: updated kwargs initially passed to the function
+        """
         args = kwargs['args']
-        file_name = kwargs['file_name']
         basename = Path(file_name).name
-        ext = kwargs['file_type']
 
         file_path = Path(DOWNLOAD_DIR, f"source/{args['source_id']}/{args['version']}")
         file_path.mkdir(parents=True, exist_ok=True)
-        fn = (file_path / basename).with_suffix(ext)
+        fn = (file_path / basename).with_suffix(file_type)
         Path(file_name).rename(fn)
 
-        kwargs['file_name'] = fn
+        kwargs['file_name'] = os.fspath(fn)
+        kwargs['file_type'] = file_type
         kwargs.pop('args')
         return kwargs
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"SourceFile(id={self.id}, file_name={self.file_name}, encoding={self.encoding}, source_version_id={self.source_version_id})"
 
     @property

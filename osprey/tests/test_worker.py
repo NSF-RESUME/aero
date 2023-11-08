@@ -18,8 +18,9 @@ from osprey.tests.utils import DUMMY_URL
 def test_download():
     with Session() as session:
         s = Source(name='test', url=DUMMY_URL)
-        s.download()
-        assert Path(TEMP_DIR, os.path.basename(DUMMY_URL)) 
+        fn, ext = s.download()
+        assert os.path.join(TEMP_DIR, os.path.basename(DUMMY_URL)) == fn
+        assert ext == '.json'
 
 def test_commit(mocker):
     with Session() as session:

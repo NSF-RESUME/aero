@@ -36,7 +36,13 @@ class Source(Base):
     def __repr__(self):
         return f"Source(id={self.id}, name={self.name}, url={self.url}, email={self.email}, timer={self.timer_readable()})"
 
-    def add_new_version(self, new_file, format):
+    def add_new_version(self, new_file: str, format: str) -> None:
+        """Commit data to the database and store in GCS server.
+
+        Args:
+            new_file (str): File path to the temporarily stored data.
+            format (str): The extension of the file.
+        """
         with Session() as session:
             version_number = self.last_version() + 1
             new_version             = SourceVersion(version=version_number, source_id= self.id)
@@ -51,11 +57,12 @@ class Source(Base):
             session.add(new_version)
             session.commit()
 
-    def download(self):
-        """ 
-            NOTE: Maybe in CSV or get format from user.
-
-            But assuming that it is gonna be in JSON for now
+    def download(self) -> tuple[str, str]:
+        """Download data from user-specified repository.
+        
+        Returns:
+            tuple[str, str]: Path to the data and its
+                associated extension.
         """
         response = requests.get(self.url)
         content_type = response.headers['content-type']
@@ -69,7 +76,7 @@ class Source(Base):
         with open(fn, 'w+') as f:
             f.write(response.content.decode('utf-8'))
         
-        return fn, ext
+        return os.fspath(fn), ext
 
     def last_version(self):
         try:
