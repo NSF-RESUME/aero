@@ -1,7 +1,9 @@
+import pandas as pd
+
 from osprey.client import all_sources
 from osprey.client import create_source
-
-from osprey.client import source_file, register_function
+from osprey.client import get_file
+from osprey.client import register_function
 
 def register(func):
     try:
@@ -43,12 +45,14 @@ def test_list_sources():
         'verifier': validator,
         'email': 'valeriehayot@gmail.com'
     }]
+    print(all_sources())
     assert all_sources() == exp_resp
 
 def test_create_source():
     pass
 
 def test_get_file():
+    assert isinstance(get_file(source_id=1, version=1), pd.DataFrame)
     pass
 
 def test_list_proxies():

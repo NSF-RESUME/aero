@@ -18,13 +18,12 @@ class SourceFile(db.Model):
         self._write_file()
 
     def toJSON(self):
-        with open(self._store_path(), 'r', newline='') as file:
-            file_content = file.read()
 
-        return {'file_name': self.file_name, 
+        return {
+                'file_name': self.file_name, 
                 'file_type': self.file_type,
-                'encoding': self.encoding,
-                'file': file_content }
+                'encoding': self.encoding
+            }
 
     def __repr__(self):
         return f"<SourceFile(id={self.id}, file_name={self.file_name})>"
@@ -36,12 +35,7 @@ class SourceFile(db.Model):
 
     def _decode_file(self, file):
         return file.decode(self.encoding)
-
-    # NOTE: Change the path
-    def _store_path(self):
-        return f"/app/osprey/data/source/{self.source_version.source_id}/{self.source_version.version}/{self.file_name}"
     
-
     @property
     def file(self):
         file_path = self._store_path()

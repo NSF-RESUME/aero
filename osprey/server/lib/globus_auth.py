@@ -1,6 +1,7 @@
 import os, json
 from globus_sdk import NativeAppAuthClient, AccessTokenAuthorizer
 
+# TODO: Move outside of server dir
 # Permanent
 # OSPREY_DIR = os.path.join(os.path.expanduser("~"), ".local/share/osprey")
 # TODO: Change this 
