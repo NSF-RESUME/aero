@@ -50,7 +50,8 @@ class Source(db.Model):
             'timer': self.timer,
             'verifier': self.verifier,
             'modifier': self.modifier,
-            'email': self.email
+            'email': self.email,
+            'available_versions': len(self.versions)
         }
 
     def _validate(self, **kwargs):
