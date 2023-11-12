@@ -33,11 +33,11 @@ class SourceFile(Base):
             dict: updated kwargs initially passed to the function
         """
         args = kwargs['args']
-        basename = Path(file_name).name
+        basename = file_name
 
-        file_path = Path(DOWNLOAD_DIR, f"source/{args['source_id']}/{args['version']}")
+        file_path = Path(DOWNLOAD_DIR)
         file_path.mkdir(parents=True, exist_ok=True)
-        fn = (file_path / basename).with_suffix(file_type)
+        fn = (file_path / basename)
         Path(file_name).rename(fn)
 
         kwargs['file_name'] = os.fspath(fn)

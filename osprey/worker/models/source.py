@@ -1,6 +1,7 @@
 import datetime
-import requests
 import os
+import requests
+import uuid
 
 from mimetypes import guess_extension
 from pathlib import Path
@@ -68,7 +69,7 @@ class Source(Base):
         content_type = response.headers['content-type']
         ext = guess_extension(content_type.split(';')[0])
 
-        bn = Path(self.url).name
+        bn = uuid.uuid4() 
         fn = Path(TEMP_DIR, bn)
         
         TEMP_DIR.mkdir(exist_ok=True)
@@ -76,7 +77,7 @@ class Source(Base):
         with open(fn, 'w+') as f:
             f.write(response.content.decode('utf-8'))
         
-        return os.fspath(fn), ext
+        return bn, ext
 
     def last_version(self):
         try:
