@@ -32,6 +32,14 @@ def get_data(id):
 
     return jsonify(s.toJSON()), 200
 
+@source_routes.route('/<id>/versions', methods=['GET'])
+def list_versions(id):
+    s = Source.query.get(id)
+    if s is None:
+        return jsonify({'code': 404, 'message': 'Not found'}), 404
+
+    return jsonify([v.toJSON() for v in s.versions]), 200
+
 @source_routes.route('/<id>/file', methods=['GET'])
 def grap_file(id):
     source = Source.query.get(id)
