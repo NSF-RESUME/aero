@@ -69,7 +69,7 @@ class Source(Base):
         content_type = response.headers['content-type']
         ext = guess_extension(content_type.split(';')[0])
 
-        bn = uuid.uuid4() 
+        bn = str(uuid.uuid4())
         fn = Path(TEMP_DIR, bn)
         
         TEMP_DIR.mkdir(exist_ok=True)
