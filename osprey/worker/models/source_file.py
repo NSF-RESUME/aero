@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship
 from osprey.worker.models.database import Base
 from pathlib import Path
 from osprey.worker.lib.serializer import decode
-from osprey.worker.models.utils import DOWNLOAD_DIR
+from osprey.worker.models.utils import SOURCE_DIR
 from osprey.worker.models.utils import TEMP_DIR
 
 # Assume that this is sa read-only class
@@ -36,9 +36,8 @@ class SourceFile(Base):
         args = kwargs['args']
         basename = file_name
 
-        file_path = Path(DOWNLOAD_DIR)
-        file_path.mkdir(parents=True, exist_ok=True)
-        fn = (file_path / basename)
+        SOURCE_DIR.mkdir(parents=True, exist_ok=True) # TODO remove from here so it only executes once
+        fn = (SOURCE_DIR / basename)
         Path(TEMP_DIR, file_name).rename(fn)
 
         kwargs['file_name'] = basename
