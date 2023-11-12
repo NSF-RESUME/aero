@@ -7,6 +7,7 @@ from osprey.worker.models.database import Base
 from pathlib import Path
 from osprey.worker.lib.serializer import decode
 from osprey.worker.models.utils import DOWNLOAD_DIR
+from osprey.worker.models.utils import TEMP_DIR
 
 # Assume that this is sa read-only class
 class SourceFile(Base):
@@ -38,9 +39,9 @@ class SourceFile(Base):
         file_path = Path(DOWNLOAD_DIR)
         file_path.mkdir(parents=True, exist_ok=True)
         fn = (file_path / basename)
-        Path(file_name).rename(fn)
+        Path(TEMP_DIR, file_name).rename(fn)
 
-        kwargs['file_name'] = os.fspath(fn)
+        kwargs['file_name'] = basename
         kwargs['file_type'] = file_type
         kwargs.pop('args')
         return kwargs
