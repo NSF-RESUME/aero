@@ -1,20 +1,21 @@
-from osprey.server.config import Config
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
+
+from osprey.server.app.extensions import db
+from osprey.server.config import Config
 from flask_migrate import Migrate
 
-db = SQLAlchemy()
-migrate = Migrate()
-app = Flask(__name__)
-app.config.from_object(Config)
+def create_app(config_class=Config):
+    app = Flask(__name__)
+    app.config.from_object(config_class)
+    db.init_app(app)
 
-db.init_app(app)
-migrate.init_app(app, db)
+    migrate = Migrate()
 
-# Insert routes here
-# from app.posts import bp as posts_bp
-# app.register_blueprint(posts_bp, url_prefix='/posts')
+    migrate.init_app(app, db)
+    # Initialize Flask extensions here
 
-from osprey.server.app import models, routes, error_handler
+    # Register blueprints here
+    from osprey.server.app.routes import all_routes
+    app.register_blueprint(all_routes)
 
-app.register_blueprint(routes.all_routes)
+    return app
