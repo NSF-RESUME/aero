@@ -4,6 +4,7 @@
 *.egg-info
 .python-version
 .coverage
+.vscode
 
 postgres-data
 globus_compute/
@@ -11,6 +12,7 @@ database_init.sql
 .DS_Store
 
 data/
+site/
 
 
 # vhs - local stuff i should maybe remove
