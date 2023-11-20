@@ -35,7 +35,7 @@ def user_function_wrapper(*args, **kwargs):
 
     source_id = kwargs['source_id']
     with Session() as session:
-        source = session.query(Source).get(source_id)
+        source = session.get(Source, source_id)
 
     # Verifier
     if source.verifier is not None:
@@ -53,6 +53,8 @@ def user_function_wrapper(*args, **kwargs):
         except:
             raise ServiceError(CUSTOM_FUNCTION_ERROR, "Modifier failed")
 
+    #TODO: check if data has changed
+
     return args, kwargs
 
 
@@ -62,7 +64,7 @@ def database_commit(*args, **kwargs):
 
     source_id = kwargs['source_id']
     with Session() as session:
-        source = session.query(Source).get(source_id)
+        source = session.get(Source, source_id)
         source.add_new_version(kwargs['file'], kwargs['file_format'])
 
 

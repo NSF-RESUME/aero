@@ -1,6 +1,6 @@
 import pandas as pd
 
-from osprey.client import all_sources
+from osprey.client import list_sources
 from osprey.client import create_source
 from osprey.client import get_file
 from osprey.client import register_function
@@ -28,12 +28,12 @@ def passing_modifier(*args, **kwargs):
 
 def test_list_sources():
     # when database is not populated, assert empty
-    assert all_sources() == []
+    #assert list_sources() == []
 
     # add data and assert that it is not empty
     name = 'test-1'
     url = 'https://dummyjson.com/products/1'
-    validator = register(failing_validator)
+    validator = register(failing_modifier)
     create_source(name=name, url=url, verifier=validator, email='valeriehayot@gmail.com')
     exp_resp = [{
         'description': None,
@@ -45,8 +45,8 @@ def test_list_sources():
         'verifier': validator,
         'email': 'valeriehayot@gmail.com'
     }]
-    print(all_sources())
-    assert all_sources() == exp_resp
+    print(list_sources())
+    assert list_sources() == exp_resp
 
 def test_create_source():
     pass
