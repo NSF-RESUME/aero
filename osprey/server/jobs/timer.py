@@ -3,6 +3,7 @@ import json
 import os
 
 from osprey.server.lib.globus_compute import register_function
+from globus_sdk import AuthClient
 from globus_sdk import TimerClient
 from globus_sdk import TimerJob
 from globus_sdk.utils import slash_join
@@ -49,15 +50,31 @@ def set_timer(interval_in_sec: int, id: int, email: str, flow_type: FlowEnum) ->
     run_label = f"Osprey Demo | Source {id}"
 
     url = slash_join(sfc.base_url, f"/flows/{flow_id}/run")
+    
+    # TODO: TimerJob is now considered legacy.
+    try:
+        ac = AuthClient(...)
+        user_uuid = ac.get_identities(email)
+        job = TimerJob(
+            callback_url=url,
+            callback_body={"body": run_input, "label": run_label},
+            start=datetime.datetime.utcnow(),
+            interval=datetime.timedelta(seconds=interval_in_sec),
+            name=f"osprey-demo-source-{id}",
+            scope=specific_flow_scope,
+            monitor_by=user_uuid,
+        )
+    except Exception as e: # AuthAPIError
+        job = TimerJob(
+            callback_url=url,
+            callback_body={"body": run_input, "label": run_label},
+            start=datetime.datetime.utcnow(),
+            interval=datetime.timedelta(seconds=interval_in_sec),
+            name=f"osprey-demo-source-{id}",
+            scope=specific_flow_scope,
+        )
+        print(e) # TODO: replace by a logger
 
-    job = TimerJob(
-        callback_url=url,
-        callback_body={"body": run_input, "label": run_label},
-        start=datetime.datetime.utcnow(),
-        interval=datetime.timedelta(seconds=interval_in_sec),
-        name=f"osprey-demo-source-{id}",
-        scope=specific_flow_scope,
-    )
 
     response = timer_client.create_job(job)
     assert response.http_status == 201
