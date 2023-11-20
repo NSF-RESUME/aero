@@ -76,9 +76,15 @@
             "ActionUrl": "https://actions.globus.org/notification/notify",
             "Parameters": {
               "sender": "dsaas-test@outlook.com",
-              "subject": "DSaaS: Error with source validation",
+              "subject": "DSaaS: Error with source verifier or modifier",
               "body_mimetype": "text/html",
-              "body_template.$": "$.ErrorOutput.Cause",
+              "body_template": "<html><body><h1>Verifier or Modifier failed</h1>Endpoint: $Endpoint<br />Function UUID: $Function<br />File: <a href=\"https://g-c952d0.1305de.36fe.data.globus.org/temp/$File\">$File</a><br /><br />Stack Trace:<br /><code>$Error</code><body></html>",
+              "body_variables": {
+                "Endpoint.$": "$.osprey-worker-endpoint",
+                "Function.$": "$.user-wrapper-function",
+                "File.$": "$.CustomFuncParams.tasks[0].kwargs.file",
+                "Error.$": "$.ErrorOutput.Cause"
+              },
               "destination.$": "$.author-email",
               "send_credentials": [
                 {

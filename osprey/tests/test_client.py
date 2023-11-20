@@ -33,7 +33,7 @@ def test_list_sources():
     # add data and assert that it is not empty
     name = 'test-1'
     url = 'https://dummyjson.com/products/1'
-    validator = register(failing_modifier)
+    validator = register(failing_validator)
     create_source(name=name, url=url, verifier=validator, email='valeriehayot@gmail.com')
     exp_resp = [{
         'description': None,
