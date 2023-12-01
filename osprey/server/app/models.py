@@ -6,3 +6,4 @@ from osprey.server.models.tag            import Tag
 from osprey.server.models.function       import Function
 from osprey.server.models.provenance     import Provenance
 from osprey.server.models.source_file    import SourceFile
+from osprey.server.models.output         import Output
