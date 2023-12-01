@@ -58,16 +58,20 @@ def user_function_wrapper(*args, **kwargs):
     return args, kwargs
 
 def flow_db_update(sources: list[str], output_fn: str, function_uuid: str):
-    from osprey.server.models.source_version import SourceVersion
-    from osprey.server.models.function import Function
-    from osprey.server.models.output import Output
-    from osprey.server.models.provenance import Provenance
+    from osprey.worker.models.database import Session
+    from osprey.worker.models.function import Function
+    from osprey.worker.models.output import Output
+    from osprey.worker.models.provenance import Provenance
+    from osprey.worker.models.source import Source
+    from osprey.worker.models.source_version import SourceVersion
+
 
     source_ver: list = []
 
     # currently just gets last version
-    for s_id in sources:
-        source_ver.append(SourceVersion.query.filter(SourceVersion.source_id == int(s_id)).order_by(SourceVersion.version.desc()).first())
+    with Session() as session:
+        for s_id in sources:
+            source_ver.append(session.query(SourceVersion).filter(SourceVersion.source_id == int(s_id)).order_by(SourceVersion.version.desc()).first())
 
     f = Function(uuid=function_uuid)
     o = Output(filename=output_fn)
