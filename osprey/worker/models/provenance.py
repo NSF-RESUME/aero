@@ -16,10 +16,7 @@ class Provenance(db.Model):
     contributed_to = relationship("Output", backref='output', lazy=True)
 
     def __init__(self, function_id: str, derived_from: list, contributed_to: list):
-        with Session() as session:
-            super().__init__(function_id=function_id, derived_from=derived_from, contributed_to=contributed_to)
-            session.add(self)
-            session.commit()
+        super().__init__(function_id=function_id, derived_from=derived_from, contributed_to=contributed_to)
         
     def __repr__(self):
         return "<Provenance(id={}, derived_from={}, contributed_to={}, function_id='{}')>".format(

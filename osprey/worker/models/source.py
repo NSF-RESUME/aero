@@ -8,7 +8,8 @@ from pathlib import Path
 
 from sqlalchemy.orm                import relationship
 from sqlalchemy                    import Column, Integer, String
-from osprey.worker.models.database import Base, Session
+from osprey.server.app             import db
+from osprey.worker.models.database import  Session
 # from osprey.worker.jobs.verifier   import verifier_microservice
 from osprey.worker.lib.serializer  import encode
 
@@ -18,7 +19,7 @@ from osprey.worker.models.utils import TEMP_DIR
 
 
 # Assume that this is sa read-only class
-class Source(Base):
+class Source(db.Model):
     __tablename__ = 'source'
     __table_args__ = {'extend_existing': True}
     id            = Column(Integer, primary_key=True)

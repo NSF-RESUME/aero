@@ -1,10 +1,10 @@
 from sqlalchemy import Column, Integer, String, Date, ForeignKey
 from sqlalchemy.orm import relationship
-from osprey.worker.models.database import Base
+from osprey.server.app import db
 import datetime
 
 # Assume that this is sa read-only class
-class SourceVersion(Base):
+class SourceVersion(db.Model):
     __tablename__  = 'source_version'
     __table_args__ = {'extend_existing': True}
     id            = Column(Integer, primary_key=True)

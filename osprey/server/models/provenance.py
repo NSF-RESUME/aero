@@ -32,6 +32,6 @@ class Provenance(db.Model):
             'id': self.id, 
             'derived_from': [v.toJSON() for v in self.derived_from], 
             'contributed_to': self.contributed_to[0].toJSON(),
-            'function_id': self.function.toJSON()
+            'function_id': self.function_id
         }
 

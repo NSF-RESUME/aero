@@ -1,5 +1,4 @@
 from osprey.server.app import db
-from osprey.worker.models.database import Session
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 
@@ -9,10 +8,7 @@ class Function(db.Model):
     provenances = relationship("Provenance", backref="function")
 
     def __init__(self, uuid:str):
-        with Session() as session:
-            super().__init__(uuid=uuid)
-            session.add(self)
-            session.commit()
+        super().__init__(uuid=uuid)
         
 
     def __repr__(self):

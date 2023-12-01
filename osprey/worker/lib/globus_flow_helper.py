@@ -73,10 +73,15 @@ def flow_db_update(sources: list[str], output_fn: str, function_uuid: str):
         for s_id in sources:
             source_ver.append(session.query(SourceVersion).filter(SourceVersion.source_id == int(s_id)).order_by(SourceVersion.version.desc()).first())
 
-    f = Function(uuid=function_uuid)
-    o = Output(filename=output_fn)
+        f = Function(uuid=function_uuid)
+        session.add(f)
 
-    p = Provenance(function_id=f.id, derived_from=source_ver, contributed_to=[o])
+        o = Output(filename=output_fn)
+        session.add(o)
+
+        p = Provenance(function_id=f.id, derived_from=source_ver, contributed_to=[o])
+        session.add(p)
+        session.commit()
 
 
 def database_commit(*args, **kwargs):

@@ -3,14 +3,14 @@ import os
 from sqlalchemy import Column, Integer, String, LargeBinary, ForeignKey
 from sqlalchemy.orm import relationship
 
-from osprey.worker.models.database import Base
 from pathlib import Path
 from osprey.worker.lib.serializer import decode
 from osprey.worker.models.utils import SOURCE_DIR
 from osprey.worker.models.utils import TEMP_DIR
+from osprey.server.app          import db
 
 # Assume that this is sa read-only class
-class SourceFile(Base):
+class SourceFile(db.Model):
     __tablename__ = 'source_file'
     __table_args__ = {'extend_existing': True}
     id                = Column(Integer, primary_key=True)

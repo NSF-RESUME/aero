@@ -1,5 +1,6 @@
-from osprey.server.app import db
 from sqlalchemy import Column, Integer, String
+
+from osprey.server.app import db
 
 
 class Output(db.Model):
