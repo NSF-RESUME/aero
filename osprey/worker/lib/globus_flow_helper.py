@@ -67,7 +67,6 @@ def flow_db_update(sources: list[str], output_fn: str, function_uuid: str):
 
     # currently just gets last version
     for s_id in sources:
-        SourceVersion(version=1, source_id=s_id)
         source_ver.append(SourceVersion.query.filter(SourceVersion.source_id == int(s_id)).order_by(SourceVersion.version.desc()).first())
 
     f = Function(uuid=function_uuid)
