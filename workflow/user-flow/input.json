@@ -1,0 +1,9 @@
+{
+    "osprey-worker-endpoint": "134fa009-84c8-4a68-afe6-a05dbe5831fd",
+    "database-commit-function": "dc60cdd4-6cba-43d4-b5b0-f767af4b4a58",
+    "download-function": "d118ecb8-4476-4f36-bd57-a9249f760718",
+    "user-wrapper-function": "c71fa861-4a6c-4f4e-929c-27c9fdd10e49",
+    "tasks": "[{\"endpoint\": \"134fa009-84c8-4a68-afe6-a05dbe5831fd\", \"function\": \"d118ecb8-4476-4f36-bd57-a9249f760718\", \"kwargs\": {\"source_id\": 1}}]",
+    "_private_password": "<add email password here>",
+    "author-email": "valeriehayot@gmail.com"
+}

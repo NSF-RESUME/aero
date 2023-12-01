@@ -1,0 +1,44 @@
+{
+    "type": "object",
+    "required": [
+        "user_endpoint",
+        "user_function",
+        "db_endpoint",
+        "db_function"
+    ],
+    "properties": {
+        "user_endpoint": {
+            "type": "string",
+            "description": "The UUID of the endpoint to execute the function on"
+        },
+        "user_function": {
+            "type": "string",
+            "description": "The UUID of the function to execute"
+        },
+        "db_endpoint": {
+            "type": "string",
+            "description": "The UUID of the server endpoint"
+        },
+        "db_function": {
+            "type": "string",
+            "description": "The UUID of the database update function"
+        },
+        "args": {
+            "type": "string",
+            "description": "args to the task, ie. 123, \"hello world\" or [456, \"my string\"]"
+        },
+        "kwargs": {
+            "type": "string",
+            "description": "kwargs to the task, ie. {\"first\": 123, \"second\": \"my string\"}"
+        }
+    },
+    "propertyOrder": [
+        "user_endpoint",
+        "user_function",
+        "db_endpoint",
+        "db_function",
+        "args",
+        "kwargs"
+    ],
+    "additionalProperties": true
+}

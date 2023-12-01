@@ -57,6 +57,24 @@ def user_function_wrapper(*args, **kwargs):
 
     return args, kwargs
 
+def flow_db_update(sources: list[str], output_fn: str, function_uuid: str):
+    from osprey.server.models.source_version import SourceVersion
+    from osprey.server.models.function import Function
+    from osprey.server.models.output import Output
+    from osprey.server.models.provenance import Provenance
+
+    source_ver: list = []
+
+    # currently just gets last version
+    for s_id in sources:
+        SourceVersion(version=1, source_id=s_id)
+        source_ver.append(SourceVersion.query.filter(SourceVersion.source_id == int(s_id)).order_by(SourceVersion.version.desc()).first())
+
+    f = Function(uuid=function_uuid)
+    o = Output(filename=output_fn)
+
+    p = Provenance(function_id=f.id, derived_from=source_ver, contributed_to=[o])
+
 
 def database_commit(*args, **kwargs):
     from osprey.worker.models.source import Source
@@ -72,3 +90,4 @@ if __name__ == "__main__":
     print("Globus Flow download",        register_function(download))
     print("Globus Flow database commit", register_function(database_commit))
     print("Globus Flow user function commit", register_function(user_function_wrapper))
+    print("UDF Globus Flow db commit", register_function(flow_db_update))
