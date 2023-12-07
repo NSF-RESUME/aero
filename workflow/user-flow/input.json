@@ -1,9 +1,7 @@
 {
-    "osprey-worker-endpoint": "134fa009-84c8-4a68-afe6-a05dbe5831fd",
-    "database-commit-function": "dc60cdd4-6cba-43d4-b5b0-f767af4b4a58",
-    "download-function": "d118ecb8-4476-4f36-bd57-a9249f760718",
-    "user-wrapper-function": "c71fa861-4a6c-4f4e-929c-27c9fdd10e49",
-    "tasks": "[{\"endpoint\": \"134fa009-84c8-4a68-afe6-a05dbe5831fd\", \"function\": \"d118ecb8-4476-4f36-bd57-a9249f760718\", \"kwargs\": {\"source_id\": 1}}]",
-    "_private_password": "<add email password here>",
-    "author-email": "valeriehayot@gmail.com"
+    "user_endpoint": "b5075507-3e2d-4bac-9b5b-e5ba09fd1034",
+    "user_function": "a229f614-11fb-4802-9139-e69919bdc57f",
+    "db_endpoint": "1fd89678-3c6f-4bac-8e2b-306da6004b13",
+    "db_function": "ed0efe86-17af-458f-b17a-cda9b4e9dc44",
+    "tasks": "[{\"user_endpoint\": \"b5075507-3e2d-4bac-9b5b-e5ba09fd1034\", \"user_function\": \"a229f614-11fb-4802-9139-e69919bdc57f\"}]"
 }

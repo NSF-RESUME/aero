@@ -12,12 +12,14 @@ class FlowEnum(IntEnum):
     NONE              = 0
     VERIFY_OR_MODIFY  = 1
     VERIFY_AND_MODIFY = 1
+    USER_FLOW         = 2
 
 # PERMANENT
 #TODO: Remove None as it is uneccessary
 FLOW_IDS = {
     FlowEnum.NONE: '6f04c927-d319-41ae-a027-561329e4c2d1',
-    FlowEnum.VERIFY_OR_MODIFY: '6f04c927-d319-41ae-a027-561329e4c2d1'
+    FlowEnum.VERIFY_OR_MODIFY: '6f04c927-d319-41ae-a027-561329e4c2d1',
+    FlowEnum.USER_FLOW: '0d8ace1a-d583-4f65-834e-4e1e1f450ecc'
 }
 
 def create_context(flow_id):

@@ -20,6 +20,9 @@ This module creates a job that gets triggered by Globus Timer.
 -> To run the TimerJob, there should be authentication file that should store the token with the scope ( Ensure it run before starting the project )
 
 """
+USER_FLOW_UUID = '0d8ace1a-d583-4f65-834e-4e1e1f450ecc'
+USER_ENDPOINT_UUID = '1fd89678-3c6f-4bac-8e2b-306da6004b13'
+
 def set_timer(interval_in_sec: int, id: int, email: str, flow_type: FlowEnum) -> None:
     """Set a Globus Timer for daily retrieval of updated tables from sources.
 
@@ -32,22 +35,29 @@ def set_timer(interval_in_sec: int, id: int, email: str, flow_type: FlowEnum) ->
     authorizer, specific_flow_scope = create_authorizer(flow_id)
     timer_client = TimerClient(authorizer=authorizer, app_name="osprey-prototype")
 
-    run_input = {
-                 "osprey-worker-endpoint": Config.GLOBUS_WORKER_UUID,
-                 "download-function": Config.GLOBUS_FLOW_DOWNLOAD_FUNCTION, 
-                 "database-commit-function": Config.GLOBUS_FLOW_COMMIT_FUNCTION,
-                 "user-wrapper-function": Config.GLOBUS_FLOW_USER_WRAPPER_FUNC,
-                 "tasks": json.dumps([{
-                     "endpoint": Config.GLOBUS_WORKER_UUID,
-                     "function": Config.GLOBUS_FLOW_DOWNLOAD_FUNCTION,
-                     "kwargs": {
-                        "source_id": id
-                     }}]),
-                 "author-email": email,
-                 "_private_password": os.environ.get('DSAAS_EMAIL_PASSWORD') 
-                 }
-
-    run_label = f"Osprey Demo | Source {id}"
+    if flow_id != 2:
+        run_input = {
+                    "osprey-worker-endpoint": Config.GLOBUS_WORKER_UUID,
+                    "download-function": Config.GLOBUS_FLOW_DOWNLOAD_FUNCTION, 
+                    "database-commit-function": Config.GLOBUS_FLOW_COMMIT_FUNCTION,
+                    "user-wrapper-function": Config.GLOBUS_FLOW_USER_WRAPPER_FUNC,
+                    "tasks": json.dumps([{
+                        "endpoint": Config.GLOBUS_WORKER_UUID,
+                        "function": Config.GLOBUS_FLOW_DOWNLOAD_FUNCTION,
+                        "kwargs": {
+                            "source_id": id
+                        }}]),
+                    "author-email": email,
+                    "_private_password": os.environ.get('DSAAS_EMAIL_PASSWORD') 
+                    }
+        run_label = f"Osprey Demo | Source {id}"
+        
+    else:
+        run_input = {
+            "endpoint": USER_ENDPOINT_UUID,
+            "function": USER_FLOW_UUID
+        }
+        run_label = f'Osprey Demo | User flow'
 
     url = slash_join(sfc.base_url, f"/flows/{flow_id}/run")
     

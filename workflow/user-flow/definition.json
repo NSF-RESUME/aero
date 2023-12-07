@@ -8,7 +8,9 @@
         "Parameters": {
           "endpoint.$": "$.user_endpoint",
           "function.$": "$.user_function",
-          "kwargs.$": "$.kwargs"
+          "args.=": "getattr('args')",
+          "kwargs.=": "getattr('kwargs')",
+          "tasks.=": "getattr('tasks')"
         },
         "ResultPath": "$.UDFResult",
         "Next": "prepare-update-database"
@@ -18,8 +20,8 @@
       "Comment": "Set details for database commit process",
       "Parameters": {
           "kwargs": {
-                  "sources.$": "$.UDFResult.details.result[0][0]",
-                  "output_fn.$": "$.UDFResult.details.result[0][1]",
+                  "sources.$": "$.UDFResult.details.result[0]",
+                  "output_fn.$": "$.UDFResult.details.result[0]",
                   "function_uuid.$": "$.user_function"
               }
           
