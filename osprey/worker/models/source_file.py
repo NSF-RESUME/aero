@@ -1,24 +1,24 @@
-import os
-
-from sqlalchemy import Column, Integer, String, LargeBinary, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 
 from pathlib import Path
-from osprey.worker.lib.serializer import decode
 from osprey.worker.models.utils import SOURCE_DIR
 from osprey.worker.models.utils import TEMP_DIR
-from osprey.server.app          import db
+from osprey.worker.models.database import Base
+
 
 # Assume that this is sa read-only class
-class SourceFile(db.Model):
-    __tablename__ = 'source_file'
-    __table_args__ = {'extend_existing': True}
-    id                = Column(Integer, primary_key=True)
-    file_name         = Column(String)
-    file_type         = Column(String)
-    source_version_id = Column(Integer, ForeignKey('source_version.id'))
-    encoding          = Column(String)
-    source_version    = relationship("SourceVersion", back_populates="source_file", uselist=False)
+class SourceFile(Base):
+    __tablename__ = "source_file"
+    __table_args__ = {"extend_existing": True}
+    id = Column(Integer, primary_key=True)
+    file_name = Column(String)
+    file_type = Column(String)
+    source_version_id = Column(Integer, ForeignKey("source_version.id"))
+    encoding = Column(String)
+    source_version = relationship(
+        "SourceVersion", back_populates="source_file", uselist=False
+    )
 
     def __init__(self, **kwargs):
         kwargs = self._write_file(**kwargs)
@@ -33,16 +33,18 @@ class SourceFile(db.Model):
         Returns:
             dict: updated kwargs initially passed to the function
         """
-        args = kwargs['args']
+        _ = kwargs["args"]
         basename = file_name
 
-        SOURCE_DIR.mkdir(parents=True, exist_ok=True) # TODO remove from here so it only executes once
-        fn = (SOURCE_DIR / basename)
+        SOURCE_DIR.mkdir(
+            parents=True, exist_ok=True
+        )  # TODO remove from here so it only executes once
+        fn = SOURCE_DIR / basename
         Path(TEMP_DIR, file_name).rename(fn)
 
-        kwargs['file_name'] = basename
-        kwargs['file_type'] = file_type
-        kwargs.pop('args')
+        kwargs["file_name"] = basename
+        kwargs["file_type"] = file_type
+        kwargs.pop("args")
         return kwargs
 
     def __repr__(self) -> str:
@@ -51,12 +53,14 @@ class SourceFile(db.Model):
     @property
     def file(self):
         pass
+
+
 """
 
 NOTE: This class is duplicated from the `class SourceFile` from
 
     /osprey/server/models/source_file.py
 
-But the usecase is, to seperates the representation for different microservices
+But the usecase is, to separates the representation for different microservices
 
 """
