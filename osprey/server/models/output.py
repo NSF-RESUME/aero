@@ -24,7 +24,6 @@ class Output(db.Model):
 
     def add_new_version(self, filename: str):
         # get current checksum
-        print("hello")
         with open(Path(GCS_OUTPUT_DIR, filename), "r") as f:
             checksum = hashlib.md5(f.read().encode("utf-8")).hexdigest()
 
@@ -32,14 +31,16 @@ class Output(db.Model):
 
         if self.output_versions is not None:
             num_version = len(self.output_versions)
-            last_version = self.output_versions[num_version - 1]
 
-            # compare checksums
-            with open(Path(GCS_OUTPUT_DIR, last_version.filename), "r") as f:
-                prev_checksum = hashlib.md5(f.read().encode("utf-8")).hexdigest()
+            if num_version > 0:
+                last_version = self.output_versions[num_version - 1]
 
-            if prev_checksum == checksum:
-                return
+                # compare checksums
+                with open(Path(GCS_OUTPUT_DIR, last_version.filename), "r") as f:
+                    prev_checksum = hashlib.md5(f.read().encode("utf-8")).hexdigest()
+
+                if prev_checksum == checksum:
+                    return
 
         v = OutputVersion(
             filename=filename,

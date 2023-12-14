@@ -1,5 +1,12 @@
+from sqlalchemy import Column
+from sqlalchemy import Integer
+from sqlalchemy import String
+
 from osprey.server.app import db
-from sqlalchemy import Column, Integer, String
+
+from osprey.server.jobs.timer import set_timer
+from osprey.server.lib.error import ServiceError
+from osprey.server.lib.error import FLOW_TIMER_ERROR
 
 provenance_derivation = db.Table(
     "provenance_derivation",
@@ -13,6 +20,8 @@ class Provenance(db.Model):
     function_id = Column(Integer, db.ForeignKey("function.id"))
     function_args = Column(String)
     description = Column(String)
+    timer = Column(Integer)
+    timer_job_id = Column(Integer)
     derived_from = db.relationship(
         "SourceVersion",
         secondary=provenance_derivation,
@@ -28,24 +37,34 @@ class Provenance(db.Model):
         contributed_to: list,
         description: str = "",
         function_args: str = "",
+        timer: int | None = None,
     ):
+        db.session.add(self)
+        db.session.commit()
+
+        if timer is None:
+            timer = 86400  # run daily
+
         super().__init__(
             function_id=function_id,
             derived_from=derived_from,
             contributed_to=contributed_to,
             description=description,
             function_args=function_args,
+            timer=timer,
         )
-        db.session.add(self)
-        db.session.commit()
+
+        self._start_timer_flow()
 
     def __repr__(self):
-        return "<Provenance(id={}, derived_from={}, contributed_to={}, function_id='{}', function_args='{}')>".format(
+        return "<Provenance(id={}, derived_from={}, contributed_to={}, function_id='{}', function_args='{}', timer='{}', 'timer_job_id='{}')>".format(
             self.id,
             self.derived_from,
             self.contributed_to,
             self.description,
             self.function_id,
+            self.timer,
+            self.timer_job_id,
         )
 
     def toJSON(self):
@@ -56,4 +75,19 @@ class Provenance(db.Model):
             "description": self.description,
             "function_id": self.function_id,
             "function_args": self.function_args,
+            "timer": self.timer,
+            "timer_job_id": self.timer_job_id,
         }
+
+    def _start_timer_flow(self, flush=False):
+        if self.id is None:
+            raise ServiceError(FLOW_TIMER_ERROR, "source needs to have an id")
+
+        if not flush and self.timer_job_id is not None:
+            raise ServiceError(FLOW_TIMER_ERROR, "source already has a flow timer")
+
+        self.timer_job_id = set_timer(
+            self.timer, self.id, self.email, self.flow_kind, kwargs=self.function_args
+        )
+        db.session.add(self)
+        db.session.commit()

@@ -22,7 +22,9 @@ USER_FLOW_UUID = "0d8ace1a-d583-4f65-834e-4e1e1f450ecc"
 USER_ENDPOINT_UUID = "1fd89678-3c6f-4bac-8e2b-306da6004b13"
 
 
-def set_timer(interval_in_sec: int, id: int, email: str, flow_type: FlowEnum) -> None:
+def set_timer(
+    interval_in_sec: int, id: int, email: str, flow_type: FlowEnum, **kwargs
+) -> None:
     """Set a Globus Timer for daily retrieval of updated tables from sources.
 
     Arguments:
@@ -55,7 +57,11 @@ def set_timer(interval_in_sec: int, id: int, email: str, flow_type: FlowEnum) ->
         run_label = f"Osprey Demo | Source {id}"
 
     else:
-        run_input = {"endpoint": USER_ENDPOINT_UUID, "function": USER_FLOW_UUID}
+        run_input = {
+            "endpoint": USER_ENDPOINT_UUID,
+            "function": USER_FLOW_UUID,
+            "kwargs": kwargs,
+        }
         run_label = "Osprey Demo | User flow"
 
     url = slash_join(sfc.base_url, f"/flows/{flow_id}/run")

@@ -23,6 +23,8 @@ PROVENANCE_KEYS = sorted(
         "description",
         "function_id",
         "function_args",
+        "timer",
+        "timer_job_id",
     ]
 )
 
@@ -32,9 +34,11 @@ def test_show_prov(client):
     assert all([sorted(r.keys()) == PROVENANCE_KEYS for r in response.json]) is True
 
 
-def test_add_record(client):
+def test_add_record(client, mocker):
+    mocker.patch("osprey.server.jobs.timer.set_timer")
+
     name = "test_prov_1234"
-    function_id = "1234"
+    function_id = "12345"
     filename = f"test-{uuid4()}.txt"
     args = '{ "test": true }'
 
@@ -71,6 +75,16 @@ def test_add_record(client):
         db.session.query(OutputVersion)
         .filter(OutputVersion.source_id == prev_outputs.id)
         .all()
+    )
+
+    print(prev_funcs)
+    print(
+        db.session.query(Provenance)
+        .filter(
+            Provenance.function_id == prev_funcs.id and Provenance.function_args == args
+        )
+        .order_by(Provenance.id.desc())
+        .first()
     )
 
     # attempt to re-add the same output
