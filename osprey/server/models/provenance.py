@@ -33,13 +33,19 @@ class Provenance(db.Model):
             function_id=function_id,
             derived_from=derived_from,
             contributed_to=contributed_to,
+            description=description,
+            function_args=function_args,
         )
         db.session.add(self)
         db.session.commit()
 
     def __repr__(self):
-        return "<Provenance(id={}, derived_from={}, contributed_to={}, function_id='{}')>".format(
-            self.id, self.derived_from, self.contributed_to, self.function_id
+        return "<Provenance(id={}, derived_from={}, contributed_to={}, function_id='{}', function_args='{}')>".format(
+            self.id,
+            self.derived_from,
+            self.contributed_to,
+            self.description,
+            self.function_id,
         )
 
     def toJSON(self):
