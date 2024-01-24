@@ -77,7 +77,14 @@ def test_add_record(client, mocker):
         .all()
     )
 
-    print(prev_funcs)
+    print(
+        prev_funcs,
+        prev_num_funcs,
+        prev_num_outputs,
+        prev_num_prov,
+        prev_num_output_versions,
+        response,
+    )
     print(
         db.session.query(Provenance)
         .filter(
@@ -90,3 +97,37 @@ def test_add_record(client, mocker):
     # attempt to re-add the same output
     # Add different output
     # add function with different args
+
+
+def test_register_flow(client, mocker):
+    mocker.patch("osprey.server.jobs.timer.set_timer")
+
+    name = "test_prov_1234567"
+    function_id = "12345678"
+    filename = "test.txt"
+    args = '{ "test": true }'
+
+    # Create the file
+    with open(Path(GCS_OUTPUT_DIR, filename), "w+") as f:
+        data = {"test": "world"}
+        json.dump(data, f)
+
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "sources": {1: 1},
+        "args": args,
+        "description": "A test provenance example",
+        "name": name,
+        "function_uuid": function_id,
+        "output_fn": filename,
+    }
+
+    # create prov record
+    response = client.post(f"{ROUTE}/new/{function_id}", json=data, headers=headers)
+
+    assert response.status_code == 200, response.text
+
+    response = client.post(
+        f"{ROUTE}/timer/{function_id}", json={"kwargs": data}, headers=headers
+    )
+    assert response.status_code == 200, response.text

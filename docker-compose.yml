@@ -16,12 +16,13 @@ services:
       - GLOBUS_FLOW_DOWNLOAD_FUNCTION=13a38ae2-97e7-4fca-b596-f6a1f8d7388f
       - GLOBUS_FLOW_COMMIT_FUNCTION=13a38ae2-97e7-4fca-b596-f6a1f8d7388f
       - GLOBUS_FLOW_USER_COMMIT_FUNCTION=13a38ae2-97e7-4fca-b596-f6a1f8d7388f
+      - SEARCH_INDEX=92c13206-bcb3-47aa-aaed-daed19a1014e
 
       # User functions are registered in this client
       # - FUNCX_SDK_CLIENT_ID=638156ef-7332-4ab1-8d92-304b27bdd270
       # - FUNCX_SDK_CLIENT_SECRET=zUtPdMO1HDdRI3Qjkjehgn6YA85griFVJlwgu/HLbl4=
 
-      - GLOBUS_WORKER_UUID=|
+      - GLOBUS_WORKER_UUID=90ed7afd-c4ce-4dd7-9e23-848b710ea3f8
       - GCS_ENDPOINT_UUID=ede1f1ef-8c15-42fd-a3ce-3ca6109bce42
       - GCS_MANAGER_DOMAIN_NAME=6073d3.08cc.data.globus.org
       - GCS_STORAGE_GATEWAY_ID=88cba8d2-5a8b-439c-8a53-74a2f0332128
@@ -33,7 +34,7 @@ services:
       - DSAAS_EMAIL_PASSWORD=$DSAAS_EMAIL_PASSWORD
 
     volumes:
-      - ${GCS_ROOT_DIR}:/dsaas_storage  
+      - ${GCS_ROOT_DIR}:/dsaas_storage:rw
       - ./osprey:/app/osprey
       - ./data:/app/osprey/data
       - ./globus_compute/:/root/.globus_compute/

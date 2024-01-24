@@ -74,3 +74,31 @@ def record_provenance(function_id):
         return jsonify(p.toJSON()), s.code
     except Exception as e:
         return jsonify({"code": 500, "message": str(e)}), 500
+
+
+@provenance_routes.route("/timer/<function_uuid>", methods=["POST"])
+def register_flow(function_uuid):
+    json_data = request.json
+
+    function_args = json_data["kwargs"]
+
+    # TODO: add function relationship to provenance
+    f = Function.query.filter(Function.uuid == function_uuid).first()
+
+    if f is None:
+        return jsonify(
+            {
+                "code": 500,
+                "message": "Function record not found. Have you saved the provenance of this flow ?",
+            }
+        ), 500
+
+    p = Provenance.query.filter(
+        Provenance.function_id == f.id and Provenance.function_args == function_args
+    ).first()
+
+    if p is not None:
+        p._start_timer_flow()
+        return jsonify(p.toJSON()), 200
+
+    return jsonify({"code": 500, "message": "Provenance record not found"}), 500

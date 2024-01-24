@@ -60,7 +60,7 @@ def set_timer(
         run_input = {
             "endpoint": USER_ENDPOINT_UUID,
             "function": USER_FLOW_UUID,
-            "kwargs": kwargs,
+            "kwargs": json.dumps(kwargs),
         }
         run_label = "Osprey Demo | User flow"
 

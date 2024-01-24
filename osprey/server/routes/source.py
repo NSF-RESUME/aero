@@ -1,6 +1,8 @@
 from flask import Blueprint, jsonify, request
 from osprey.server.app import db
+from osprey.server.app import SEARCH_INDEX
 from osprey.server.app.models import Source, SourceVersion
+from osprey.server.lib.globus_search import DSaaSSearchClient
 from osprey.server.lib.error import ServiceError
 
 source_routes = Blueprint("source_routes", __name__, url_prefix="/source")
@@ -13,6 +15,18 @@ def all_sources():
     sources = Source.query.paginate(page=page, per_page=per_page)
     result = [source.toJSON() for source in sources]
     return jsonify(result), 200
+
+
+@source_routes.route("/search", methods=["GET"])
+def search():
+    query = request.args.get("query")
+    sc = DSaaSSearchClient(SEARCH_INDEX).client
+
+    try:
+        result = sc.search(SEARCH_INDEX, query, advanced=True)
+    except Exception:
+        return jsonify(query), 500
+    return result.text, 200
 
 
 @source_routes.route("/", methods=["POST"])

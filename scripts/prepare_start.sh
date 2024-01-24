@@ -47,6 +47,10 @@ echo "${flow_download_uuid}"
 echo "${flow_database_uuid}"
 echo "${flow_user_function_uuid}"
 
+echo "\nThe Globus Search index is":
+search_idx=`docker compose run -it web python /app/osprey/server/lib/globus_search.py | tail -n 1`
+
+echo "${search_idx}"
 
 echo "\n\nSetting up Globus Flow Worker"
 docker compose run -it web python /app/osprey/server/jobs/timer.py

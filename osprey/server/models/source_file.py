@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from sqlalchemy import Column
 from sqlalchemy import Integer
+from sqlalchemy import Numeric
 from sqlalchemy import String
 
 from osprey.server.app import db
@@ -15,6 +16,7 @@ class SourceFile(db.Model):
     id = Column(Integer, primary_key=True)
     file_name = Column(String)
     file_type = Column(String)
+    size = Column(Numeric)
     source_version_id = Column(Integer, db.ForeignKey("source_version.id"))
     source_version = db.relationship(
         "SourceVersion", back_populates="source_file", uselist=False
@@ -32,11 +34,12 @@ class SourceFile(db.Model):
         return {
             "file_name": self.file_name,
             "file_type": self.file_type,
+            "file_size": self.size,
             "encoding": self.encoding,
         }
 
     def __repr__(self):
-        return f"<SourceFile(id={self.id}, file_name={self.file_name})>"
+        return f"<SourceFile(id={self.id}, file_name={self.file_name}, file_size={self.size}, encoding={self.encoding})>"
 
     def _set_defaults(self, **kwargs):
         if "encoding" not in kwargs:

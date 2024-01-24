@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
 from sqlalchemy.orm import relationship
 
 from pathlib import Path
@@ -14,6 +14,7 @@ class SourceFile(Base):
     id = Column(Integer, primary_key=True)
     file_name = Column(String)
     file_type = Column(String)
+    size = Column(Numeric)
     source_version_id = Column(Integer, ForeignKey("source_version.id"))
     encoding = Column(String)
     source_version = relationship(
@@ -44,11 +45,12 @@ class SourceFile(Base):
 
         kwargs["file_name"] = basename
         kwargs["file_type"] = file_type
+        kwargs["size"] = fn.stat.st_size
         kwargs.pop("args")
         return kwargs
 
     def __repr__(self) -> str:
-        return f"SourceFile(id={self.id}, file_name={self.file_name}, encoding={self.encoding}, source_version_id={self.source_version_id})"
+        return f"SourceFile(id={self.id}, file_name={self.file_name}, encoding={self.encoding}, file_size={self.size}, source_version_id={self.source_version_id})"
 
     @property
     def file(self):

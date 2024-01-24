@@ -37,7 +37,7 @@ sudo globus-connect-server collection create \
     --contact-email vhayot@uchicago.edu \
     --keywords uchicago.org,home \
     --allow-guest-collections \
-    --sharing-restrict-paths file:sharing_restrictions.json \
+    --sharing-restrict-paths file:path_restrictions.json \
     --user-message "Tape storage: Do not upload small files" \
     --enable-https
 

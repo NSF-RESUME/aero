@@ -7,6 +7,7 @@ from osprey.server.app import db
 from osprey.server.jobs.timer import set_timer
 from osprey.server.lib.error import ServiceError
 from osprey.server.lib.error import FLOW_TIMER_ERROR
+from osprey.server.lib.globus_flow import FlowEnum
 
 provenance_derivation = db.Table(
     "provenance_derivation",
@@ -21,7 +22,7 @@ class Provenance(db.Model):
     function_args = Column(String)
     description = Column(String)
     timer = Column(Integer)
-    timer_job_id = Column(Integer)
+    timer_job_id = Column(String)
     derived_from = db.relationship(
         "SourceVersion",
         secondary=provenance_derivation,
@@ -54,8 +55,6 @@ class Provenance(db.Model):
             timer=timer,
         )
 
-        self._start_timer_flow()
-
     def __repr__(self):
         return "<Provenance(id={}, derived_from={}, contributed_to={}, function_id='{}', function_args='{}', timer='{}', 'timer_job_id='{}')>".format(
             self.id,
@@ -86,8 +85,13 @@ class Provenance(db.Model):
         if not flush and self.timer_job_id is not None:
             raise ServiceError(FLOW_TIMER_ERROR, "source already has a flow timer")
 
+        # TODO: remove hard coding of email
         self.timer_job_id = set_timer(
-            self.timer, self.id, self.email, self.flow_kind, kwargs=self.function_args
+            self.timer,
+            self.id,
+            "test@test.com",
+            FlowEnum.USER_FLOW,
+            kwargs=self.function_args,
         )
         db.session.add(self)
         db.session.commit()

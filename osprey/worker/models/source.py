@@ -10,6 +10,9 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, String
 from osprey.worker.models.database import Base
 from osprey.worker.models.database import Session
+from osprey.worker.models.database import SEARCH_INDEX
+from osprey.worker.models.database import search_client
+from osprey.worker.models.database import add_entry
 # from osprey.worker.jobs.verifier   import verifier_microservice
 
 from osprey.worker.models.source_version import SourceVersion
@@ -80,6 +83,10 @@ class Source(Base):
             )
             session.add(new_version)
             session.commit()
+
+            add_entry(
+                client=search_client, idx=SEARCH_INDEX, source_version=new_version
+            )
 
     def download(self) -> tuple[str, str]:
         """Download data from user-specified repository.
