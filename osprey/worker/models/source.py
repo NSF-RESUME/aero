@@ -40,7 +40,7 @@ class Source(Base):
         order_by="SourceVersion.version",
         lazy=False,
     )
-    tags = relationship("Tag", secondary="SourceTagTable", back_populates="sources")
+    tags = relationship("Tag", secondary="source_tag", back_populates="sources")
 
     def __repr__(self):
         return f"Source(id={self.id}, name={self.name}, url={self.url}, email={self.email}, timer={self.timer_readable()})"
