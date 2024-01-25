@@ -45,7 +45,7 @@ class SourceFile(Base):
 
         kwargs["file_name"] = basename
         kwargs["file_type"] = file_type
-        kwargs["size"] = fn.stat.st_size
+        kwargs["size"] = fn.stat().st_size
         kwargs.pop("args")
         return kwargs
 
