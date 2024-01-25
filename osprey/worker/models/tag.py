@@ -4,6 +4,7 @@ from osprey.worker.models.database import Base
 
 SourceTagTable = Table(
     "source_tag",
+    Base.metadata,
     Column("id", Integer, primary_key=True),
     Column("source_id", Integer, ForeignKey("source.id")),
     Column("tag_id", Integer, ForeignKey("tag.id")),
