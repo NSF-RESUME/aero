@@ -15,6 +15,7 @@ from osprey.worker.models.database import search_client
 
 from osprey.worker.models.source_version import SourceVersion
 from osprey.worker.models.source_file import SourceFile
+from osprey.worker.models.tag import SourceTagTable
 from osprey.worker.models.utils import TEMP_DIR
 from osprey.worker.models.utils import SOURCE_DIR
 
@@ -40,7 +41,7 @@ class Source(Base):
         order_by="SourceVersion.version",
         lazy=False,
     )
-    tags = relationship("Tag", back_populates="sources")
+    tags = relationship("Tag", secondary=SourceTagTable, back_populates="sources")
 
     def __repr__(self):
         return f"Source(id={self.id}, name={self.name}, url={self.url}, email={self.email}, timer={self.timer_readable()})"
