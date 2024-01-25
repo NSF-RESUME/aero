@@ -87,7 +87,7 @@ class Source(Base):
             session.add(new_version)
             session.commit()
 
-            search_client.add_entry(source_version=new_version)
+            return search_client.add_entry(source_version=new_version)
 
     def download(self) -> tuple[str, str]:
         """Download data from user-specified repository.

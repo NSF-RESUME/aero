@@ -57,7 +57,7 @@ class DSaaSSearchClient:
 
     def add_entry(self, source_version: SourceVersion):
         entry = {
-            "ingest_type": "GMetaList",
+            "ingest_type": "GMetaEntry",
             "ingest_data": {
                 "subject": f"{source_version.source.name}-{source_version.source.id}.{source_version.version}",
                 "visible_to": ["public"],
@@ -83,7 +83,7 @@ class DSaaSSearchClient:
 
         try:
             response = self.client.ingest(self.index, entry)
-            return response.raw_json
+            return response
         except SearchAPIError as e:
             return e.raw_json
 

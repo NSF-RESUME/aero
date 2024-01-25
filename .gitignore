@@ -19,7 +19,7 @@ site/
 osprey/server/config_db.py
 osprey/server/lib/test_flow.py
 
-tokens.json
+*tokens.json*
 scope.json
 secrets.txt
 source

@@ -24,8 +24,8 @@ def search():
 
     try:
         result = sc.search(SEARCH_INDEX, query, advanced=True)
-    except Exception:
-        return jsonify(query), 500
+    except Exception as e:
+        return jsonify(str(e)), 500
     return result.text, 200
 
 
