@@ -75,7 +75,7 @@ class DSaaSSearchClient:
                     else None,
                     "created": source_version.created_at.strftime("%Y/%m/%d")
                     if source_version.created_at is not None
-                    else "0000/00/00",
+                    else None,
                     "url": f"{GCS_PATH}/{source_version.source_file.file_name}",
                 },
             },
