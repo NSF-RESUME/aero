@@ -52,7 +52,10 @@ class Source(Base):
             format (str): The extension of the file.
         """
         with Session() as session:
-            version_number = self.last_version().version + 1
+            if self.last_version() == 0:
+                version_number = 1
+            else:
+                version_number = self.last_version().version + 1
 
             # compare checksums to see if new version
             try:
