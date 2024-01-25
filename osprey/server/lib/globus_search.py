@@ -55,7 +55,7 @@ class DSaaSSearchClient:
         idx = r["id"]
         return idx
 
-    def add_entry(self, client: SearchClient, idx: str, source_version: SourceVersion):
+    def add_entry(self, source_version: SourceVersion):
         entry = {
             "ingest_type": "GMetaList",
             "ingest_data": {
@@ -81,7 +81,7 @@ class DSaaSSearchClient:
             },
         }
 
-        client.ingest(idx, entry)
+        self.client.ingest(self.index, entry)
 
     def populate_source_idx(self) -> None:
         sources = Source.query.all()
