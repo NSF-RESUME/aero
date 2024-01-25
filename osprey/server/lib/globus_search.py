@@ -70,7 +70,7 @@ class DSaaSSearchClient:
                     "source_id": source_version.source.id,
                     "version": source_version.id,
                     "checksum": source_version.checksum,
-                    "file_size": source_version.source_file.size
+                    "file_size": str(source_version.source_file.size)
                     if source_version.source_file is not None
                     else None,
                     "created": source_version.created_at.strftime("%Y/%m/%d")
