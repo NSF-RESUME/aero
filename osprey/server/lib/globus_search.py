@@ -81,7 +81,11 @@ class DSaaSSearchClient:
             },
         }
 
-        self.client.ingest(self.index, entry)
+        try:
+            response = self.client.ingest(self.index, entry)
+            return response.raw_json
+        except SearchAPIError as e:
+            return e.raw_json
 
     def populate_source_idx(self) -> None:
         sources = Source.query.all()
