@@ -1,13 +1,14 @@
 services:
   web:
+    user: flask
     build:
       dockerfile: ./Dockerfiles/Dockerfile.server.dev
     ports:
       - "5001:80"
     environment:
       - DATABASE_PORT=5432
-      - DATABASE_PASSWORD=postgres
-      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD={DATABASE_PASSWORD}
+      - DATABASE_USER={DATABASE_USER}
       - DATABASE_HOST=dsaas-postgres-database-1 # NOTE: Make sure it is the same as the database-name
       - DATABASE_NAME=osprey_development
       - FLASK_APP=server.py
@@ -32,7 +33,7 @@ services:
       - CONNECTOR_ID=88cba8d2-5a8b-439c-8a53-74a2f0332128
 
       # For timer email
-      - DSAAS_EMAIL_PASSWORD=$DSAAS_EMAIL_PASSWORD
+      - DSAAS_EMAIL_PASSWORD=${DSAAS_EMAIL_PASSWORD}
 
     volumes:
       - ${GCS_ROOT_DIR}:/dsaas_storage:rw
@@ -44,17 +45,19 @@ services:
         - globus-endpoint
 
   postgres-database:
+    user: postgres
     restart: always
     image: postgres:15.3
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER={DATABASE_USER}
+      - POSTGRES_PASSWORD={DATABASE_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
       - osprey-postgres-data:/var/lib/postgresql/data
 
   globus-endpoint:
+    user: gc
     build:
         dockerfile: ./Dockerfiles/Dockerfile.endpoint.dev
     volumes:
@@ -66,8 +69,8 @@ services:
     # TODO: Make a different user
     environment:
       - DATABASE_PORT=5432
-      - DATABASE_PASSWORD=postgres
-      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD={DATABASE_PASSWORD}
+      - DATABASE_USER={DATABASE_USER}
       - DATABASE_HOST=dsaas-postgres-database-1
       - DATABASE_NAME=osprey_development
       - SEARCH_INDEX=2f703b36-3c05-40df-87e2-c3b463a80397
