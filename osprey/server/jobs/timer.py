@@ -58,7 +58,7 @@ def set_timer(
 
     else:
         run_input = {
-            "endpoint": USER_ENDPOINT_UUID,
+            "endpoint": kwargs["user_endpoint"],
             "function": USER_FLOW_UUID,
             "kwargs": json.dumps(kwargs),
         }

@@ -91,7 +91,7 @@ class Provenance(db.Model):
             self.id,
             "test@test.com",
             FlowEnum.USER_FLOW,
-            kwargs=self.function_args,
+            **self.function_args,
         )
         db.session.add(self)
         db.session.commit()
