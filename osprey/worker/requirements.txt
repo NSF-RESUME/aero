@@ -1,3 +1,6 @@
+flask
+Flask-SQLAlchemy
+Flask-Migrate
 globus-compute-endpoint
 SQLAlchemy
 psycopg2
