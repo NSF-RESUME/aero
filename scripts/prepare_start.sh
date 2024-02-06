@@ -14,7 +14,7 @@ docker compose up postgres-database -d
 
 sleep 5 # sleep required otherwise attempts to create db before postgres server is started
 
-docker compose exec -it postgres-database bash -c "psql -U postgres -c \"CREATE DATABASE osprey_development;\"; exit;"
+docker compose exec -it postgres-database bash -c "psql -U ${DATABASE_USER} -c \"CREATE DATABASE osprey_development;\"; exit;"
 docker compose run -it web flask db upgrade
 docker compose down
 
