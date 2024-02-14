@@ -48,7 +48,7 @@ echo "${flow_database_uuid}"
 echo "${flow_user_function_uuid}"
 
 echo "\nThe Globus Search index is":
-search_idx=`docker compose run -it web python /app/osprey/server/lib/globus_search.py | tail -n 1`
+search_idx=`docker compose run -it web python /app/osprey/server/lib/globus_search.py | head -n 1 | awk '{print $NF}'`
 
 echo "${search_idx}"
 
@@ -62,11 +62,13 @@ then
     sed -i '' "s/GLOBUS_FLOW_DOWNLOAD_FUNCTION=.*/GLOBUS_FLOW_DOWNLOAD_FUNCTION=${flow_download_uuid}/g" docker-compose.yml
     sed -i '' "s/GLOBUS_FLOW_COMMIT_FUNCTION=.*/GLOBUS_FLOW_COMMIT_FUNCTION=${flow_database_uuid}/g" docker-compose.yml
     sed -i '' "s/GLOBUS_FLOW_USER_COMMIT_FUNCTION=.*/GLOBUS_FLOW_USER_COMMIT_FUNCTION=${flow_user_function_uuid}/g" docker-compose.yml
+    sed -i '' "s/SEARCH_INDEX=.*/SEARCH_INDEX=${search_idx}/g" docker-compose.yml
 else
     sed -i "s/GLOBUS_WORKER_UUID=.*/GLOBUS_WORKER_UUID=${endpoint_uuid}/g" docker-compose.yml
     sed -i "s/GLOBUS_FLOW_DOWNLOAD_FUNCTION=.*/GLOBUS_FLOW_DOWNLOAD_FUNCTION=${flow_download_uuid}/g" docker-compose.yml
     sed -i "s/GLOBUS_FLOW_COMMIT_FUNCTION=.*/GLOBUS_FLOW_COMMIT_FUNCTION=${flow_database_uuid}/g" docker-compose.yml
     sed -i "s/GLOBUS_FLOW_USER_COMMIT_FUNCTION=.*/GLOBUS_FLOW_USER_COMMIT_FUNCTION=${flow_user_function_uuid}/g" docker-compose.yml
+    sed -i "s/SEARCH_INDEX=.*/SEARCH_INDEX=${search_idx}/g" docker-compose.yml
 fi
 
 echo "\n\nUpdated docker-compose.yml"

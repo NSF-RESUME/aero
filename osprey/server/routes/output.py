@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 
 from flask import Blueprint, jsonify, request
+
+from osprey.server.app.decorators import authenticated
 from osprey.server.app.models import Output
 
 output_routes = Blueprint("output_routes", __name__, url_prefix="/output")
@@ -18,6 +20,7 @@ GCS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 @output_routes.route("/", methods=["GET"])
+@authenticated
 def show_output():
     page = request.args.get("page") or 1
     per_page = request.args.get("per_page") or 15
@@ -27,6 +30,7 @@ def show_output():
 
 
 @output_routes.route("/new", methods=["POST"])
+@authenticated
 def create_output_file():
     filename = str(uuid.uuid4())
     filepath = Path(GCS_DIR, filename)

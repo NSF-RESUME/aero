@@ -1,6 +1,8 @@
 from flask import Blueprint, jsonify, request
+
 from osprey.server.app import db
 from osprey.server.app import SEARCH_INDEX
+from osprey.server.app.decorators import authenticated
 from osprey.server.app.models import Source, SourceVersion
 from osprey.server.lib.globus_search import DSaaSSearchClient
 from osprey.server.lib.error import ServiceError
@@ -9,6 +11,7 @@ source_routes = Blueprint("source_routes", __name__, url_prefix="/source")
 
 
 @source_routes.route("/", methods=["GET"])
+@authenticated
 def all_sources():
     page = request.args.get("page") or 1
     per_page = request.args.get("per_page") or 15
@@ -18,6 +21,7 @@ def all_sources():
 
 
 @source_routes.route("/search", methods=["GET"])
+@authenticated
 def search():
     query = request.args.get("query")
     sc = DSaaSSearchClient(SEARCH_INDEX).client
@@ -30,6 +34,7 @@ def search():
 
 
 @source_routes.route("/", methods=["POST"])
+@authenticated
 def create_source():
     try:
         json_data = request.json
@@ -42,6 +47,7 @@ def create_source():
 
 
 @source_routes.route("/<id>", methods=["GET"])
+@authenticated
 def get_data(id):
     s = db.session.get(Source, id)
     if s is None:
@@ -51,6 +57,7 @@ def get_data(id):
 
 
 @source_routes.route("/<id>/versions", methods=["GET"])
+@authenticated
 def list_versions(id):
     s = db.session.get(Source, id)
     if s is None:
@@ -60,6 +67,7 @@ def list_versions(id):
 
 
 @source_routes.route("/<id>/file", methods=["GET"])
+@authenticated
 def grap_file(id):
     source = db.session.get(Source, id)
     if not source:

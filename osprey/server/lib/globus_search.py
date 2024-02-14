@@ -30,6 +30,7 @@ class DSaaSSearchClient:
             self.index = index
         else:
             self.index = self.create_source_idx()
+            print(f"Created new search index: {self.index}")
 
     def create_context(self) -> NativeAppAuthClient:
         client = NativeAppAuthClient(client_id=_CLIENT_ID)

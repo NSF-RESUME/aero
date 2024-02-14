@@ -10,20 +10,22 @@ services:
       - DATABASE_USER=${DATABASE_USER}
       - DATABASE_HOST=dsaas-postgres-database-1 # NOTE: Make sure it is the same as the database-name
       - DATABASE_NAME=osprey_development
+      - PORTAL_CLIENT_ID=${PORTAL_CLIENT_ID}
+      - PORTAL_CLIENT_SECRET=${PORTAL_CLIENT_SECRET}
       - FLASK_APP=server.py
 
       # Project owner registers this
-      - GLOBUS_FLOW_DOWNLOAD_FUNCTION=e82cc565-a5fa-4a96-9259-7554f98f6de6
-      - GLOBUS_FLOW_COMMIT_FUNCTION=d21c8fac-4069-42f2-a431-f61ba17377d4
-      - GLOBUS_FLOW_USER_COMMIT_FUNCTION=2cd71701-afd9-47b7-ba4a-27062a6c8492
+      - GLOBUS_FLOW_DOWNLOAD_FUNCTION=760e00b7-cb0e-4cf8-96d5-94b611d6c1e0
+      - GLOBUS_FLOW_COMMIT_FUNCTION=b9a4e562-cc16-461b-9546-2603e4a70c75
+      - GLOBUS_FLOW_USER_COMMIT_FUNCTION=b9a4e562-cc16-461b-9546-2603e4a70c75
       - UDF_FLOW_FUNCTION=2cd71701-afd9-47b7-ba4a-27062a6c8492
-      - SEARCH_INDEX=2f703b36-3c05-40df-87e2-c3b463a80397
+      - SEARCH_INDEX=50f1b8cb-1e16-44ec-b7cb-cac4df34487f
 
       # User functions are registered in this client
       # - FUNCX_SDK_CLIENT_ID=638156ef-7332-4ab1-8d92-304b27bdd270
       # - FUNCX_SDK_CLIENT_SECRET=zUtPdMO1HDdRI3Qjkjehgn6YA85griFVJlwgu/HLbl4=
 
-      - GLOBUS_WORKER_UUID=37a1d2eb-f896-4a43-99d5-1ef72c655947
+      - GLOBUS_WORKER_UUID=a73435fc-7779-4111-8fc8-fc40ba9302ca
       - GCS_ENDPOINT_UUID=ede1f1ef-8c15-42fd-a3ce-3ca6109bce42
       - GCS_MANAGER_DOMAIN_NAME=6073d3.08cc.data.globus.org
       - GCS_STORAGE_GATEWAY_ID=88cba8d2-5a8b-439c-8a53-74a2f0332128
@@ -70,7 +72,7 @@ services:
       - DATABASE_USER=${DATABASE_USER}
       - DATABASE_HOST=dsaas-postgres-database-1
       - DATABASE_NAME=osprey_development
-      - SEARCH_INDEX=2f703b36-3c05-40df-87e2-c3b463a80397
+      - SEARCH_INDEX=50f1b8cb-1e16-44ec-b7cb-cac4df34487f
       # - FUNCX_SDK_CLIENT_ID=638156ef-7332-4ab1-8d92-304b27bdd270
       # - FUNCX_SDK_CLIENT_SECRET=zUtPdMO1HDdRI3Qjkjehgn6YA85griFVJlwgu/HLbl4=
 

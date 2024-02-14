@@ -1,4 +1,6 @@
 from flask import Blueprint, jsonify, request
+
+from osprey.server.app.decorators import authenticated
 from osprey.server.app.models import Function
 from osprey.server.app.models import Output
 from osprey.server.app.models import Provenance
@@ -9,6 +11,7 @@ provenance_routes = Blueprint("provenance_routes", __name__, url_prefix="/prov")
 
 
 @provenance_routes.route("/", methods=["GET"])
+@authenticated
 def show_provenance():
     page = request.args.get("page") or 1
     per_page = request.args.get("per_page") or 15
@@ -18,6 +21,7 @@ def show_provenance():
 
 
 @provenance_routes.route("/new/<function_id>", methods=["POST"])
+@authenticated
 def record_provenance(function_id):
     try:
         json_data = request.json
@@ -77,6 +81,7 @@ def record_provenance(function_id):
 
 
 @provenance_routes.route("/timer/<function_uuid>", methods=["POST"])
+@authenticated
 def register_flow(function_uuid):
     json_data = request.json
 
