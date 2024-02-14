@@ -126,7 +126,7 @@ class DSaaSSearchClient:
         try:
             self.client.ingest(self.index, entries)
         except SearchAPIError as e:
-            print(e.raw_json)
+            print("Error in populating index", e.raw_json)
 
     def create_output_idx(self) -> None:
         _ = self.client.create_index(
