@@ -39,7 +39,7 @@ out=`docker compose run -it globus-endpoint python /app/osprey/worker/lib/globus
 
 flow_download_uuid=`echo -e ${out} | grep -i 'download' | awk '{print $4}' | tr -d '\r'`
 flow_database_uuid=`echo -e ${out} | grep -i 'database' | awk '{print $9}' | tr -d '\r'`
-flow_commit_uuid=`echo -e ${out} | grep -i 'Globus Flow user function commit' | awk '{print $NF}' | tr -d '\r'`
+flow_commit_uuid=`echo -e ${out} | grep -i 'Globus Flow user function commit' | awk '{print $15}' | tr -d '\r'`
 flow_user_function_uuid=`echo -e ${out} | grep -i 'user' | awk '{print $NF}' | tr -d '\r'`
 
 echo "${out}"
