@@ -37,18 +37,20 @@ endpoint_uuid=`cat ${endpoint_out} | grep -i 'default' | awk '{print $2}'`
 echo "\nThe Globus Flow Functions UUIDs are : "
 out=`docker compose run -it globus-endpoint python /app/osprey/worker/lib/globus_flow_helper.py`
 
-flow_download_uuid=`echo ${out} | grep -i 'download' | awk '{print $4}' | tr -d '\r'`
-flow_database_uuid=`echo ${out} | grep -i 'database' | awk '{print $9}' | tr -d '\r'`
-flow_user_function_uuid=`echo ${out} | grep -i 'user' | awk '{print $NF}' | tr -d '\r'`
+flow_download_uuid=`echo -e ${out} | grep -i 'download' | awk '{print $4}' | tr -d '\r'`
+flow_database_uuid=`echo -e ${out} | grep -i 'database' | awk '{print $9}' | tr -d '\r'`
+flow_commit_uuid=`echo -e ${out} | grep -i 'Globus Flow user function commit' | awk '{print $NF}' | tr -d '\r'`
+flow_user_function_uuid=`echo -e ${out} | grep -i 'user' | awk '{print $NF}' | tr -d '\r'`
 
 echo "${out}"
 echo "${endpoint_uuid}"
 echo "${flow_download_uuid}"
 echo "${flow_database_uuid}"
+echo "${flow_commit_uuid}"
 echo "${flow_user_function_uuid}"
 
 echo "\nThe Globus Search index is":
-search_idx=`docker compose run -it web python /app/osprey/server/lib/globus_search.py | head -n 1 | awk '{print $NF}'`
+search_idx=`docker compose run -it web python /app/osprey/server/lib/globus_search.py | head -n 1 | awk '{print $NF}' | tr -d '\r'`
 
 echo "${search_idx}"
 
@@ -61,13 +63,15 @@ then
     sed -i '' "s/GLOBUS_WORKER_UUID=.*/GLOBUS_WORKER_UUID=${endpoint_uuid}/g" docker-compose.yml
     sed -i '' "s/GLOBUS_FLOW_DOWNLOAD_FUNCTION=.*/GLOBUS_FLOW_DOWNLOAD_FUNCTION=${flow_download_uuid}/g" docker-compose.yml
     sed -i '' "s/GLOBUS_FLOW_COMMIT_FUNCTION=.*/GLOBUS_FLOW_COMMIT_FUNCTION=${flow_database_uuid}/g" docker-compose.yml
-    sed -i '' "s/GLOBUS_FLOW_USER_COMMIT_FUNCTION=.*/GLOBUS_FLOW_USER_COMMIT_FUNCTION=${flow_user_function_uuid}/g" docker-compose.yml
+    sed -i '' "s/GLOBUS_FLOW_USER_COMMIT_FUNCTION=.*/GLOBUS_FLOW_USER_COMMIT_FUNCTION=${flow_commit_uuid}/g" docker-compose.yml
+    sed -i '' "s/UDF_FLOW_FUNCTION=.*/UDF_FLOW_FUNCTION=${flow_user_function_uuid}/g" docker-compose.yml
     sed -i '' "s/SEARCH_INDEX=.*/SEARCH_INDEX=${search_idx}/g" docker-compose.yml
 else
     sed -i "s/GLOBUS_WORKER_UUID=.*/GLOBUS_WORKER_UUID=${endpoint_uuid}/g" docker-compose.yml
     sed -i "s/GLOBUS_FLOW_DOWNLOAD_FUNCTION=.*/GLOBUS_FLOW_DOWNLOAD_FUNCTION=${flow_download_uuid}/g" docker-compose.yml
     sed -i "s/GLOBUS_FLOW_COMMIT_FUNCTION=.*/GLOBUS_FLOW_COMMIT_FUNCTION=${flow_database_uuid}/g" docker-compose.yml
-    sed -i "s/GLOBUS_FLOW_USER_COMMIT_FUNCTION=.*/GLOBUS_FLOW_USER_COMMIT_FUNCTION=${flow_user_function_uuid}/g" docker-compose.yml
+    sed -i "s/GLOBUS_FLOW_USER_COMMIT_FUNCTION=.*/GLOBUS_FLOW_USER_COMMIT_FUNCTION=${flow_commit_uuid}/g" docker-compose.yml
+    sed -i "s/UDF_FLOW_FUNCTION=.*/UDF_FLOW_FUNCTION=${flow_user_function_uuid}/g" docker-compose.yml
     sed -i "s/SEARCH_INDEX=.*/SEARCH_INDEX=${search_idx}/g" docker-compose.yml
 fi
 
