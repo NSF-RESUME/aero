@@ -46,7 +46,7 @@ class Source(Base):
     def __repr__(self):
         return f"Source(id={self.id}, name={self.name}, url={self.url}, email={self.email}, timer={self.timer_readable()})"
 
-    def add_new_version(self, new_file: str, format: str) -> None:
+    def add_new_version(self, new_file: str, format: str) -> str:
         """Commit data to the database and store in GCS server.
 
         Args:
