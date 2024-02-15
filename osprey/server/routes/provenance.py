@@ -54,7 +54,7 @@ def record_provenance(function_id):
         if (
             p := Provenance.query.filter(
                 Provenance.function_id == f.id
-                and Provenance.function_args == json_data["args"]
+                and Provenance.function_args == json_data["kwargs"]
             ).first()
         ) is None:
             # create output and store provenance data
@@ -65,7 +65,7 @@ def record_provenance(function_id):
                 derived_from=source_ver,
                 contributed_to=[o],
                 description=json_data["description"],
-                function_args=json_data["args"],
+                function_args=json_data["kwargs"],
             )
         else:
             # find output instance and add a new version
