@@ -28,7 +28,7 @@ def authenticated(fn):
         token_meta = client.oauth2_token_introspect(token)
 
         if not token_meta.get("active"):
-            raise ForbiddenError(token_meta)
+            raise ForbiddenError()
 
         # todo: unnecessary
         # Token has passed verification so we attach it to the
