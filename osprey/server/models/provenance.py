@@ -70,7 +70,9 @@ class Provenance(db.Model):
         return {
             "id": self.id,
             "derived_from": [v.toJSON() for v in self.derived_from],
-            "contributed_to": self.contributed_to[0].toJSON(),
+            "contributed_to": self.contributed_to[0].toJSON()
+            if len(self.contributed_to) > 0
+            else None,
             "description": self.description,
             "function_id": self.function_id,
             "function_args": self.function_args,

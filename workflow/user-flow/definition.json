@@ -13,31 +13,7 @@
           "tasks.=": "getattr('tasks')"
         },
         "ResultPath": "$.UDFResult",
-        "Next": "prepare-update-database"
-    },
-    "prepare-update-database": {
-      "Type": "ExpressionEval",
-      "Comment": "Set details for database commit process",
-      "Parameters": {
-          "kwargs": {
-                  "sources.$": "$.UDFResult.details.result[0]",
-                  "output_fn.$": "$.UDFResult.details.result[0]",
-                  "function_uuid.$": "$.user_function"
-              }
-          
-      },
-      "ResultPath": "$.UpdateParams",
-      "Next": "update-database"
-    },
-    "update-database": {
-        "Type": "Action",
-        "ActionUrl": "https://compute.actions.globus.org/",
-        "Parameters": {
-          "endpoint.$": "$.db_endpoint",
-          "function.$": "$.db_function",
-          "kwargs.$": "$.UpdateParams.kwargs"
-        },
-        "End": true 
+        "End": true
     }
   }
 }

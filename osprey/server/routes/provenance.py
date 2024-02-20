@@ -1,3 +1,5 @@
+import uuid
+
 from flask import Blueprint, jsonify, request
 
 from osprey.server.app.decorators import authenticated
@@ -20,9 +22,9 @@ def show_provenance():
     return jsonify(result), 200
 
 
-@provenance_routes.route("/new/<function_id>", methods=["POST"])
+@provenance_routes.route("/new", methods=["POST"])
 @authenticated
-def record_provenance(function_id):
+def record_provenance():
     try:
         json_data = request.json
 
@@ -30,6 +32,7 @@ def record_provenance(function_id):
 
         sources: dict[int, int | None] = json_data["sources"]
         source_ver: list[SourceVersion] = []
+        function_uuid = json_data["function_uuid"]
 
         # currently just gets last version
         for k, v in sources.items():
@@ -47,8 +50,13 @@ def record_provenance(function_id):
                 )
 
         # check if function exists, if not create one
-        if (f := Function.query.filter(Function.uuid == function_id).first()) is None:
-            f = Function(uuid=function_id)
+        if (
+            function_uuid
+            is None(f := Function.query.filter(Function.uuid == function_uuid).first())
+            is None
+        ):
+            function_uuid = str(uuid.uuid4())
+            f = Function(uuid=function_uuid)
 
         # check if provenance already exists
         if (
