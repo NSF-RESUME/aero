@@ -51,8 +51,8 @@ def record_provenance():
 
         # check if function exists, if not create one
         if (
-            function_uuid
-            is None(f := Function.query.filter(Function.uuid == function_uuid).first())
+            function_uuid is None
+            or (f := Function.query.filter(Function.uuid == function_uuid).first())
             is None
         ):
             function_uuid = str(uuid.uuid4())
