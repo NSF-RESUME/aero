@@ -30,9 +30,12 @@ def record_provenance():
 
         assert "output_fn" in json_data
 
-        sources: dict[int, int | None] = json_data["sources"]
+        sources: list[int] | dict[int, int | None] = json_data["sources"]
         source_ver: list[SourceVersion] = []
         function_uuid = json_data["function_uuid"]
+
+        if isinstance(sources, list):
+            sources = {s: None for s in sources}
 
         # currently just gets last version
         for k, v in sources.items():
