@@ -42,7 +42,6 @@ class SourceVersion(db.Model):
             "version": self.version,
             "created_at": self.created_at,
             "checksum": self.checksum,
-            "size": self.size,
             "source_file": self.source_file.toJSON()
             if self.source_file is not None
             else None,
