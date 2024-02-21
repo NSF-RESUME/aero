@@ -17,7 +17,7 @@ class Output(db.Model):
     provenance_id = db.Column(db.Integer, db.ForeignKey("provenance.id"))
     output_versions = db.relationship(
         "OutputVersion",
-        backref="output_version",
+        back_populates="output",
         order_by="OutputVersion.version",
         lazy=True,
     )
@@ -48,6 +48,7 @@ class Output(db.Model):
             checksum=checksum,
             output_id=self.id,
         )
+
         db.session.add(v)
         db.session.commit()
 
