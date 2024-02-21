@@ -8,7 +8,7 @@ class OutputVersion(db.Model):
     filename = Column(String)
     version = Column(Integer)
     checksum = Column(String)
-    source_id = db.Column(db.Integer, db.ForeignKey("output.id"))
+    output_id = db.Column(db.Integer, db.ForeignKey("output.id"))
 
     def __init__(self, filename: str, version: int, checksum: str, output_id: int):
         super().__init__(
