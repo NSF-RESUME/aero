@@ -46,7 +46,7 @@ class Output(db.Model):
             filename=filename,
             version=num_version + 1,
             checksum=checksum,
-            source_id=self.id,
+            output_id=self.id,
         )
         db.session.add(v)
         db.session.commit()

@@ -10,6 +10,13 @@ class OutputVersion(db.Model):
     checksum = Column(String)
     source_id = db.Column(db.Integer, db.ForeignKey("output.id"))
 
+    def __init__(self, filename: str, version: int, checksum: str, output_id: int):
+        super().__init__(
+            filename=filename, version=version, checksum=checksum, output_id=output_id
+        )
+        db.session.add(self)
+        db.session.commit()
+
     def __repr__(self):
         return f"<OutputVersion(id={self.id}, filename={self.filename}, version_id={self.version}, checksum={self.checksum})>"
 

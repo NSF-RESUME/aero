@@ -40,9 +40,6 @@ class Provenance(db.Model):
         function_args: str = "",
         timer: int | None = None,
     ):
-        db.session.add(self)
-        db.session.commit()
-
         if timer is None:
             timer = 86400  # run daily
 
@@ -54,6 +51,9 @@ class Provenance(db.Model):
             function_args=function_args,
             timer=timer,
         )
+
+        db.session.add(self)
+        db.session.commit()
 
     def __repr__(self):
         return "<Provenance(id={}, derived_from={}, contributed_to={}, function_id='{}', function_args='{}', timer='{}', 'timer_job_id='{}')>".format(
