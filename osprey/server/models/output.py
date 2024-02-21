@@ -22,6 +22,11 @@ class Output(db.Model):
         lazy=True,
     )
 
+    def __init__(self, name: str):
+        super().__init__(name=name)
+        db.session.add(self)
+        db.session.commit()
+
     def add_new_version(self, filename: str):
         # get current checksum
         with open(Path(GCS_OUTPUT_DIR, filename), "r") as f:
