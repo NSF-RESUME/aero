@@ -18,8 +18,8 @@ This module creates a job that gets triggered by Globus Timer.
 -> To run the TimerJob, there should be authentication file that should store the token with the scope ( Ensure it run before starting the project )
 
 """
-USER_FLOW_UUID = "0d8ace1a-d583-4f65-834e-4e1e1f450ecc"
-USER_ENDPOINT_UUID = "1fd89678-3c6f-4bac-8e2b-306da6004b13"
+# USER_FLOW_UUID = "0d8ace1a-d583-4f65-834e-4e1e1f450ecc"
+# USER_ENDPOINT_UUID = "1fd89678-3c6f-4bac-8e2b-306da6004b13"
 
 
 def set_timer(
@@ -55,14 +55,16 @@ def set_timer(
             "_private_password": os.environ.get("DSAAS_EMAIL_PASSWORD"),
         }
         run_label = f"Osprey Demo | Source {id}"
+        name = f"osprey-demo-source-{id}"
 
     else:
         run_input = {
-            "endpoint": kwargs["user_endpoint"],
-            "function": USER_FLOW_UUID,
-            "kwargs": json.dumps(kwargs),
+            "user_endpoint": kwargs["endpoint"],
+            "user_function": kwargs["function"],
+            "kwargs": json.dumps(kwargs["tasks"]),
         }
         run_label = "Osprey Demo | User flow"
+        name = f"osprey-demo-user-flow-{id}"
 
     url = slash_join(sfc.base_url, f"/flows/{flow_id}/run")
 
@@ -75,7 +77,7 @@ def set_timer(
         callback_body={"body": run_input, "label": run_label},
         start=datetime.datetime.utcnow(),
         interval=datetime.timedelta(seconds=interval_in_sec),
-        name=f"osprey-demo-source-{id}",
+        name=name,
         scope=specific_flow_scope,
     )
 

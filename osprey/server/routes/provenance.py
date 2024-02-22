@@ -2,6 +2,8 @@ import uuid
 
 from flask import Blueprint, jsonify, request
 
+from osprey.server.app import db
+
 from osprey.server.app.decorators import authenticated
 from osprey.server.app.models import Function
 from osprey.server.app.models import Output
@@ -96,25 +98,54 @@ def record_provenance():
 def register_flow(function_uuid):
     json_data = request.json
 
+    source_ver: list[SourceVersion] = []
     function_args = json_data["kwargs"]
+    sources = json_data["sources"]
+    description = json_data["description"]
+    p: Provenance | None = None
+
+    if isinstance(sources, list):
+        sources = {s: None for s in sources}
+
+    # currently just gets last version
+    if sources is not None:
+        for k, v in sources.items():
+            if v is None:
+                source_ver.append(
+                    SourceVersion.query.filter(SourceVersion.source_id == k)
+                    .order_by(SourceVersion.version.desc())
+                    .first()
+                )
+            else:
+                source_ver.append(
+                    SourceVersion.query.filter(
+                        SourceVersion.source_id == k and SourceVersion.version == v
+                    ).first()
+                )
 
     # TODO: add function relationship to provenance
     f = Function.query.filter(Function.uuid == function_uuid).first()
 
     if f is None:
-        return jsonify(
-            {
-                "code": 500,
-                "message": "Function record not found. Have you saved the provenance of this flow ?",
-            }
-        ), 500
+        f = Function(uuid=function_uuid)
+    else:
+        p = Provenance.query.filter(
+            Provenance.function_id == f.id and Provenance.function_args == function_args
+        ).first()
 
-    p = Provenance.query.filter(
-        Provenance.function_id == f.id and Provenance.function_args == function_args
-    ).first()
+    if p is None:
+        p = Provenance(
+            function_id=f.id,
+            derived_from=source_ver,
+            description=description,
+            function_args=function_args,
+        )
 
-    if p is not None:
-        p._start_timer_flow()
-        return jsonify(p.toJSON()), 200
+    job_id = p._start_timer_flow()
 
-    return jsonify({"code": 500, "message": "Provenance record not found"}), 500
+    p.timer_job_id = job_id
+
+    db.session.add(p)
+    db.session.commit()
+
+    return jsonify(p.toJSON()), 200
