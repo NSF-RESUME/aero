@@ -2,8 +2,6 @@ import uuid
 
 from flask import Blueprint, jsonify, request
 
-from osprey.server.app import db
-
 from osprey.server.app.decorators import authenticated
 from osprey.server.app.models import Function
 from osprey.server.app.models import Output
@@ -99,7 +97,7 @@ def register_flow(function_uuid):
     json_data = request.json
 
     source_ver: list[SourceVersion] = []
-    function_args = json_data["tasks"]
+    function_args = json_data
     sources = json_data["sources"]
     description = json_data["description"]
     p: Provenance | None = None
@@ -142,11 +140,6 @@ def register_flow(function_uuid):
             function_args=function_args,
         )
 
-    job_id = p._start_timer_flow()
-
-    p.timer_job_id = job_id
-
-    db.session.add(p)
-    db.session.commit()
+    p._start_timer_flow()
 
     return jsonify(p.toJSON()), 200
