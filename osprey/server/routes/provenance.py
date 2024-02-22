@@ -137,6 +137,7 @@ def register_flow(function_uuid):
         p = Provenance(
             function_id=f.id,
             derived_from=source_ver,
+            contributed_to=[],
             description=description,
             function_args=function_args,
         )
