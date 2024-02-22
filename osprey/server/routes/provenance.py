@@ -99,7 +99,7 @@ def register_flow(function_uuid):
     json_data = request.json
 
     source_ver: list[SourceVersion] = []
-    function_args = json_data["kwargs"]
+    function_args = json_data["tasks"]
     sources = json_data["sources"]
     description = json_data["description"]
     p: Provenance | None = None
