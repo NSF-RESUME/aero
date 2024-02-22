@@ -1,1 +1,0 @@
-::: osprey.client.client
