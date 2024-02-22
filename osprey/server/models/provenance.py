@@ -1,3 +1,5 @@
+import json
+
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import String
@@ -37,18 +39,20 @@ class Provenance(db.Model):
         derived_from: list,
         contributed_to: list,
         description: str = "",
-        function_args: str = "",
+        function_args: dict = {},
         timer: int | None = None,
     ):
         if timer is None:
             timer = 86400  # run daily
+
+        self.kwargs = function_args
 
         super().__init__(
             function_id=function_id,
             derived_from=derived_from,
             contributed_to=contributed_to,
             description=description,
-            function_args=function_args,
+            function_args=json.dumps(function_args),
             timer=timer,
         )
 
@@ -93,7 +97,7 @@ class Provenance(db.Model):
             self.id,
             "test@test.com",
             FlowEnum.USER_FLOW,
-            **self.function_args,
+            **self.kwargs,
         )
         db.session.add(self)
         db.session.commit()
