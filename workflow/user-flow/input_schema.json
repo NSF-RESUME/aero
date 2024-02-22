@@ -2,9 +2,7 @@
     "type": "object",
     "required": [
         "user_endpoint",
-        "user_function",
-        "db_endpoint",
-        "db_function"
+        "user_function"
     ],
     "properties": {
         "user_endpoint": {
@@ -31,8 +29,6 @@
     "propertyOrder": [
         "user_endpoint",
         "user_function",
-        "db_endpoint",
-        "db_function",
         "args",
         "kwargs",
         "tasks"

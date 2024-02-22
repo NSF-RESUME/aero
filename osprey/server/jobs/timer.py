@@ -36,7 +36,7 @@ def set_timer(
     authorizer, specific_flow_scope = create_authorizer(flow_id)
     timer_client = TimerClient(authorizer=authorizer, app_name="osprey-prototype")
 
-    if flow_id != 2:
+    if flow_type != 2:
         run_input = {
             "osprey-worker-endpoint": Config.GLOBUS_WORKER_UUID,
             "download-function": Config.GLOBUS_FLOW_DOWNLOAD_FUNCTION,
@@ -61,7 +61,7 @@ def set_timer(
         run_input = {
             "user_endpoint": kwargs["endpoint"],
             "user_function": kwargs["function"],
-            "kwargs": json.dumps(kwargs["tasks"]),
+            "tasks": json.dumps(kwargs["tasks"]),
         }
         run_label = "Osprey Demo | User flow"
         name = f"osprey-demo-user-flow-{id}"
