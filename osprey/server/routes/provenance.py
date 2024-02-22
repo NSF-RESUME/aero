@@ -19,7 +19,9 @@ provenance_routes = Blueprint("provenance_routes", __name__, url_prefix="/prov")
 def show_provenance():
     page = request.args.get("page") or 1
     per_page = request.args.get("per_page") or 15
-    provs = Provenance.query.paginate(page=page, per_page=per_page)
+    provs = Provenance.query.order_by(Provenance.id.desc()).paginate(
+        page=page, per_page=per_page
+    )
     result = [p.toJSON() for p in provs]
     return jsonify(result), 200
 

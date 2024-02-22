@@ -24,7 +24,9 @@ GCS_DIR.mkdir(parents=True, exist_ok=True)
 def show_output():
     page = request.args.get("page") or 1
     per_page = request.args.get("per_page") or 15
-    outputs = Output.query.paginate(page=page, per_page=per_page)
+    outputs = Output.query.order_by(Output.id.desc()).paginate(
+        page=page, per_page=per_page
+    )
     result = [o.toJSON() for o in outputs]
     return jsonify(result), 200
 
