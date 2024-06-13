@@ -1,11 +1,18 @@
+import datetime
+from sqlalchemy import Column
+from sqlalchemy import Integer
+from sqlalchemy import String
+
 from osprey.server.app import db
+from osprey.server.app.utils import search_client
 from osprey.server.lib.error import (
     ServiceError,
     MODEL_INSUFFICIENT_ATTRS,
     FLOW_TIMER_ERROR,
 )
-from sqlalchemy import Column, Integer, String
+from osprey.server.models.source_file import SourceFile
 from osprey.server.models.tag import SourceTagTable
+from osprey.server.models.source_version import SourceVersion
 from osprey.server.jobs.timer import set_timer
 from osprey.server.lib.globus_flow import get_job, FlowEnum, FLOW_IDS
 from osprey.server.config import Config
@@ -24,7 +31,12 @@ class Source(db.Model):
     user_endpoint = Column(String)
     timer_job_id = Column(String)
     flow_kind = Column(Integer)
-    versions = db.relationship("SourceVersion", back_populates="source")
+    versions = db.relationship(
+        "SourceVersion",
+        back_populates="source",
+        order_by="SourceVersion.version",
+        lazy=False,
+    )
     tags = db.relationship("Tag", secondary=SourceTagTable, back_populates="sources")
     # outputs       = db.relationship("Output", back_populates="source")
 
@@ -46,6 +58,56 @@ class Source(db.Model):
         return "<Source(id={}, name='{}', url='{}', description={})>".format(
             self.id, self.name, self.url, self.description
         )
+
+    def add_new_version(self, new_file: str, format: str, checksum: str) -> str:
+        """Commit data to the database and store in GCS server.
+
+        Args:
+            new_file (str): File path to the temporarily stored data.
+            format (str): The extension of the file.
+        """
+        if self.last_version() == 0:
+            version_number = 1
+        else:
+            version_number = self.last_version().version + 1
+
+        # compare checksums to see if new version
+        try:
+            old_checksum = self.last_version().checksum
+        except Exception:  # if source_file doesn't exist
+            old_checksum = None
+
+        if old_checksum == checksum:
+            return
+
+        new_version = SourceVersion(
+            version=version_number, source_id=self.id, checksum=checksum
+        )
+
+        new_version.source_file = SourceFile(
+            encoding="utf-8",
+            file_type=format,
+            file_name=new_file,
+            args={"version": version_number, "source_id": self.id},
+        )
+
+        db.session.add(new_version)
+        db.commit()
+
+        return search_client.add_entry(source_version=new_version)
+
+    def last_version(self):
+        try:
+            l_version = self.versions[len(self.versions) - 1]
+            return l_version
+        except IndexError:
+            return 0
+
+    def timer_readable(self):
+        if not (self.timer):
+            return None
+
+        return str(datetime.timedelta(seconds=self.timer))
 
     # TODO: Should send hash_id instead of id
     def toJSON(self):

@@ -98,3 +98,12 @@ def grap_file(id):
         ), 404
 
     return jsonify(s[0].source_file.toJSON()), 200
+
+
+@source_routes.route("/<id>/new-version", methods=["POST"])
+@authenticated
+def add_version(id):
+    _ = db.session.get(Source, id)
+
+    # try:
+    #    json_data = request.json

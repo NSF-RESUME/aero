@@ -74,7 +74,9 @@ def record_provenance():
         ) is None:
             # create output and store provenance data
             o = Output(name=json_data["name"])
-            o.add_new_version(filename=json_data["output_fn"])
+            o.add_new_version(
+                filename=json_data["output_fn"], checksum=json_data["checksum"]
+            )
             p = Provenance(
                 function_id=f.id,
                 derived_from=source_ver,

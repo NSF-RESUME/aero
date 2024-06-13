@@ -1,9 +1,6 @@
 from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
 from sqlalchemy.orm import relationship
 
-from pathlib import Path
-from osprey.worker.models.utils import SOURCE_DIR
-from osprey.worker.models.utils import TEMP_DIR
 from osprey.worker.models.database import Base
 
 
@@ -25,29 +22,29 @@ class SourceFile(Base):
         kwargs = self._write_file(**kwargs)
         super().__init__(**kwargs)
 
-    def _write_file(self, file_name: str, file_type: str, **kwargs) -> dict:
-        """_summary_
+    # def _write_file(self, file_name: str, file_type: str, **kwargs) -> dict:
+    #     """_summary_
 
-        Args:
-            file_name (str): Path to the temporary path that needs to be committed
-            file_type (str): File extension
-        Returns:
-            dict: updated kwargs initially passed to the function
-        """
-        _ = kwargs["args"]
-        basename = file_name
+    #     Args:
+    #         file_name (str): Path to the temporary path that needs to be committed
+    #         file_type (str): File extension
+    #     Returns:
+    #         dict: updated kwargs initially passed to the function
+    #     """
+    #     _ = kwargs["args"]
+    #     basename = file_name
 
-        SOURCE_DIR.mkdir(
-            parents=True, exist_ok=True
-        )  # TODO remove from here so it only executes once
-        fn = SOURCE_DIR / basename
-        Path(TEMP_DIR, file_name).rename(fn)
+    #     SOURCE_DIR.mkdir(
+    #         parents=True, exist_ok=True
+    #     )  # TODO remove from here so it only executes once
+    #     fn = SOURCE_DIR / basename
+    #     Path(TEMP_DIR, file_name).rename(fn)
 
-        kwargs["file_name"] = basename
-        kwargs["file_type"] = file_type
-        kwargs["size"] = fn.stat().st_size
-        kwargs.pop("args")
-        return kwargs
+    #     kwargs["file_name"] = basename
+    #     kwargs["file_type"] = file_type
+    #     kwargs["size"] = fn.stat().st_size
+    #     kwargs.pop("args")
+    #     return kwargs
 
     def __repr__(self) -> str:
         return f"SourceFile(id={self.id}, file_name={self.file_name}, encoding={self.encoding}, file_size={self.size}, source_version_id={self.source_version_id})"

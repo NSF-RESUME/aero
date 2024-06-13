@@ -1,3 +1,5 @@
+import datetime
+
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import Column, Integer, String, Date
 from osprey.server.app import db
@@ -34,6 +36,11 @@ class SourceVersion(db.Model):
         return "<SourceVersion(id={}, version={}, source_id={}, checksum={}, source_file={})>".format(
             self.id, self.version, self.source_id, self.checksum, self.source_file
         )
+
+    def _set_defaults(self, **kwargs):
+        if "created_at" not in kwargs:
+            kwargs["created_at"] = datetime.datetime.now()
+        return kwargs
 
     def toJSON(self):
         return {

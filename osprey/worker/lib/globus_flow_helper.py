@@ -14,8 +14,33 @@ from osprey.server.lib.globus_compute import register_function
 
 
 def download(*args, **kwargs):
+    """Download data from user-specified repository.
+
+    Returns:
+        tuple[str, str]: Path to the data and its
+            associated extension.
+    """
+    import requests
+    import uuid
+    from mimetypes import guess_extension
+    from pathlib import Path
     from osprey.worker.models.source import Source
     from osprey.worker.models.database import Session
+    from osprey.worker.models.utils import TEMP_DIR
+
+    response = requests.get(kwargs["url"])
+    content_type = response.headers["content-type"]
+    ext = guess_extension(content_type.split(";")[0])
+
+    bn = str(uuid.uuid4())
+    fn = Path(TEMP_DIR, bn)
+
+    TEMP_DIR.mkdir(exist_ok=True)
+
+    with open(fn, "w+") as f:
+        f.write(response.content.decode("utf-8"))
+
+    return bn, ext
 
     source_id = kwargs["source_id"]
     with Session() as session:

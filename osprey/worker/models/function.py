@@ -8,6 +8,7 @@ class Function(Base):
     id = Column(Integer, primary_key=True)
     uuid = Column(String)
     provenances = relationship("Provenance", backref="function")
+    outputs = relationship("Output", backref="function")
 
     def __repr__(self):
         return "<Function(id={}, uuid='{}')>".format(self.id, self.uuid)

@@ -8,7 +8,8 @@ class OutputVersion(Base):
     filename = Column(String)
     version = Column(Integer)
     checksum = Column(String)
-    source_id = Column(Integer, ForeignKey("output.id"))
+    output_id = Column(Integer, ForeignKey("output.id"))
+    provenance_id = Column(Integer, ForeignKey("provenance.id"))
 
     def __repr__(self):
         return f"<OutputVersion(id={self.id}, filename={self.filename}, version_id={self.version}, checksum={self.checksum})>"

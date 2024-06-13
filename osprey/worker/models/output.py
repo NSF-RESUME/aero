@@ -13,7 +13,7 @@ GCS_OUTPUT_DIR = Path("/dsaas_storage/output")
 class Output(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    provenance_id = Column(Integer, ForeignKey("provenance.id"))
+    function_id = Column(Integer, ForeignKey("function.id"))
     output_versions = relationship(
         "OutputVersion",
         backref="output_version",
@@ -22,7 +22,7 @@ class Output(Base):
     )
 
     def __repr__(self):
-        return f"<Output(id={self.id}, name={self.name}, provenance_id={self.provenance_id}, versions={self.output_versions})>"
+        return f"<Output(id={self.id}, name={self.name}, function_id={self.function_id}, versions={self.output_versions})>"
 
 
 """

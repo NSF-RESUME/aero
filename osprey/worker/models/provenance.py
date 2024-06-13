@@ -30,7 +30,7 @@ class Provenance(Base):
         backref="source_versions",
         uselist=True,
     )
-    contributed_to = relationship("Output", backref="output", lazy=True)
+    contributed_to = relationship("OutputVersion", backref="output_version", lazy=True)
 
     def __init__(
         self,

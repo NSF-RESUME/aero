@@ -17,7 +17,6 @@ from osprey.worker.models.source_version import SourceVersion
 from osprey.worker.models.source_file import SourceFile
 from osprey.worker.models.tag import SourceTagTable
 from osprey.worker.models.utils import TEMP_DIR
-from osprey.worker.models.utils import SOURCE_DIR
 
 
 # Assume that this is sa read-only class
@@ -61,10 +60,7 @@ class Source(Base):
 
             # compare checksums to see if new version
             try:
-                with open(
-                    Path(SOURCE_DIR, self.last_version().source_file.file_name), "r"
-                ) as f:
-                    old_checksum = hashlib.md5(f.read().encode("utf-8")).hexdigest()
+                old_checksum = self.last_version().checksum
             except Exception:  # if source_file doesn't exist
                 old_checksum = None
 
