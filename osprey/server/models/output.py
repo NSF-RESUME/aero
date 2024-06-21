@@ -10,6 +10,7 @@ from osprey.server.models.output_version import OutputVersion
 class Output(db.Model):
     id = Column(Integer, primary_key=True)
     name = Column(String)
+    url = Column(String)
     provenance_id = db.Column(db.Integer, db.ForeignKey("provenance.id"))
     output_versions = db.relationship(
         "OutputVersion",

@@ -26,6 +26,7 @@ class Source(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     url = Column(String)
+    collection_url = Column(String)
     description = Column(String)
     timer = Column(Integer)  # in seconds
     verifier = Column(String)

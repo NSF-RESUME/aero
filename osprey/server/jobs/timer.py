@@ -23,7 +23,12 @@ This module creates a job that gets triggered by Globus Timer.
 
 
 def set_timer(
-    interval_in_sec: int, id: int, email: str, flow_type: FlowEnum, **kwargs
+    interval_in_sec: int,
+    id: int,
+    email: str,
+    flow_type: FlowEnum,
+    user_endpoint: str,
+    **kwargs,
 ) -> None:
     """Set a Globus Timer for daily retrieval of updated tables from sources.
 
@@ -38,14 +43,14 @@ def set_timer(
 
     if flow_id != 2:
         run_input = {
-            "osprey-worker-endpoint": Config.GLOBUS_WORKER_UUID,
+            "osprey-worker-endpoint": user_endpoint,
             "download-function": Config.GLOBUS_FLOW_DOWNLOAD_FUNCTION,
             "database-commit-function": Config.GLOBUS_FLOW_COMMIT_FUNCTION,
             "user-wrapper-function": Config.GLOBUS_FLOW_USER_WRAPPER_FUNC,
             "tasks": json.dumps(
                 [
                     {
-                        "endpoint": Config.GLOBUS_WORKER_UUID,
+                        "endpoint": user_endpoint,
                         "function": Config.GLOBUS_FLOW_DOWNLOAD_FUNCTION,
                         "kwargs": {"source_id": id},
                     }

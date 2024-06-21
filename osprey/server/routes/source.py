@@ -103,7 +103,16 @@ def grap_file(id):
 @source_routes.route("/<id>/new-version", methods=["POST"])
 @authenticated
 def add_version(id):
-    _ = db.session.get(Source, id)
+    source = db.session.get(Source, id)
 
-    # try:
-    #    json_data = request.json
+    if not source:
+        return jsonify({"code": 404, "message": f"Source with id {id} not found"}), 404
+
+    try:
+        json_data = request.json
+        response = source.add_new_version(json_data["file"], json_data["file_format"])
+        return response
+    except ServiceError as s:
+        return jsonify(s.toJSON()), s.code
+    except Exception as e:
+        return jsonify({"code": 500, "message": str(e)}), 500

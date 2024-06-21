@@ -24,11 +24,22 @@ def download(*args, **kwargs):
     import uuid
     from mimetypes import guess_extension
     from pathlib import Path
-    from osprey.worker.models.source import Source
-    from osprey.worker.models.database import Session
+
+    from dsaas_client.config import CONF
+    from dsaas_client.utils import load_tokens
     from osprey.worker.models.utils import TEMP_DIR
 
-    response = requests.get(kwargs["url"])
+    tokens = load_tokens()
+    auth_token = tokens[CONF.portal_client_id]["refresh_token"]
+
+    headers = {"Authorization": f"Bearer {auth_token}"}
+
+    response = requests.get(
+        f'{CONF.server_url}/source/{kwargs["source_id"]}', headers=headers, verify=False
+    )
+    source = response.json()
+
+    response = requests.get(source["url"])
     content_type = response.headers["content-type"]
     ext = guess_extension(content_type.split(";")[0])
 
@@ -40,44 +51,49 @@ def download(*args, **kwargs):
     with open(fn, "w+") as f:
         f.write(response.content.decode("utf-8"))
 
-    return bn, ext
+    kwargs["file"] = str(fn)
+    kwargs["file_bn"] = bn
+    kwargs["file_format"] = ext
+    kwargs["download"] = True
 
-    source_id = kwargs["source_id"]
-    with Session() as session:
-        source = session.get(Source, source_id)
-        fn, file_format = source.download()
-
-        kwargs["file"] = fn
-        kwargs["file_format"] = file_format
-        kwargs["download"] = True
-        return args, kwargs
+    return args, kwargs
 
 
 def user_function_wrapper(*args, **kwargs):
-    from osprey.worker.models.source import Source
-    from osprey.worker.models.database import Session
+    import requests
+
+    from dsaas_client.config import CONF
+    from dsaas_client.utils import load_tokens
+
     from osprey.server.lib.error import ServiceError, CUSTOM_FUNCTION_ERROR
     from osprey.server.lib.globus_compute import execute_function, get_result
 
+    tokens = load_tokens()
+    auth_token = tokens[CONF.portal_client_id]["refresh_token"]
+    headers = {"Authorization": f"Bearer {auth_token}"}
+
     source_id = kwargs["source_id"]
-    with Session() as session:
-        source = session.get(Source, source_id)
+
+    response = requests.get(
+        f"{CONF.server_url}/source/{source_id}", headers=headers, verify=False
+    )
+    source = response.json()
 
     # Verifier
-    if source.verifier is not None:
+    if source["verifier"] is not None:
         try:
             tracker = execute_function(
-                source.verifier, source.user_endpoint, *args, **kwargs
+                source["verifier"], source["user_endpoint"], *args, **kwargs
             )
             args, kwargs = get_result(tracker, block=True)
         except Exception:
             raise ServiceError(CUSTOM_FUNCTION_ERROR, "Verifier failed")
 
     # Modifier
-    if source.modifier is not None:
+    if source["modifier"] is not None:
         try:
             tracker = execute_function(
-                source.modifier, source.user_endpoint, *args, **kwargs
+                source["modifier"], source["user_endpoint"], *args, **kwargs
             )
             args, kwargs = get_result(tracker, block=True)
         except Exception:
@@ -119,14 +135,35 @@ def flow_db_update(sources: list[str], output_fn: str, function_uuid: str):
 
 
 def database_commit(*args, **kwargs):
-    from osprey.worker.models.source import Source
-    from osprey.worker.models.database import Session
+    import requests
+    from dsaas_client.config import CONF
+    from dsaas_client.utils import load_tokens
+
+    tokens = load_tokens()
+
+    auth_token = tokens[CONF.portal_client_id]["refresh_token"]
+    headers = {"Authorization": f"Bearer {auth_token}"}
 
     source_id = kwargs["source_id"]
-    with Session() as session:
-        source = session.get(Source, source_id)
-        response = source.add_new_version(kwargs["file"], kwargs["file_format"])
-        return response
+    file_bn = kwargs["file_bn"]
+
+    response = requests.get(
+        f"{CONF.server_url}/source/{source_id}", headers=headers, verify=False
+    )
+    source = response.json()
+
+    gcs_url = source["collection_url"]
+    gcs_id = source["collection_uuid"]
+
+    transfer_token = tokens[gcs_id]["refresh_token"]
+
+    headers = {"Authorization": f"Bearer {transfer_token}"}
+
+    response = requests.post(
+        f"https://{gcs_url}/{file_bn}", headers=headers, verify=False
+    )
+
+    return response.json()
 
 
 if __name__ == "__main__":

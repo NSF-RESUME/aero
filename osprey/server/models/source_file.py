@@ -10,8 +10,6 @@ class SourceFile(db.Model):
     id = Column(Integer, primary_key=True)
     file_name = Column(String)
     file_type = Column(String)
-    gcs_domain = Column(String)
-    gcs_uuid = Column(String)
     size = Column(Numeric)
     encoding = Column(String)
     source_version_id = Column(Integer, db.ForeignKey("source_version.id"))
@@ -30,6 +28,7 @@ class SourceFile(db.Model):
     def toJSON(self):
         return {
             "file_name": self.file_name,
+            "collection_url": self.source_version.source.collection_url,
             "file_type": self.file_type,
             "file_size": self.size,
             "encoding": self.encoding,

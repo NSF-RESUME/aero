@@ -7,7 +7,6 @@ class Function(db.Model):
     id = Column(Integer, primary_key=True)
     uuid = Column(String)
     provenances = db.relationship("Provenance", backref="function")
-    outputs = db.relationship("Output", backref="function")
 
     def __init__(self, uuid: str):
         super().__init__(uuid=uuid)

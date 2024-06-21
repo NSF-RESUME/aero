@@ -9,6 +9,11 @@ class OutputVersion(db.Model):
     version = Column(Integer)
     checksum = Column(String)
     output_id = db.Column(db.Integer, db.ForeignKey("output.id"))
+    output = db.relationship(
+        "Output",
+        back_populates="output_versions",
+        lazy=True,
+    )
     # provenance_id = Column(Integer, ForeignKey("provenance.id"))
 
     def __init__(self, filename: str, version: int, checksum: str, output_id: int):

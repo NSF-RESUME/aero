@@ -22,6 +22,8 @@ class Source(db.Model):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     url = Column(String)
+    collection_uuid = Column(String)
+    collection_url = Column(String)
     description = Column(String)
     timer = Column(Integer)  # in seconds
     verifier = Column(String)
@@ -55,12 +57,33 @@ class Source(db.Model):
         self._start_timer_flow()
 
     def __repr__(self):
-        return "<Source(id={}, name='{}', url='{}', description={})>".format(
-            self.id, self.name, self.url, self.description
+        return (
+            f"<Source(id={self.id}"
+            f"name={self.name}"
+            f"url={self.description}"
+            f"collection_uuid={self.collection_uuid}"
+            f"collection_url={self.collection_url}"
+            f"description={self.description})>"
         )
 
+    # TODO: Should send hash_id instead of id
+    def toJSON(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "url": self.url,
+            "collection_uuid": self.collection_uuid,
+            "collection_url": self.collection_url,
+            "description": self.description,
+            "timer": self.timer,
+            "verifier": self.verifier,
+            "modifier": self.modifier,
+            "email": self.email,
+            "available_versions": len(self.versions),
+        }
+
     def add_new_version(self, new_file: str, format: str, checksum: str) -> str:
-        """Commit data to the database and store in GCS server.
+        """Commit data to the database.
 
         Args:
             new_file (str): File path to the temporarily stored data.
@@ -109,20 +132,6 @@ class Source(db.Model):
 
         return str(datetime.timedelta(seconds=self.timer))
 
-    # TODO: Should send hash_id instead of id
-    def toJSON(self):
-        return {
-            "id": self.id,
-            "name": self.name,
-            "url": self.url,
-            "description": self.description,
-            "timer": self.timer,
-            "verifier": self.verifier,
-            "modifier": self.modifier,
-            "email": self.email,
-            "available_versions": len(self.versions),
-        }
-
     def _validate(self, **kwargs):
         for attr in ["name", "url", "timer"]:  # Required attributes
             if attr not in kwargs or not kwargs[attr]:
@@ -159,7 +168,13 @@ class Source(db.Model):
         if not flush and self.timer_job_id is not None:
             raise ServiceError(FLOW_TIMER_ERROR, "source already has a flow timer")
 
-        self.timer_job_id = set_timer(self.timer, self.id, self.email, self.flow_kind)
+        self.timer_job_id = set_timer(
+            self.timer,
+            self.id,
+            self.email,
+            self.flow_kind,
+            user_endpoint=self.user_endpoint,
+        )
         db.session.add(self)
         db.session.commit()
 
