@@ -1,9 +1,7 @@
 import datetime
 
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import Column, Integer, String, Date
 from osprey.server.app import db
-from osprey.server.models.proxy import Proxy
 
 
 class SourceVersion(db.Model):
@@ -13,7 +11,7 @@ class SourceVersion(db.Model):
     created_at = Column(Date)
     source_id = Column(Integer, db.ForeignKey("source.id"))
     source = db.relationship("Source", back_populates="versions", uselist=False)
-    proxy = db.relationship("Proxy", back_populates="source_version", uselist=False)
+    # proxy = db.relationship("Proxy", back_populates="source_version", uselist=False)
     source_file = db.relationship(
         "SourceFile", back_populates="source_version", uselist=False
     )
@@ -55,15 +53,15 @@ class SourceVersion(db.Model):
             else None,
         }
 
-    def create_proxy(self, replace=False):
-        if self.proxy is not None and not replace:
-            return self.proxy
+    # def create_proxy(self, replace=False):
+    #     if self.proxy is not None and not replace:
+    #         return self.proxy
 
-        # TODO: Need to create representation
-        proxy = Proxy(source_version=self)
-        try:
-            db.session.add(proxy)
-            db.session.commit()
-        except SQLAlchemyError:
-            raise
-        return proxy
+    #     # TODO: Need to create representation
+    #     proxy = Proxy(source_version=self)
+    #     try:
+    #         db.session.add(proxy)
+    #         db.session.commit()
+    #     except SQLAlchemyError:
+    #         raise
+    #     return proxy
