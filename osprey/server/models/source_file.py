@@ -16,12 +16,10 @@ class SourceFile(db.Model):
     source_version = db.relationship(
         "SourceVersion", back_populates="source_file", uselist=False
     )
-    encoding = Column(String)
 
     def __init__(self, **kwargs):
         kwargs = self._set_defaults(**kwargs)
         super().__init__(**kwargs)
-        self._write_file()
         db.session.add(self)
         db.session.commit()
 

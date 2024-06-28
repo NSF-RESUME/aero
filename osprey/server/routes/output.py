@@ -16,7 +16,7 @@ else:
     GCS_DIR = Path("/dsaas_storage/output")
 
 # TODO: Just create these directories when GCS is created
-GCS_DIR.mkdir(parents=True, exist_ok=True)
+# GCS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 @output_routes.route("/", methods=["GET"])

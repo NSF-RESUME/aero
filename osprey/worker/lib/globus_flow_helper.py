@@ -20,6 +20,7 @@ def download(*args, **kwargs):
         tuple[str, str]: Path to the data and its
             associated extension.
     """
+    import hashlib
     import requests
     import uuid
     from mimetypes import guess_extension
@@ -54,6 +55,8 @@ def download(*args, **kwargs):
     kwargs["file"] = str(fn)
     kwargs["file_bn"] = bn
     kwargs["file_format"] = ext
+    kwargs["checksum"] = hashlib.md5(response.content).hexdigest()
+    kwargs["size"] = fn.stat().st_size
     kwargs["download"] = True
 
     return args, kwargs
@@ -135,6 +138,7 @@ def flow_db_update(sources: list[str], output_fn: str, function_uuid: str):
 
 
 def database_commit(*args, **kwargs):
+    import json
     import requests
     from dsaas_client.config import CONF
     from dsaas_client.utils import load_tokens
@@ -142,13 +146,14 @@ def database_commit(*args, **kwargs):
     tokens = load_tokens()
 
     auth_token = tokens[CONF.portal_client_id]["refresh_token"]
-    headers = {"Authorization": f"Bearer {auth_token}"}
+    aero_headers = {"Authorization": f"Bearer {auth_token}"}
 
     source_id = kwargs["source_id"]
     file_bn = kwargs["file_bn"]
 
+    # get source
     response = requests.get(
-        f"{CONF.server_url}/source/{source_id}", headers=headers, verify=False
+        f"{CONF.server_url}/source/{source_id}", headers=aero_headers, verify=False
     )
     source = response.json()
 
@@ -159,8 +164,26 @@ def database_commit(*args, **kwargs):
 
     headers = {"Authorization": f"Bearer {transfer_token}"}
 
+    # save data to GCS
     response = requests.post(
         f"https://{gcs_url}/{file_bn}", headers=headers, verify=False
+    )
+
+    aero_headers["Content-type"] = "application/json"
+
+    # add new version
+    response = requests.post(
+        f"{CONF.server_url}source/{source_id}/new-version",
+        headers=aero_headers,
+        data=json.dumps(
+            {
+                "file": kwargs["file"],
+                "file_format": kwargs["file_format"],
+                "checksum": kwargs["checksum"],
+                "size": kwargs["size"],
+            }
+        ),
+        verify=False,
     )
 
     return response.json()

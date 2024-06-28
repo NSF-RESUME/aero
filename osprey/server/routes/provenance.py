@@ -1,5 +1,6 @@
 import uuid
 
+from datetime import datetime
 from flask import Blueprint, jsonify, request
 
 from osprey.server.app import db
@@ -106,6 +107,9 @@ def register_flow(function_uuid):
     function_args = json_data["kwargs"]
     sources = json_data["sources"]
     description = json_data["description"]
+    policy: int | None = json_data.get("policy")
+    timer_delay: int | None = json_data.get("timer_delay")
+
     p: Provenance | None = None
 
     if isinstance(sources, list):
@@ -143,11 +147,16 @@ def register_flow(function_uuid):
             derived_from=source_ver,
             description=description,
             function_args=function_args,
+            policy=policy,
+            timer=timer_delay,
         )
 
-    job_id = p._start_timer_flow()
-
-    p.timer_job_id = job_id
+    if policy is not None and policy == 0:
+        job_id = p._start_timer_flow()
+        p.timer_job_id = job_id
+    elif policy is not None:
+        p._run_flow()
+        p.last_executed = datetime.now()
 
     db.session.add(p)
     db.session.commit()

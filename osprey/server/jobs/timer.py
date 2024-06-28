@@ -80,7 +80,7 @@ def set_timer(
     job = TimerJob(
         callback_url=url,
         callback_body={"body": run_input, "label": run_label},
-        start=datetime.datetime.utcnow(),
+        start=datetime.datetime.now(),
         interval=datetime.timedelta(seconds=interval_in_sec),
         name=name,
         scope=specific_flow_scope,

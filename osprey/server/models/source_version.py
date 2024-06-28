@@ -27,8 +27,9 @@ class SourceVersion(db.Model):
     #     1. Set current_time if None
     #     2. super()
 
-    def __init__(self, version: int, source_id: int):
-        super().__init__(version=version, source_id=source_id)
+    def __init__(self, **kwargs):
+        kwargs = self._set_defaults(**kwargs)
+        super().__init__(**kwargs)
         db.session.add(self)
         db.session.commit()
 

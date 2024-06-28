@@ -10,6 +10,7 @@ from osprey.server.lib.error import (
     MODEL_INSUFFICIENT_ATTRS,
     FLOW_TIMER_ERROR,
 )
+from osprey.server.models.provenance import Provenance
 from osprey.server.models.source_file import SourceFile
 from osprey.server.models.tag import SourceTagTable
 from osprey.server.models.source_version import SourceVersion
@@ -58,11 +59,11 @@ class Source(db.Model):
 
     def __repr__(self):
         return (
-            f"<Source(id={self.id}"
-            f"name={self.name}"
-            f"url={self.description}"
-            f"collection_uuid={self.collection_uuid}"
-            f"collection_url={self.collection_url}"
+            f"<Source(id={self.id}, "
+            f"name={self.name}, "
+            f"url={self.url}, "
+            f"collection_uuid={self.collection_uuid}, "
+            f"collection_url={self.collection_url}, "
             f"description={self.description})>"
         )
 
@@ -82,7 +83,9 @@ class Source(db.Model):
             "available_versions": len(self.versions),
         }
 
-    def add_new_version(self, new_file: str, format: str, checksum: str) -> str:
+    def add_new_version(
+        self, new_file: str, format: str, checksum: str, size: int
+    ) -> str:
         """Commit data to the database.
 
         Args:
@@ -104,28 +107,44 @@ class Source(db.Model):
             return
 
         new_version = SourceVersion(
-            version=version_number, source_id=self.id, checksum=checksum
+            version=version_number,
+            source_id=self.id,
+            checksum=checksum,
         )
 
         new_version.source_file = SourceFile(
             encoding="utf-8",
             file_type=format,
             file_name=new_file,
-            args={"version": version_number, "source_id": self.id},
+            size=size,
+            source_version_id=version_number,
         )
 
+        # db.session.add(source_file)
         db.session.add(new_version)
-        db.commit()
+        db.session.commit()
 
         return search_client.add_entry(source_version=new_version)
 
-    def last_version(self):
+    def rerun_flow(self) -> int:
+        # TODO: Fix implementation
+        provenances = Provenance.query.filter(
+            Provenance.derived_from.any(Source.id == self.id)
+        )
+
+        policies = []
+        for prov in provenances:
+            policies.append(prov._run_flow())
+        return policies
+
+    def last_version(self) -> int | SourceVersion:
         try:
             l_version = self.versions[len(self.versions) - 1]
             return l_version
         except IndexError:
             return 0
 
+    # TODO: remove ?
     def timer_readable(self):
         if not (self.timer):
             return None
@@ -134,7 +153,7 @@ class Source(db.Model):
 
     def _validate(self, **kwargs):
         for attr in ["name", "url", "timer"]:  # Required attributes
-            if attr not in kwargs or not kwargs[attr]:
+            if attr not in kwargs.keys():
                 raise ServiceError(
                     code=MODEL_INSUFFICIENT_ATTRS,
                     message="Name, url and timer values are required",
@@ -162,9 +181,6 @@ class Source(db.Model):
         return kwargs
 
     def _start_timer_flow(self, flush=False):
-        if self.id is None:
-            raise ServiceError(FLOW_TIMER_ERROR, "source needs to have an id")
-
         if not flush and self.timer_job_id is not None:
             raise ServiceError(FLOW_TIMER_ERROR, "source already has a flow timer")
 
@@ -177,11 +193,6 @@ class Source(db.Model):
         )
         db.session.add(self)
         db.session.commit()
-
-    # def _fake_flow(self):
-    #     import osprey.worker.lib.globus_flow_helper as helper
-    #     a, k = helper.download(source_id=self.id)
-    #     helper.database_commit(*a, **k)
 
     def get_timer_job(self):
         return get_job(FLOW_IDS[self.flow_kind], self.timer_job_id)

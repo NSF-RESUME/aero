@@ -97,7 +97,7 @@ def grap_file(id):
             }
         ), 404
 
-    return jsonify(s[0].source_file.toJSON()), 200
+    return jsonify(s[0].toJSON()), 200
 
 
 @source_routes.route("/<id>/new-version", methods=["POST"])
@@ -110,7 +110,12 @@ def add_version(id):
 
     try:
         json_data = request.json
-        response = source.add_new_version(json_data["file"], json_data["file_format"])
+        response = source.add_new_version(
+            json_data["file"],
+            json_data["file_format"],
+            json_data["checksum"],
+            json_data["size"],
+        )
         return response
     except ServiceError as s:
         return jsonify(s.toJSON()), s.code
