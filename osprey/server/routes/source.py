@@ -3,7 +3,8 @@ from flask import Blueprint, jsonify, request
 from osprey.server.app import db
 from osprey.server.app import SEARCH_INDEX
 from osprey.server.app.decorators import authenticated
-from osprey.server.app.models import Source, SourceVersion
+from osprey.server.app.models import Source
+from osprey.server.app.models import SourceVersion
 from osprey.server.lib.globus_search import DSaaSSearchClient
 from osprey.server.lib.error import ServiceError
 
