@@ -39,20 +39,3 @@ class SourceFile(db.Model):
         if "encoding" not in kwargs:
             kwargs["encoding"] = "utf-8"
         return kwargs
-
-    def _decode_file(self, file):
-        return file.decode(self.encoding)
-
-    # @property
-    # def file(self):
-    #     file_path = self._store_path()
-    #     if not Path(file_path).exists():
-    #         raise ServiceError(
-    #             FILE_NOT_FOUND, "Source file does not exist or was deleted"
-    #         )
-
-    #     _file = open(file_path)
-    #     if self.file_type == "json":
-    #         return json.loads(_file)
-
-    #     return csv.reader(_file)
