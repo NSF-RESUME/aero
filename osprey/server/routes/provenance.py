@@ -6,10 +6,10 @@ from flask import Blueprint, jsonify, request
 from osprey.server.app import db
 
 from osprey.server.app.decorators import authenticated
-from osprey.server.app.models import Function
-from osprey.server.app.models import Output
-from osprey.server.app.models import Provenance
-from osprey.server.app.models import SourceVersion
+from osprey.server.models.function import Function
+from osprey.server.models.output import Output
+from osprey.server.models.provenance import Provenance
+from osprey.server.models.source_version import SourceVersion
 from osprey.server.lib.error import ServiceError
 
 provenance_routes = Blueprint("provenance_routes", __name__, url_prefix="/prov")

@@ -6,7 +6,7 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request
 
 from osprey.server.app.decorators import authenticated
-from osprey.server.app.models import Output
+from osprey.server.models.output import Output
 
 output_routes = Blueprint("output_routes", __name__, url_prefix="/output")
 
