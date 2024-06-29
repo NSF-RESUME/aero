@@ -19,8 +19,8 @@ class Output(db.Model):
         lazy=True,
     )
 
-    def __init__(self, name: str):
-        super().__init__(name=name)
+    def __init__(self, name: str, url: str):
+        super().__init__(name=name, url=url)
         db.session.add(self)
         db.session.commit()
 
@@ -49,12 +49,13 @@ class Output(db.Model):
         db.session.commit()
 
     def __repr__(self):
-        return f"<Output(id={self.id}, name={self.name}, provenance_id={self.provenance_id}, versions={self.output_versions})>"
+        return f"<Output(id={self.id}, name='{self.name}', url='{self.url}', provenance_id={self.provenance_id}, versions={self.output_versions})>"
 
     def toJSON(self):
         return {
             "id": self.id,
             "name": self.name,
+            "url": self.url,
             "provenance_id": self.provenance_id,
             "versions": [v.toJSON() for v in self.output_versions]
             if self.output_versions is not None
