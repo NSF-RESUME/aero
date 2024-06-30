@@ -24,7 +24,7 @@ class OutputVersion(db.Model):
         db.session.commit()
 
     def __repr__(self):
-        return f"<OutputVersion(id={self.id}, filename={self.filename}, version_id={self.version}, checksum={self.checksum})>"
+        return f"<OutputVersion(id={self.id}, filename='{self.filename}', version_id={self.version}, checksum='{self.checksum}')>"
 
     def toJSON(self):
         return {

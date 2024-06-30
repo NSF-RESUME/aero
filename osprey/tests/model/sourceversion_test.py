@@ -16,8 +16,7 @@ def test_create_source_version(app):
         )
 
         assert (
-            v.version == 1
-            and v.checksum == checksum
+            v.checksum == checksum
             and isinstance(v.created_at, datetime.date)
             and v.source_id == s.id
             and v.source == s

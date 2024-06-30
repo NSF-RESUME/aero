@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import Column, Integer, String, Date
+from sqlalchemy import Column, Integer, String, DateTime
 from osprey.server.app import db
 
 
@@ -8,7 +8,7 @@ class SourceVersion(db.Model):
     id = Column(Integer, primary_key=True)
     version = Column(Integer)
     checksum = Column(String)
-    created_at = Column(Date)
+    created_at = Column(DateTime)
     source_id = Column(Integer, db.ForeignKey("source.id"))
     source = db.relationship("Source", back_populates="versions", uselist=False)
     # proxy = db.relationship("Proxy", back_populates="source_version", uselist=False)

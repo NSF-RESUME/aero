@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 
 from sqlalchemy import Column
-from sqlalchemy import Date
+from sqlalchemy import DateTime
 from sqlalchemy import Integer
 from sqlalchemy import String
 
@@ -28,7 +28,7 @@ class Provenance(db.Model):
     timer = Column(Integer)
     timer_job_id = Column(String)
     policy = Column(Integer)
-    last_executed = Column(Date)
+    last_executed = Column(DateTime)
     derived_from = db.relationship(
         "Source",
         secondary=provenance_derivation,
@@ -46,12 +46,9 @@ class Provenance(db.Model):
         function_args: str = "",
         timer_job_id: str | None = None,
         timer: int | None = None,
-        policy: int | None = None,
+        policy: int = 3,
     ):
-        if policy is None:
-            timer = -1  # run daily
-            policy = 3
-        elif policy == 0 and timer is None:
+        if policy == 0 and timer is None:
             timer = 86400
 
         last_executed = datetime.now()
@@ -71,23 +68,13 @@ class Provenance(db.Model):
         db.session.commit()
 
     def __repr__(self):
-        return "<Provenance(id={}, derived_from={}, contributed_to={}, function_id='{}', function_args='{}', timer='{}', 'timer_job_id='{}')>".format(
-            self.id,
-            self.derived_from,
-            self.contributed_to,
-            self.description,
-            self.function_id,
-            self.timer,
-            self.policy,
-        )
+        return f"<Provenance(id={self.id}, derived_from={self.derived_from}, contributed_to={self.contributed_to}, function_id={self.function_id}, function_args='{self.function_args}', timer={self.timer}, timer_job_id='{self.timer_job_id}')>"
 
     def toJSON(self):
         return {
             "id": self.id,
-            "derived_from": [v.toJSON() for v in self.derived_from],
-            "contributed_to": self.contributed_to[0].toJSON()
-            if len(self.contributed_to) > 0
-            else None,
+            "derived_from": [s.toJSON() for s in self.derived_from],
+            "contributed_to": [o.toJSON() for o in self.contributed_to],
             "description": self.description,
             "function_id": self.function_id,
             "function_args": self.function_args,
@@ -116,7 +103,7 @@ class Provenance(db.Model):
             return 0
         elif self.policy == 1:  # ANY
             if any(
-                s.last_version().created_at < self.last_executed
+                s.last_version().created_at > self.last_executed
                 for s in self.derived_from
             ):
                 run_flow(
@@ -124,10 +111,13 @@ class Provenance(db.Model):
                     function_uuid=function_args["function"],
                     tasks=function_args["tasks"],
                 )
+                self.last_executed = datetime.now()
+                db.session.add(self)
+                db.session.commit()
             return 1
         elif self.policy == 2:  # ALL
             if all(
-                s.last_version().created_at < self.last_executed
+                s.last_version().created_at > self.last_executed
                 for s in self.derived_from
             ):
                 run_flow(
@@ -135,5 +125,8 @@ class Provenance(db.Model):
                     function_uuid=function_args["function"],
                     tasks=function_args["tasks"],
                 )
+                self.last_executed = datetime.now()
+                db.session.add(self)
+                db.session.commit()
             return 2
         return 3

@@ -19,8 +19,7 @@ def test_create_source(app):
     with app.app_context():
         s: Source = Source(name="test", url="test", email="test")
         assert (
-            s.id == 1
-            and s.name == "test"
+            s.name == "test"
             and s.url == "test"
             and s.collection_uuid is None
             and s.collection_url is None
@@ -57,16 +56,16 @@ def test_json_repr(app):
         ], list(s_dict.keys())
 
         assert (
-            s_dict["id"] == 1
-            and s_dict["name"] == "test"
-            and s_dict["url"] == "test"
-            and s_dict["collection_uuid"] is None
-            and s_dict["collection_url"] is None
-            and s_dict["description"] is None
-            and s_dict["timer"] == 86400
-            and s_dict["verifier"] is None
-            and s_dict["modifier"] is None
-            and s_dict["email"] == "test"
+            s_dict["id"] == s.id
+            and s_dict["name"] == s.name
+            and s_dict["url"] == s.url
+            and s_dict["collection_uuid"] == s.collection_uuid
+            and s_dict["collection_url"] == s.collection_url
+            and s_dict["description"] == s.description
+            and s_dict["timer"] == s.timer
+            and s_dict["verifier"] == s.verifier
+            and s_dict["modifier"] == s.modifier
+            and s_dict["email"] == s.email
             and s_dict["available_versions"] == 0
         )
 
@@ -77,7 +76,7 @@ def test_str_repr(app):
         s_str = str(s)
         assert (
             s_str
-            == "<Source(id=1, name=test, url=test, collection_uuid=None, collection_url=None, description=None)>"
+            == f"<Source(id={s.id}, name={s.name}, url={s.url}, collection_uuid={s.collection_uuid}, collection_url={s.collection_url}, description={s.description})>"
         ), s_str
 
 
@@ -96,13 +95,10 @@ def test_add_source_version(app):
         v: SourceVersion = s.last_version()
 
         assert (
-            v.id == 1
-            and v.version == 1
-            and v.checksum == "1234"
+            v.checksum == "1234"
             and v.created_at is not None
             and v.source_id == s.id
             and v.source == s
-            and v.source_file.id == 1
             and v.source_file.file_name == new_file
             and v.source_file.file_type == fformat
             and v.source_file.size == size

@@ -120,7 +120,6 @@ class Source(db.Model):
             source_version_id=version_number,
         )
 
-        # db.session.add(source_file)
         db.session.add(new_version)
         db.session.commit()
 
