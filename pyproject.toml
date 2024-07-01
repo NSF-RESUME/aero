@@ -39,7 +39,11 @@ exclude = ["Dockerfiles*", "scripts*", "workflow*"]
 [tool.ruff]
 extend-select = ["Q"]
 
+[tool.coverage.run]
+branch = true
+
 [tool.coverage.report]
+fail_under = 100
 exclude_also = [
     "def search",
 ]
