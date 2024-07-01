@@ -1,14 +1,15 @@
 import uuid
 
+from datetime import datetime
 from flask import Blueprint, jsonify, request
 
 from osprey.server.app import db
 
 from osprey.server.app.decorators import authenticated
-from osprey.server.app.models import Function
-from osprey.server.app.models import Output
-from osprey.server.app.models import Provenance
-from osprey.server.app.models import SourceVersion
+from osprey.server.models.function import Function
+from osprey.server.models.output import Output
+from osprey.server.models.provenance import Provenance
+from osprey.server.models.source_version import SourceVersion
 from osprey.server.lib.error import ServiceError
 
 provenance_routes = Blueprint("provenance_routes", __name__, url_prefix="/prov")
@@ -74,7 +75,9 @@ def record_provenance():
         ) is None:
             # create output and store provenance data
             o = Output(name=json_data["name"])
-            o.add_new_version(filename=json_data["output_fn"])
+            o.add_new_version(
+                filename=json_data["output_fn"], checksum=json_data["checksum"]
+            )
             p = Provenance(
                 function_id=f.id,
                 derived_from=source_ver,
@@ -104,6 +107,9 @@ def register_flow(function_uuid):
     function_args = json_data["kwargs"]
     sources = json_data["sources"]
     description = json_data["description"]
+    policy: int | None = json_data.get("policy")
+    timer_delay: int | None = json_data.get("timer_delay")
+
     p: Provenance | None = None
 
     if isinstance(sources, list):
@@ -141,11 +147,16 @@ def register_flow(function_uuid):
             derived_from=source_ver,
             description=description,
             function_args=function_args,
+            policy=policy,
+            timer=timer_delay,
         )
 
-    job_id = p._start_timer_flow()
-
-    p.timer_job_id = job_id
+    if policy is not None and policy == 0:
+        job_id = p._start_timer_flow()
+        p.timer_job_id = job_id
+    elif policy is not None:
+        p._run_flow()
+        p.last_executed = datetime.now()
 
     db.session.add(p)
     db.session.commit()

@@ -15,7 +15,7 @@ docker compose up postgres-database -d
 sleep 5 # sleep required otherwise attempts to create db before postgres server is started
 
 docker compose exec -it postgres-database bash -c "psql -U ${DATABASE_USER} -c \"CREATE DATABASE osprey_development;\"; exit;"
-docker compose run -it web flask db upgrade
+docker compose run -it --rm web flask db upgrade
 docker compose down
 
 # echo "\n\nSetting up Globus Web"
@@ -24,18 +24,18 @@ docker compose down
 echo "\n\nSetting up Globus Compute Endpoint"
 
 echo "\nThe Globus Endpoint UUID is : "
-docker compose run -it globus-endpoint globus-compute-endpoint start default
+docker compose run -it --rm globus-endpoint globus-compute-endpoint start default
 
 # out=`docker compose run -it globus-endpoint globus-compute-endpoint list`
 # endpoint_uuid=`echo ${out} | grep -i 'default' | awk '{print $2}'`
 
 # create file due to weird issue when storing into variable. Need to test variable method further
 endpoint_out="endpoint.out"
-docker compose run -it globus-endpoint globus-compute-endpoint list > ${endpoint_out}
+docker compose run -it --rm globus-endpoint globus-compute-endpoint list > ${endpoint_out}
 endpoint_uuid=`cat ${endpoint_out} | grep -i 'default' | awk '{print $2}'`
 
 echo "\nThe Globus Flow Functions UUIDs are : "
-out=`docker compose run -it globus-endpoint python /app/osprey/worker/lib/globus_flow_helper.py`
+out=`docker compose run -it --rm globus-endpoint python /app/osprey/worker/lib/globus_flow_helper.py`
 
 flow_download_uuid=`echo -e ${out} | grep -i 'download' | awk '{print $4}' | tr -d '\r'`
 flow_database_uuid=`echo -e ${out} | grep -i 'database' | awk '{print $9}' | tr -d '\r'`
@@ -50,13 +50,13 @@ echo "${flow_commit_uuid}"
 echo "${flow_user_function_uuid}"
 
 echo "\nThe Globus Search index is":
-search_idx=`docker compose run -it web python /app/osprey/server/lib/globus_search.py | head -n 1 | awk '{print $NF}' | tr -d '\r'`
+search_idx=`docker compose run -it --rm web python /app/osprey/server/lib/globus_search.py | head -n 1 | awk '{print $NF}' | tr -d '\r'`
 
 echo "${search_idx}"
 
 echo "\n\nSetting up Globus Flow Worker"
-docker compose run -it web python /app/osprey/server/jobs/timer.py
-docker compose run -it web python /app/osprey/server/lib/globus_compute.py
+docker compose run -it --rm web python /app/osprey/server/jobs/timer.py
+docker compose run -it --rm web python /app/osprey/server/lib/globus_compute.py
 
 if [[ $(uname -a) == *"Darwin"* ]]
 then

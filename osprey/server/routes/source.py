@@ -3,7 +3,8 @@ from flask import Blueprint, jsonify, request
 from osprey.server.app import db
 from osprey.server.app import SEARCH_INDEX
 from osprey.server.app.decorators import authenticated
-from osprey.server.app.models import Source, SourceVersion
+from osprey.server.models.source import Source
+from osprey.server.models.source_version import SourceVersion
 from osprey.server.lib.globus_search import DSaaSSearchClient
 from osprey.server.lib.error import ServiceError
 
@@ -44,7 +45,7 @@ def create_source():
         return jsonify(s.toJSON()), 200
     except ServiceError as s:
         return jsonify(s.toJSON()), s.code
-    except Exception as e:
+    except Exception as e:  # pragma: no cover
         return jsonify({"code": 500, "message": str(e)}), 500
 
 
@@ -97,4 +98,28 @@ def grap_file(id):
             }
         ), 404
 
-    return jsonify(s[0].source_file.toJSON()), 200
+    return jsonify(s[0].toJSON()), 200
+
+
+@source_routes.route("/<id>/new-version", methods=["POST"])
+@authenticated
+def add_version(id):
+    source = db.session.get(Source, id)
+
+    if not source:
+        return jsonify({"code": 404, "message": f"Source with id {id} not found"}), 404
+
+    try:
+        json_data = request.json
+        response = source.add_new_version(
+            json_data["file"],
+            json_data["file_format"],
+            json_data["checksum"],
+            json_data["size"],
+            json_data["encoding"] if "encoding" in json_data else None,
+        )
+        return response
+    except ServiceError as s:  # pragma: no cover
+        return jsonify(s.toJSON()), s.code
+    except Exception as e:  # pragma: no cover
+        return jsonify({"code": 500, "message": str(e)}), 500

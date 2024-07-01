@@ -12,7 +12,7 @@ from osprey.server.lib.globus_auth import _CLIENT_ID
 from osprey.server.lib.globus_auth import create_token_file
 from osprey.server.lib.globus_auth import SEARCH_TOKENS_FILE
 
-from osprey.server.models.source import Source
+# from osprey.server.models.source import Source
 from osprey.server.models.source_version import SourceVersion
 
 GCS_PATH = "https://g-c952d0.1305de.36fe.data.globus.org/source"
@@ -88,45 +88,45 @@ class DSaaSSearchClient:
         except SearchAPIError as e:
             return e.raw_json
 
-    def populate_source_idx(self) -> None:
-        sources = Source.query.all()
+    # def populate_source_idx(self) -> None:
+    #     sources = Source.query.all()
 
-        entries = {
-            "ingest_type": "GMetaList",
-            "ingest_data": {
-                "gmeta": [
-                    {
-                        "subject": f"{s.name}-{s.id}.{v.version}",
-                        "visible_to": ["public"],
-                        "content": {
-                            "name": s.name,
-                            "description": s.description,
-                            "email": s.email,
-                            "tags": [t.toJSON() for t in s.tags],
-                            "source": s.url,
-                            "source_id": s.id,
-                            "version": v.id,
-                            "checksum": v.checksum,
-                            "file_size": str(v.source_file.size)
-                            if v.source_file is not None
-                            else None,
-                            "created": v.created_at.strftime("%Y/%m/%d")
-                            if v.created_at is not None
-                            else None,
-                            "url": f"{GCS_PATH}/{v.source_file.file_name}"
-                            if v.source_file
-                            else None,
-                        },
-                    }
-                    for s in sources
-                    for v in s.versions
-                ]
-            },
-        }
-        try:
-            self.client.ingest(self.index, entries)
-        except SearchAPIError as e:
-            print("Error in populating index", e.raw_json)
+    #     entries = {
+    #         "ingest_type": "GMetaList",
+    #         "ingest_data": {
+    #             "gmeta": [
+    #                 {
+    #                     "subject": f"{s.name}-{s.id}.{v.version}",
+    #                     "visible_to": ["public"],
+    #                     "content": {
+    #                         "name": s.name,
+    #                         "description": s.description,
+    #                         "email": s.email,
+    #                         "tags": [t.toJSON() for t in s.tags],
+    #                         "source": s.url,
+    #                         "source_id": s.id,
+    #                         "version": v.id,
+    #                         "checksum": v.checksum,
+    #                         "file_size": str(v.source_file.size)
+    #                         if v.source_file is not None
+    #                         else None,
+    #                         "created": v.created_at.strftime("%Y/%m/%d")
+    #                         if v.created_at is not None
+    #                         else None,
+    #                         "url": f"{GCS_PATH}/{v.source_file.file_name}"
+    #                         if v.source_file
+    #                         else None,
+    #                     },
+    #                 }
+    #                 for s in sources
+    #                 for v in s.versions
+    #             ]
+    #         },
+    #     }
+    #     try:
+    #         self.client.ingest(self.index, entries)
+    #     except SearchAPIError as e:
+    #         print("Error in populating index", e.raw_json)
 
     def create_output_idx(self) -> None:
         _ = self.client.create_index(
@@ -141,6 +141,6 @@ if __name__ == "__main__":
 
     with app.app_context():
         sc = DSaaSSearchClient()
-        sc.populate_source_idx()
-        # print(sc.index)
-        # print(sc.get_index(index_id=idx)) #.search(idx, )
+#         sc.populate_source_idx()
+# print(sc.index)
+# print(sc.get_index(index_id=idx)) #.search(idx, )

@@ -15,7 +15,7 @@ class Function(db.Model):
         db.session.commit()
 
     def __repr__(self):
-        return "<Function(id={}, uuid='{}')>".format(self.id, self.uuid)
+        return f"<Function(id={self.id}, uuid='{self.uuid}')>"
 
     def toJSON(self):
         return {

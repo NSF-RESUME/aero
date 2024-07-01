@@ -6,7 +6,7 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request
 
 from osprey.server.app.decorators import authenticated
-from osprey.server.app.models import Output
+from osprey.server.models.output import Output
 
 output_routes = Blueprint("output_routes", __name__, url_prefix="/output")
 
@@ -16,7 +16,7 @@ else:
     GCS_DIR = Path("/dsaas_storage/output")
 
 # TODO: Just create these directories when GCS is created
-GCS_DIR.mkdir(parents=True, exist_ok=True)
+# GCS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 @output_routes.route("/", methods=["GET"])
