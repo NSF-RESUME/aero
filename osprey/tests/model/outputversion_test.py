@@ -1,5 +1,4 @@
-from osprey.tests.conftest import Output
-from osprey.tests.conftest import OutputVersion
+import osprey.server.models as models
 
 
 def test_create(app):
@@ -9,8 +8,8 @@ def test_create(app):
     version = 1
     checksum = "1"
 
-    o: Output = Output(name=name, url=url)
-    ov: OutputVersion = OutputVersion(
+    o: models.output.Output = models.output.Output(name=name, url=url)
+    ov: models.output_version.OutputVersion = models.output_version.OutputVersion(
         filename=filename, version=version, checksum=checksum, output_id=o.id
     )
 
@@ -24,7 +23,9 @@ def test_create(app):
 
 
 def test_json(app):
-    ov: OutputVersion = OutputVersion.query.filter_by(id=1).first()
+    ov: models.output_version.OutputVersion = (
+        models.output_version.OutputVersion.query.filter_by(id=1).first()
+    )
     ov_json = ov.toJSON()
 
     assert list(ov_json.keys()) == ["id", "filename", "version", "checksum"]
@@ -37,7 +38,9 @@ def test_json(app):
 
 
 def test_str_repr(app):
-    ov: OutputVersion = OutputVersion.query.filter_by(id=1).first()
+    ov: models.output_version.OutputVersion = (
+        models.output_version.OutputVersion.query.filter_by(id=1).first()
+    )
     ov_str = str(ov)
 
     assert (

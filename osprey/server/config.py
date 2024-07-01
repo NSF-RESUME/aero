@@ -24,3 +24,4 @@ class Config(object):
     PORTAL_CLIENT_ID = os.getenv("PORTAL_CLIENT_ID")
     PORTAL_CLIENT_SECRET = os.getenv("PORTAL_CLIENT_SECRET")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SEARCH_INDEX = os.getenv("SEARCH_INDEX")

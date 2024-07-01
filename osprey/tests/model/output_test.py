@@ -1,12 +1,11 @@
-from osprey.tests.conftest import Output
-from osprey.tests.conftest import OutputVersion
+import osprey.server.models as models
 
 
 def test_create(app):
     name = "test"
     url = "test"
 
-    o: Output = Output(name=name, url=url)
+    o: models.output.Output = models.output.Output(name=name, url=url)
 
     # without output_version
     assert (
@@ -20,7 +19,7 @@ def test_create(app):
     filename = "test"
     version = 1
     checksum = "1"
-    ov: OutputVersion = OutputVersion(
+    ov: models.output.OutputVersion = models.output.OutputVersion(
         filename=filename, version=version, checksum=checksum, output_id=o.id
     )
 
@@ -28,7 +27,7 @@ def test_create(app):
 
 
 def test_json(app):
-    o: Output = Output.query.filter_by(id=1).first()
+    o: models.output.Output = models.output.Output.query.filter_by(id=1).first()
     o_json = o.toJSON()
 
     assert list(o_json.keys()) == ["id", "name", "url", "provenance_id", "versions"]
@@ -43,7 +42,7 @@ def test_json(app):
 
 
 def test_str_repr(app):
-    o: Output = Output.query.filter_by(id=1).first()
+    o: models.output.Output = models.output.Output.query.filter_by(id=1).first()
     o_str = str(o)
 
     assert (
@@ -55,10 +54,10 @@ def test_str_repr(app):
 def test_add_output_version(app):
     fn = "test1"
     checksum = "1"
-    o: Output = Output(name="test1", url="test1")
+    o: models.output.Output = models.output.Output(name="test1", url="test1")
     o.add_new_version(filename=fn, checksum="1")
 
-    ov: OutputVersion = o.output_versions[-1]
+    ov: models.output_version.OutputVersion = o.output_versions[-1]
 
     assert (
         len(o.output_versions) == 1

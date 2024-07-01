@@ -1,8 +1,7 @@
 import globus_sdk
-import os
 
+import osprey.server.lib.globus_search as gs
 from osprey.server.config import Config
-from osprey.server.lib.globus_search import DSaaSSearchClient
 
 
 def load_auth_client():
@@ -16,5 +15,5 @@ def get_token(header):
     return header.split(" ")[1].strip()
 
 
-SEARCH_INDEX = os.getenv("SEARCH_INDEX")
-search_client = DSaaSSearchClient(SEARCH_INDEX)
+def get_search_client():
+    return gs.DSaaSSearchClient(Config.SEARCH_INDEX)

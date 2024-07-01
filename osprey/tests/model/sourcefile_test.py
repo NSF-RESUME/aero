@@ -1,8 +1,6 @@
 from uuid import uuid4
 
-from osprey.tests.conftest import Source
-from osprey.tests.conftest import SourceFile
-from osprey.tests.conftest import SourceVersion
+import osprey.server.models as models
 
 
 def test_create_source_file(app):
@@ -12,13 +10,15 @@ def test_create_source_file(app):
         size = 1
         encoding = "utf-8"
 
-        s: Source = Source.query.filter_by(name="test").first()
+        s: models.source.Source = models.source.Source.query.filter_by(
+            name="test"
+        ).first()
         checksum = str(uuid4())
-        v: SourceVersion = SourceVersion(
+        v: models.source_version.SourceVersion = models.source_version.SourceVersion(
             version=(s.last_version().version + 1), source_id=s.id, checksum=checksum
         )
 
-        f: SourceFile = SourceFile(
+        f: models.source_file.SourceFile = models.source_file.SourceFile(
             file_name=file_name,
             file_type=file_type,
             size=size,
@@ -38,7 +38,9 @@ def test_create_source_file(app):
 
 
 def test_json(app):
-    f: SourceFile = SourceFile.query.filter_by(file_name="test").first()
+    f: models.source_file.SourceFile = models.source_file.SourceFile.query.filter_by(
+        file_name="test"
+    ).first()
     f_json = f.toJSON()
 
     assert list(f_json.keys()) == [
@@ -59,7 +61,9 @@ def test_json(app):
 
 
 def test_str_repr(app):
-    f: SourceFile = SourceFile.query.filter_by(file_name="test").first()
+    f: models.source_file.SourceFile = models.source_file.SourceFile.query.filter_by(
+        file_name="test"
+    ).first()
     f_str = str(f)
 
     assert (
@@ -69,7 +73,9 @@ def test_str_repr(app):
 
 
 def test_set_defaults(app):
-    f: SourceFile = SourceFile.query.filter_by(file_name="test").first()
+    f: models.source_file.SourceFile = models.source_file.SourceFile.query.filter_by(
+        file_name="test"
+    ).first()
     kwargs = f._set_defaults(**{})
 
     assert kwargs["encoding"] == "utf-8"

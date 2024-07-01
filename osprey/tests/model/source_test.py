@@ -5,19 +5,17 @@ import pytest
 from unittest import mock
 from uuid import uuid4
 
-from osprey.tests.conftest import Config
-from osprey.tests.conftest import FlowEnum
-from osprey.tests.conftest import Function
-from osprey.tests.conftest import Provenance
-from osprey.tests.conftest import ServiceError
-from osprey.tests.conftest import Source
-from osprey.tests.conftest import SourceFile
-from osprey.tests.conftest import SourceVersion
+import osprey.server.models as models
+from osprey.server.app.utils import Config
+from osprey.server.lib.globus_flow import FlowEnum
+from osprey.server.lib.error import ServiceError
 
 
 def test_create_source(app):
     with app.app_context():
-        s: Source = Source(name="test", url="test", email="test")
+        s: models.source.Source = models.source.Source(
+            name="test", url="test", email="test"
+        )
         assert (
             s.name == "test"
             and s.url == "test"
@@ -38,7 +36,9 @@ def test_create_source(app):
 
 def test_json_repr(app):
     with app.app_context():
-        s: Source = Source.query.filter_by(name="test").first()
+        s: models.source.Source = models.source.Source.query.filter_by(
+            name="test"
+        ).first()
         s_dict = s.toJSON()
 
         assert list(s_dict.keys()) == [
@@ -72,7 +72,9 @@ def test_json_repr(app):
 
 def test_str_repr(app):
     with app.app_context():
-        s: Source = Source.query.filter_by(name="test").first()
+        s: models.source.Source = models.source.Source.query.filter_by(
+            name="test"
+        ).first()
         s_str = str(s)
         assert (
             s_str
@@ -87,12 +89,14 @@ def test_add_source_version(app):
     new_file = "test2"
 
     with app.app_context():
-        s: Source = Source.query.filter_by(name="test").first()
+        s: models.source.Source = models.source.Source.query.filter_by(
+            name="test"
+        ).first()
         _ = s.add_new_version(
             new_file=new_file, format=fformat, checksum=checksum, size=size
         )
 
-        v: SourceVersion = s.last_version()
+        v: models.source_version.SourceVersion = s.last_version()
 
         assert (
             v.checksum == "1234"
@@ -124,7 +128,7 @@ def test_add_source_version(app):
 
 def test_policy_flow(app):
     with app.app_context():
-        f: Function = Function(uuid="1")
+        f: models.function.Function = models.function.Function(uuid="1")
         function_id = f.id
         function_args = json.dumps(
             {
@@ -135,11 +139,13 @@ def test_policy_flow(app):
         )
         contributed_to = []
 
-        s: Source = Source.query.filter_by(name="test").first()
+        s: models.source.Source = models.source.Source.query.filter_by(
+            name="test"
+        ).first()
         derived_from = [s]
 
         # default policy
-        p: Provenance = Provenance(
+        p: models.provenance.Provenance = models.provenance.Provenance(
             function_id=function_id,
             function_args=function_args,
             derived_from=derived_from,
@@ -168,19 +174,23 @@ def test_policy_flow(app):
 
 def test_last_version(app):
     with app.app_context():
-        s: Source = Source(name="1", url="1", email="1")
+        s: models.source.Source = models.source.Source(name="1", url="1", email="1")
         assert s.last_version() == 0
 
         s.add_new_version("1", "1", "2", 1)
-        assert isinstance(s.last_version(), SourceVersion)
+        assert isinstance(s.last_version(), models.source_version.SourceVersion)
 
 
 def test_timer_readable(app):
     with app.app_context():
-        s: Source = Source.query.filter_by(name="test").first()
+        s: models.source.Source = models.source.Source.query.filter_by(
+            name="test"
+        ).first()
         assert isinstance(s.timer_readable(), str)  # probably should test str formats
 
-        s: Source = Source(name="1", url="1", email="1", timer=0)
+        s: models.source.Source = models.source.Source(
+            name="1", url="1", email="1", timer=0
+        )
         assert s.timer_readable() is None
 
 
@@ -188,12 +198,12 @@ def test_timer_readable(app):
 def test_source_validate(app):
     with app.app_context():
         with pytest.raises(ServiceError):
-            _: Source = Source(name="1", email="1")
+            _: models.source.Source = models.source.Source(name="1", email="1")
 
 
 def test_set_defaults(app):
     with app.app_context():
-        s: Source = Source(name="1", url="1", email="1")
+        s: models.source.Source = models.source.Source(name="1", url="1", email="1")
         kwargs = s._set_defaults(**{})
 
         assert (
@@ -224,7 +234,7 @@ def test_set_defaults(app):
 
 def test_start_time_flow(app):
     with app.app_context():
-        s: Source = Source(name="1", url="1", email="1")
+        s: models.source.Source = models.source.Source(name="1", url="1", email="1")
 
         with pytest.raises(ServiceError):
             s._start_timer_flow()
@@ -232,14 +242,14 @@ def test_start_time_flow(app):
 
 def test_get_timer_job(app):
     with app.app_context():
-        s: Source = Source(name="1", url="1", email="1")
+        s: models.source.Source = models.source.Source(name="1", url="1", email="1")
         with mock.patch("osprey.server.lib.globus_flow.create_client") as _:
             _ = s.get_timer_job()
 
 
 def test_last_refreshed_at(app):
     with app.app_context():
-        s: Source = Source(name="1", url="1", email="1")
+        s: models.source.Source = models.source.Source(name="1", url="1", email="1")
 
         with mock.patch("osprey.server.lib.globus_flow.create_client") as _:
             s.last_refreshed_at()
@@ -255,10 +265,10 @@ def test_last_refreshed_at(app):
 
 def test_create_source_version(app):
     with app.app_context():
-        s: Source = Source(name="1", url="1", email="1")
+        s: models.source.Source = models.source.Source(name="1", url="1", email="1")
 
         checksum = str(uuid4())
-        v: SourceVersion = SourceVersion(
+        v: models.source_version.SourceVersion = models.source_version.SourceVersion(
             version=(s.last_version() + 1), source_id=s.id, checksum=checksum
         )
 
@@ -274,9 +284,11 @@ def test_create_source_version(app):
 
 def test_version_json(app):
     with app.app_context():
-        s: Source = Source.query.filter_by(name="test").first()
+        s: models.source.Source = models.source.Source.query.filter_by(
+            name="test"
+        ).first()
         checksum = str(uuid4())
-        v: SourceVersion = SourceVersion(
+        v: models.source_version.SourceVersion = models.source_version.SourceVersion(
             version=(s.last_version().version + 1), source_id=s.id, checksum=checksum
         )
         v_dict = v.toJSON()
@@ -295,9 +307,11 @@ def test_version_json(app):
 
 def test_version_repr(app):
     with app.app_context():
-        s: Source = Source.query.filter_by(name="test").first()
+        s: models.source.Source = models.source.Source.query.filter_by(
+            name="test"
+        ).first()
         checksum = str(uuid4())
-        v: SourceVersion = SourceVersion(
+        v: models.source_version.SourceVersion = models.source_version.SourceVersion(
             version=(s.last_version().version + 1), source_id=s.id, checksum=checksum
         )
         v_str = str(v)
@@ -310,9 +324,11 @@ def test_version_repr(app):
 
 def test_set_version_defaults(app):
     with app.app_context():
-        s: Source = Source.query.filter_by(name="test").first()
+        s: models.source.Source = models.source.Source.query.filter_by(
+            name="test"
+        ).first()
         checksum = str(uuid4())
-        v: SourceVersion = SourceVersion(
+        v: models.source_version.SourceVersion = models.source_version.SourceVersion(
             version=(s.last_version().version + 1), source_id=s.id, checksum=checksum
         )
 
@@ -335,13 +351,15 @@ def test_create_source_file(app):
         size = 1
         encoding = "utf-8"
 
-        s: Source = Source.query.filter_by(name="test").first()
+        s: models.source.Source = models.source.Source.query.filter_by(
+            name="test"
+        ).first()
         checksum = str(uuid4())
-        v: SourceVersion = SourceVersion(
+        v: models.source_version.SourceVersion = models.source_version.SourceVersion(
             version=(s.last_version().version + 1), source_id=s.id, checksum=checksum
         )
 
-        f: SourceFile = SourceFile(
+        f: models.source_file.SourceFile = models.source_file.SourceFile(
             file_name=file_name,
             file_type=file_type,
             size=size,
@@ -358,40 +376,3 @@ def test_create_source_file(app):
             and f.source_version_id == v.id
             and f.source_version == v
         )
-
-
-def test_create_tag(app):
-    pass
-
-
-def test_create_provenance(app):
-    pass
-
-
-def test_create_output(app):
-    pass
-
-
-def test_create_output_version(app):
-    pass
-
-
-def test_create_function(app):
-    pass
-
-
-# def test_add_new_version(app):
-#     from osprey.server.models.source import Source
-
-#     with app.app_context():
-#         s: Source = Source.query.filter_by(name="test").first()
-#         s.add_new_version(new_file="test2", format="csv", checksum=str(uuid4()), size=5)
-#         assert s.versions is not None, s
-
-#         assert s.versions[-1].source_file is not None, s.versions[-1]
-
-
-def test_source_populate():
-    # with app.app_context():
-    #    Source(name='test_populate', url=DUMMY_URL, verifier='dcf0c1d4-9ef8-41eb-b13b-8f0156b206bd')
-    pass

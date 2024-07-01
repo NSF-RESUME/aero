@@ -4,17 +4,17 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 
 from osprey.server.app import db
-from osprey.server.app.utils import search_client
+from osprey.server.app.utils import get_search_client
 from osprey.server.lib.error import (
     ServiceError,
     MODEL_INSUFFICIENT_ATTRS,
     FLOW_TIMER_ERROR,
 )
+import osprey.server.jobs.timer as timer
 from osprey.server.models.provenance import Provenance
 from osprey.server.models.source_file import SourceFile
 from osprey.server.models.tag import SourceTagTable
 from osprey.server.models.source_version import SourceVersion
-from osprey.server.jobs.timer import set_timer
 from osprey.server.lib.globus_flow import get_job, FlowEnum, FLOW_IDS
 from osprey.server.config import Config
 
@@ -128,7 +128,7 @@ class Source(db.Model):
         db.session.add(new_version)
         db.session.commit()
 
-        return search_client.add_entry(source_version=new_version)
+        return get_search_client().add_entry(source_version=new_version)
 
     def rerun_flow(self) -> int:
         # TODO: Fix implementation
@@ -188,7 +188,7 @@ class Source(db.Model):
         if not flush and self.timer_job_id is not None:
             raise ServiceError(FLOW_TIMER_ERROR, "source already has a flow timer")
 
-        self.timer_job_id = set_timer(
+        self.timer_job_id = timer.set_timer(
             self.timer,
             self.id,
             self.email,
