@@ -84,7 +84,12 @@ class Source(db.Model):
         }
 
     def add_new_version(
-        self, new_file: str, format: str, checksum: str, size: int
+        self,
+        new_file: str,
+        format: str,
+        checksum: str,
+        size: int,
+        encoding: str = "utf-8",
     ) -> str:
         """Commit data to the database.
 
@@ -104,7 +109,7 @@ class Source(db.Model):
             old_checksum = None
 
         if old_checksum == checksum:
-            return
+            return {"code": 201, "message": "Version already exists"}
 
         new_version = SourceVersion(
             version=version_number,
@@ -113,7 +118,7 @@ class Source(db.Model):
         )
 
         new_version.source_file = SourceFile(
-            encoding="utf-8",
+            encoding=encoding,
             file_type=format,
             file_name=new_file,
             size=size,

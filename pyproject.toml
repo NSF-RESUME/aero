@@ -9,18 +9,21 @@ authors = [
 dependencies = [
     "proxystore",
     "requests",
-    "pandas"
+    "pandas",
+    "flask",
+    "flask-sqlalchemy",
+    "flask-migrate",
+    "psycopg2",
+    "globus_compute_sdk"
 ]
 
 [project.optional-dependencies]
 dev = [
-    "proxystore[endpoints]",
-    "flask",
     "pre-commit",
-    "tox"
+    "tox",
+    "black"
 ]
 server = [
-    "proxystore[endpoints]",
     "flask==2.1.0",
 ]
 
@@ -35,3 +38,8 @@ exclude = ["Dockerfiles*", "scripts*", "workflow*"]
 
 [tool.ruff]
 extend-select = ["Q"]
+
+[tool.coverage.report]
+exclude_also = [
+    "def search",
+]

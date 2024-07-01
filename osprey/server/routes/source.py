@@ -45,7 +45,7 @@ def create_source():
         return jsonify(s.toJSON()), 200
     except ServiceError as s:
         return jsonify(s.toJSON()), s.code
-    except Exception as e:
+    except Exception as e:  # pragma: no cover
         return jsonify({"code": 500, "message": str(e)}), 500
 
 
@@ -116,9 +116,10 @@ def add_version(id):
             json_data["file_format"],
             json_data["checksum"],
             json_data["size"],
+            json_data["encoding"] if "encoding" in json_data else None,
         )
         return response
-    except ServiceError as s:
+    except ServiceError as s:  # pragma: no cover
         return jsonify(s.toJSON()), s.code
-    except Exception as e:
+    except Exception as e:  # pragma: no cover
         return jsonify({"code": 500, "message": str(e)}), 500
