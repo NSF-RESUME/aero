@@ -9,7 +9,7 @@ from osprey.server.app.decorators import authenticated
 from osprey.server.models.function import Function
 from osprey.server.models.output import Output
 from osprey.server.models.provenance import Provenance
-from osprey.server.models.source_version import SourceVersion
+from osprey.server.models.source import Source
 from osprey.server.lib.error import ServiceError
 
 provenance_routes = Blueprint("provenance_routes", __name__, url_prefix="/prov")
@@ -35,35 +35,20 @@ def record_provenance():
 
         assert "output_fn" in json_data
 
-        sources: list[int] | dict[int, int | None] = json_data["sources"]
-        source_ver: list[SourceVersion] = []
-        function_uuid = json_data["function_uuid"]
-
-        if isinstance(sources, list):
-            sources = {s: None for s in sources}
+        sources: list[int] = json_data["sources"]
+        derived_from: list[Source] = []
+        function_uuid = (
+            json_data["function_uuid"] if "function_uuid" in json_data else None
+        )
 
         # currently just gets last version
-        for k, v in sources.items():
-            if v is None:
-                source_ver.append(
-                    SourceVersion.query.filter(SourceVersion.source_id == k)
-                    .order_by(SourceVersion.version.desc())
-                    .first()
-                )
-            else:
-                source_ver.append(
-                    SourceVersion.query.filter(
-                        SourceVersion.source_id == k and SourceVersion.version == v
-                    ).first()
-                )
+        for k in sources:
+            derived_from.append(Source.query.filter(Source.id == k).first())
 
         # check if function exists, if not create one
-        if (
-            function_uuid is None
-            or (f := Function.query.filter(Function.uuid == function_uuid).first())
-            is None
-        ):
+        if function_uuid is None:
             function_uuid = str(uuid.uuid4())
+        if (f := Function.query.filter(Function.uuid == function_uuid).first()) is None:
             f = Function(uuid=function_uuid)
 
         # check if provenance already exists
@@ -74,13 +59,13 @@ def record_provenance():
             ).first()
         ) is None:
             # create output and store provenance data
-            o = Output(name=json_data["name"])
+            o = Output(name=json_data["name"], url=json_data["url"])
             o.add_new_version(
                 filename=json_data["output_fn"], checksum=json_data["checksum"]
             )
             p = Provenance(
                 function_id=f.id,
-                derived_from=source_ver,
+                derived_from=derived_from,
                 contributed_to=[o],
                 description=json_data["description"],
                 function_args=json_data["kwargs"],
@@ -89,7 +74,9 @@ def record_provenance():
             # find output instance and add a new version
             # assumes no duplicate names
             o = Output.query.filter(Output.name == json_data["name"]).first()
-            o.add_new_version(filename=json_data["output_fn"])
+            o.add_new_version(
+                filename=json_data["output_fn"], checksum=json_data["checksum"]
+            )
 
         return jsonify(p.toJSON()), 200
     except ServiceError as s:
@@ -103,7 +90,7 @@ def record_provenance():
 def register_flow(function_uuid):
     json_data = request.json
 
-    source_ver: list[SourceVersion] = []
+    derived_from: list[Source] = []
     function_args = json_data["kwargs"]
     sources = json_data["sources"]
     description = json_data["description"]
@@ -112,24 +99,9 @@ def register_flow(function_uuid):
 
     p: Provenance | None = None
 
-    if isinstance(sources, list):
-        sources = {s: None for s in sources}
-
     # currently just gets last version
-    if sources is not None:
-        for k, v in sources.items():
-            if v is None:
-                source_ver.append(
-                    SourceVersion.query.filter(SourceVersion.source_id == k)
-                    .order_by(SourceVersion.version.desc())
-                    .first()
-                )
-            else:
-                source_ver.append(
-                    SourceVersion.query.filter(
-                        SourceVersion.source_id == k and SourceVersion.version == v
-                    ).first()
-                )
+    for k in sources:
+        derived_from.append(Source.query.filter(Source.id == k).first())
 
     # TODO: add function relationship to provenance
     f = Function.query.filter(Function.uuid == function_uuid).first()
@@ -142,13 +114,22 @@ def register_flow(function_uuid):
         ).first()
 
     if p is None:
+        contributed_to = []
+        if "name" in json_data and "url" in json_data:
+            o = Output(name=json_data["name"], url=json_data["url"])
+            o.add_new_version(
+                filename=json_data["output_fn"], checksum=json_data["checksum"]
+            )
+            contributed_to.append(o)
+
         p = Provenance(
             function_id=f.id,
-            derived_from=source_ver,
+            derived_from=derived_from,
             description=description,
             function_args=function_args,
             policy=policy,
             timer=timer_delay,
+            contributed_to=contributed_to,
         )
 
     if policy is not None and policy == 0:
