@@ -1,6 +1,5 @@
 import json
 
-
 import osprey.server.models as models
 
 ROUTE = "/osprey/api/v1.0/source"
@@ -21,7 +20,7 @@ SOURCE_KEYS = sorted(
 )
 
 
-def test_create_source(client, mocker):
+def test_create_source(client):
     headers = {"Content-Type": "application/json"}
     data = {
         "name": "test",
