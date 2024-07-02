@@ -18,8 +18,6 @@ This module creates a job that gets triggered by Globus Timer.
 -> To run the TimerJob, there should be authentication file that should store the token with the scope ( Ensure it run before starting the project )
 
 """
-# USER_FLOW_UUID = "0d8ace1a-d583-4f65-834e-4e1e1f450ecc"
-# USER_ENDPOINT_UUID = "1fd89678-3c6f-4bac-8e2b-306da6004b13"
 
 
 def set_timer(

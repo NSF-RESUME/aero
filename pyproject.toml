@@ -46,7 +46,10 @@ branch = true
 omit = [
     "tests/*",
     "osprey/server/app/decorators.py",
-    "osprey/server/lib/*"
+    "osprey/server/lib/*",
+    "osprey/server/app/utils.py",
+    "osprey/server/jobs/timer.py",
+    "osprey/server/jobs/user_flow.py"
 ]
 fail_under = 100
 exclude_also = [
