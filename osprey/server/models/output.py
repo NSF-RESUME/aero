@@ -28,15 +28,14 @@ class Output(db.Model):
         # get current checksum
         num_version = 0
 
-        if self.output_versions is not None:
-            num_version = len(self.output_versions)
+        num_version = len(self.output_versions)
 
-            if num_version > 0:
-                last_version = self.output_versions[num_version - 1]
+        if num_version > 0:
+            last_version = self.output_versions[num_version - 1]
 
-                # compare checksums
-                if last_version.checksum == checksum:
-                    return
+            # compare checksums
+            if last_version.checksum == checksum:
+                return
 
         v = OutputVersion(
             filename=filename,
