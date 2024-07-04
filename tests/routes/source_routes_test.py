@@ -8,6 +8,7 @@ SOURCE_KEYS = sorted(
         "available_versions",
         "collection_url",
         "collection_uuid",
+        "user_endpoint",
         "description",
         "email",
         "id",

@@ -75,6 +75,7 @@ class Source(db.Model):
             "url": self.url,
             "collection_uuid": self.collection_uuid,
             "collection_url": self.collection_url,
+            "user_endpoint": self.user_endpoint,
             "description": self.description,
             "timer": self.timer,
             "verifier": self.verifier,

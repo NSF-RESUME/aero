@@ -47,6 +47,7 @@ def test_json_repr(app):
             "url",
             "collection_uuid",
             "collection_url",
+            "user_endpoint",
             "description",
             "timer",
             "verifier",
