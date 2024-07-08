@@ -1,17 +1,18 @@
-import json
 import os
 
 from typing import Literal
 
-from globus_sdk import NativeAppAuthClient, AccessTokenAuthorizer
+from globus_sdk import AccessTokenAuthorizer
+from globus_sdk import NativeAppAuthClient
+from globus_sdk import SearchClient
+from globus_sdk.tokenstorage import SimpleJSONFileAdapter
 
 # TODO: Move outside of server dir
 # Permanent
 # OSPREY_DIR = os.path.join(os.path.expanduser("~"), ".local/share/osprey")
 # TODO: Change this
 OSPREY_DIR = "/app/osprey/server/"
-TOKENS_FILE = os.path.join(OSPREY_DIR, "tokens.json")
-SEARCH_TOKENS_FILE = os.path.join(OSPREY_DIR, "search_tokens.json")
+TOKENS_FILE = SimpleJSONFileAdapter(os.path.join(OSPREY_DIR, "tokens.json"))
 
 _TIMER_CLIENT_UUID: str = "524230d7-ea86-4a52-8312-86065a9e0417"
 _REDIRECT_URI = "https://auth.globus.org/v2/web/auth-code"
@@ -21,6 +22,7 @@ _CLIENT_ID: str = "c78511ef-8cf7-4802-a7e1-7d56e27b1bf8"
 def authenticate(client: NativeAppAuthClient, scope: str):
     """Perform Globus Authentication."""
 
+    # assert False, scope
     client.oauth2_start_flow(
         redirect_uri=_REDIRECT_URI, refresh_tokens=True, requested_scopes=scope
     )
@@ -37,26 +39,29 @@ def authenticate(client: NativeAppAuthClient, scope: str):
 def create_token_file(
     client: NativeAppAuthClient,
     scope: str | None = None,
-    type: Literal["flows", "search"] = "flows",
+    auth_type: Literal["flows", "timer", "search"] = "flows",
+    fid: str = None,
 ) -> AccessTokenAuthorizer:
     os.makedirs(OSPREY_DIR, exist_ok=True)
     tokens = authenticate(client, scope)
+    TOKENS_FILE.store(tokens)
 
-    if type == "flows":
+    if auth_type == "flows":
+        assert fid is not None
+        flows_access_token = tokens.by_resource_server[fid]["access_token"]
+        authorizer = AccessTokenAuthorizer(access_token=flows_access_token)
+
+    elif auth_type == "timer":
         timer_access_token = tokens.by_resource_server[_TIMER_CLIENT_UUID][
             "access_token"
         ]
         authorizer = AccessTokenAuthorizer(access_token=timer_access_token)
 
-        with open(TOKENS_FILE, "w+") as f:
-            json.dump(tokens.by_resource_server[_TIMER_CLIENT_UUID], f)
     else:
-        _SEARCH_SERVER = "search.api.globus.org"
-        search_access_token = tokens.by_resource_server[_SEARCH_SERVER]["access_token"]
+        search_access_token = tokens.by_resource_server[SearchClient.resource_server][
+            "access_token"
+        ]
         authorizer = AccessTokenAuthorizer(access_token=search_access_token)
-
-        with open(SEARCH_TOKENS_FILE, "w+") as f:
-            json.dump(tokens.by_resource_server[_SEARCH_SERVER], f)
 
     return authorizer
 

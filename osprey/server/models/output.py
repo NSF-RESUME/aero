@@ -11,6 +11,8 @@ class Output(db.Model):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     url = Column(String)
+    collection_uuid = Column(String)
+    description = Column(String)
     provenance_id = db.Column(db.Integer, db.ForeignKey("provenance.id"))
     output_versions = db.relationship(
         "OutputVersion",
@@ -19,8 +21,12 @@ class Output(db.Model):
         lazy=True,
     )
 
-    def __init__(self, name: str, url: str):
-        super().__init__(name=name, url=url)
+    def __init__(
+        self, name: str, url: str, collection_uuid: str, description: str = ""
+    ):
+        super().__init__(
+            name=name, url=url, collection_uuid=collection_uuid, description=description
+        )
         db.session.add(self)
         db.session.commit()
 
@@ -55,8 +61,8 @@ class Output(db.Model):
             "id": self.id,
             "name": self.name,
             "url": self.url,
+            "collection_uuid": self.collection_uuid,
             "provenance_id": self.provenance_id,
-            "versions": [v.toJSON() for v in self.output_versions]
-            if self.output_versions is not None
-            else None,
+            "available_versions": len(self.output_versions),
+            "description": self.description,
         }

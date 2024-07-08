@@ -1,7 +1,9 @@
 from flask import Blueprint, jsonify, request
 
+from osprey.server.app import db
 from osprey.server.app.decorators import authenticated
 from osprey.server.models.output import Output
+from osprey.server.models.output_version import OutputVersion
 
 output_routes = Blueprint("output_routes", __name__, url_prefix="/output")
 
@@ -34,3 +36,35 @@ def create_output_file():
     o: Output = Output(name=data["name"], url=data["url"])
     o.add_new_version(filename=data["filename"], checksum=data["checksum"])
     return jsonify(o.toJSON()), 200
+
+
+@output_routes.route("/<id>/file", methods=["GET"])
+@authenticated
+def grap_file(id):
+    source = db.session.get(Output, id)
+    if not source:
+        return jsonify({"code": 404, "message": f"Source with id {id} not found"}), 404
+
+    version = request.args.get("version")
+    if not version:
+        s = list(
+            OutputVersion.query.filter(OutputVersion.output_id == id)
+            .order_by(OutputVersion.version.desc())
+            .limit(1)
+        )
+    else:
+        s = list(
+            OutputVersion.query.filter(OutputVersion.output_id == id)
+            .filter(OutputVersion.version == version)
+            .limit(1)
+        )
+
+    if len(s) == 0:
+        return jsonify(
+            {
+                "code": 404,
+                "message": f"Output with id {id} and version {version} not found",
+            }
+        ), 404
+
+    return jsonify(s[0].toJSON()), 200

@@ -1,6 +1,3 @@
-import json
-import os
-
 from globus_sdk import AccessTokenAuthorizer
 from globus_sdk import NativeAppAuthClient
 from globus_sdk import RefreshTokenAuthorizer
@@ -10,7 +7,7 @@ from globus_sdk.services.search.errors import SearchAPIError
 
 from osprey.server.lib.globus_auth import _CLIENT_ID
 from osprey.server.lib.globus_auth import create_token_file
-from osprey.server.lib.globus_auth import SEARCH_TOKENS_FILE
+from osprey.server.lib.globus_auth import TOKENS_FILE
 
 # from osprey.server.models.source import Source
 from osprey.server.models.source_version import SourceVersion
@@ -39,9 +36,8 @@ class DSaaSSearchClient:
 
     def create_authorizer(self) -> AccessTokenAuthorizer | RefreshTokenAuthorizer:
         client = self.create_context()
-        if os.path.exists(SEARCH_TOKENS_FILE):
-            with open(SEARCH_TOKENS_FILE) as f:
-                tokens = json.load(f)
+        if TOKENS_FILE.file_exists():
+            tokens = TOKENS_FILE.get_token_data(SearchClient.resource_server)
             search_refresh_token = tokens["refresh_token"]
             authorizer = RefreshTokenAuthorizer(search_refresh_token, client)
         else:

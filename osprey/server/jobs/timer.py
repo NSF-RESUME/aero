@@ -94,7 +94,7 @@ def delete_job(job_id: str, flow_type: FlowEnum):
     flow_id = FLOW_IDS[flow_type]
 
     _ = SpecificFlowClient(flow_id=flow_id)
-    authorizer, specific_flow_scope = create_authorizer(flow_id)
+    authorizer, specific_flow_scope = create_authorizer(flow_id, auth_type="timer")
     timer_client = TimerClient(authorizer=authorizer, app_name="osprey-prototype")
     response = timer_client.delete_job(job_id=job_id)
     assert response.http_status == 200, response.http_reason
@@ -102,4 +102,4 @@ def delete_job(job_id: str, flow_type: FlowEnum):
 
 if __name__ == "__main__":
     flow_id = FLOW_IDS[FlowEnum.NONE]
-    create_authorizer(flow_id)
+    create_authorizer(flow_id, auth_type="timer")

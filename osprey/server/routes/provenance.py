@@ -1,6 +1,6 @@
 import uuid
+import json
 
-from datetime import datetime
 from flask import Blueprint, jsonify, request
 
 from osprey.server.app import db
@@ -59,7 +59,11 @@ def record_provenance():
             ).first()
         ) is None:
             # create output and store provenance data
-            o = Output(name=json_data["name"], url=json_data["url"])
+            o = Output(
+                name=json_data["name"],
+                url=json_data["url"],
+                collection_uuid=json_data["collection_uuid"],
+            )
             o.add_new_version(
                 filename=json_data["output_fn"], checksum=json_data["checksum"]
             )
@@ -88,10 +92,11 @@ def record_provenance():
 @provenance_routes.route("/timer/<function_uuid>", methods=["POST"])
 @authenticated
 def register_flow(function_uuid):
+    print("registering_flow")
     json_data = request.json
 
     derived_from: list[Source] = []
-    function_args = json_data["kwargs"]
+    function_args = json.dumps(json_data)
     sources = json_data["sources"]
     description = json_data["description"]
     policy: int | None = json_data.get("policy")
@@ -137,7 +142,6 @@ def register_flow(function_uuid):
         p.timer_job_id = job_id
     elif policy is not None:
         p._run_flow()
-        p.last_executed = datetime.now()
 
     db.session.add(p)
     db.session.commit()
