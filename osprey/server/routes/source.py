@@ -1,11 +1,10 @@
 from flask import Blueprint, jsonify, request
 
 from osprey.server.app import db
-from osprey.server.app import SEARCH_INDEX
 from osprey.server.app.decorators import authenticated
+from osprey.server.app.utils import get_search_client
 from osprey.server.models.source import Source
 from osprey.server.models.source_version import SourceVersion
-from osprey.server.lib.globus_search import DSaaSSearchClient
 from osprey.server.lib.error import ServiceError
 
 source_routes = Blueprint("source_routes", __name__, url_prefix="/source")
@@ -27,10 +26,10 @@ def all_sources():
 @authenticated
 def search():
     query = request.args.get("query")
-    sc = DSaaSSearchClient(SEARCH_INDEX).client
+    sc = get_search_client()
 
     try:
-        result = sc.search(SEARCH_INDEX, query, advanced=True)
+        result = sc.client.search(sc.index, query, advanced=True)
     except Exception as e:
         return jsonify(str(e)), 500
     return result.text, 200

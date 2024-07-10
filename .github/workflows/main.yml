@@ -18,6 +18,7 @@ jobs:
         image: postgres
         # Provide the password for postgres
         env:
+          POSTGRES_DB: osprey_development
           POSTGRES_PASSWORD: postgres
         # Set health checks to wait until postgres has started
         options: >-
@@ -38,11 +39,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          
+
       # Performs a clean installation of all dependencies in the `package.json` file
       # For more information, see https://docs.npmjs.com/cli/ci.html
       - name: Install dependencies
-        run: pip install ".[dev]"
+        run: pip install "tox"
 
       - name: Run tests
         run: tox
@@ -52,3 +53,6 @@ jobs:
           DATABASE_PASSWORD: postgres
           DATABASE_PORT: 5432
           DATABASE_NAME: osprey_development
+
+      - name: Display coverage report
+        run: tox -e report

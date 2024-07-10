@@ -12,12 +12,12 @@ JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | 
 def run_flow(endpoint_uuid: str, function_uuid: str, tasks: JSON):
     flow_id = FLOW_IDS[FlowEnum.USER_FLOW]
 
-    authorizer, specific_flow_scope = create_authorizer(flow_id)
+    authorizer, specific_flow_scope = create_authorizer(flow_id, "flow")
     sfc = SpecificFlowClient(flow_id=flow_id, authorizer=authorizer)
     run_input = {
         "user_endpoint": endpoint_uuid,
         "user_function": function_uuid,
-        "kwargs": json.dumps(tasks),
+        "tasks": json.dumps(tasks),
     }
     response = sfc.run_flow(body=run_input, label="Osprey Demo | User flow")
     assert response.http_status == 201

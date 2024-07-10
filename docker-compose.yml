@@ -12,38 +12,21 @@ services:
       - DATABASE_NAME=osprey_development
       - PORTAL_CLIENT_ID=${PORTAL_CLIENT_ID}
       - PORTAL_CLIENT_SECRET=${PORTAL_CLIENT_SECRET}
-      - FLASK_APP=server.py
+      - FLASK_APP=app/run.py
 
       # Project owner registers this
-      - GLOBUS_FLOW_DOWNLOAD_FUNCTION=fcb8997c-d993-4ebb-a0be-654328c904f3
-      - GLOBUS_FLOW_COMMIT_FUNCTION=6e63070f-8465-47d2-bea4-8f3d98db8d0d
-      - GLOBUS_FLOW_USER_COMMIT_FUNCTION=236cf864-f17d-40ae-91d1-2366012296d1
-      - UDF_FLOW_FUNCTION=4777072c-6ca1-44a5-9cfa-b22fd8959900
-      - SEARCH_INDEX=3779f3dc-00e2-42aa-ab84-765bb84199be
-
-      # User functions are registered in this client
-      # - FUNCX_SDK_CLIENT_ID=638156ef-7332-4ab1-8d92-304b27bdd270
-      # - FUNCX_SDK_CLIENT_SECRET=zUtPdMO1HDdRI3Qjkjehgn6YA85griFVJlwgu/HLbl4=
-
-      - GLOBUS_WORKER_UUID=8b4456e0-1a7d-4257-9e45-373dabbb922e
-      - GCS_ENDPOINT_UUID=ede1f1ef-8c15-42fd-a3ce-3ca6109bce42
-      - GCS_MANAGER_DOMAIN_NAME=6073d3.08cc.data.globus.org
-      - GCS_STORAGE_GATEWAY_ID=88cba8d2-5a8b-439c-8a53-74a2f0332128
-      - GCS_MAPPED_COLLECTION_ID=f36c1eb6-7d6a-4bf0-973f-e4adf052b34e
-      - GCS_SERVICE_USER=vhayot
-      - CONNECTOR_ID=88cba8d2-5a8b-439c-8a53-74a2f0332128
-
+      - GLOBUS_FLOW_DOWNLOAD_FUNCTION=330e9240-70a0-47be-98a5-3354c7fcba5a
+      - GLOBUS_FLOW_COMMIT_FUNCTION=0037e1ac-749b-4006-be57-75d933b02665
+      - GLOBUS_FLOW_USER_COMMIT_FUNCTION=45276e86-7ac3-4e8e-8d06-10870c173d77
+      - SEARCH_INDEX=8bbcdadc-46ae-4a45-8cd6-e80ea85d7afd
       # For timer email
       - DSAAS_EMAIL_PASSWORD=${DSAAS_EMAIL_PASSWORD}
 
     volumes:
-      - ${GCS_ROOT_DIR}:/dsaas_storage:rw
       - ./osprey:/app/osprey
       - ./data:/app/osprey/data
-      - ./globus_compute/:/root/.globus_compute/
     depends_on:
         - postgres-database
-        - globus-endpoint
 
   postgres-database:
     restart: always
@@ -51,54 +34,11 @@ services:
     environment:
       - POSTGRES_USER=${DATABASE_USER}
       - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_DB=osprey_development
     ports:
       - "5432:5432"
     volumes:
       - osprey-postgres-data:/var/lib/postgresql/data
-
-  globus-endpoint:
-    build:
-        dockerfile: ./Dockerfiles/Dockerfile.endpoint.dev
-    volumes:
-      - ${GCS_ROOT_DIR}:/dsaas_storage
-      - osprey-endpoint-data:/root/.globus_compute
-      - ./osprey:/app/osprey
-      - ./data:/app/osprey/data
-
-    # TODO: Make a different user
-    environment:
-      - DATABASE_PORT=5432
-      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
-      - DATABASE_USER=${DATABASE_USER}
-      - DATABASE_HOST=dsaas-postgres-database-1
-      - DATABASE_NAME=osprey_development
-      - SEARCH_INDEX=3779f3dc-00e2-42aa-ab84-765bb84199be
-      # - FUNCX_SDK_CLIENT_ID=638156ef-7332-4ab1-8d92-304b27bdd270
-      # - FUNCX_SDK_CLIENT_SECRET=zUtPdMO1HDdRI3Qjkjehgn6YA85griFVJlwgu/HLbl4=
-
-  # globus-connect:
-  #     build:
-  #       dockerfile: ./Dockerfiles/Dockerfile.connect-server.dev
-  #     volumes:
-  #       - ./osprey/:/app/osprey/
-  #     ports:
-  #       - "443:443"
-  #       - "80:80"
-  #     tty: true
-  #     stdin_open: true
-
-  # globus-proxystore:
-  #   build:
-  #     dockerfile: ./Dockerfiles/Dockerfile.proxystore.dev
-  #   volumes:
-  #     - osprey-proxystore-data:/root/.local/share/proxystore
-  #   ports:
-  #     - "8765:8765"
-
 volumes:
   osprey-postgres-data:
-    external: true
-  osprey-endpoint-data:
-    external: true
-  osprey-proxystore-data:
     external: true

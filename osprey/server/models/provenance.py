@@ -51,7 +51,7 @@ class Provenance(db.Model):
         if policy == 0 and timer is None:
             timer = 86400
 
-        last_executed = datetime.now()
+        last_executed = None  # datetime.now()
 
         super().__init__(
             function_id=function_id,
@@ -100,9 +100,10 @@ class Provenance(db.Model):
 
         if self.policy == 0:
             self._start_timer_flow()
+            self.last_executed = datetime.now()
             return 0
         elif self.policy == 1:  # ANY
-            if any(
+            if self.last_executed is None or any(
                 s.last_version().created_at > self.last_executed
                 for s in self.derived_from
             ):
@@ -116,7 +117,7 @@ class Provenance(db.Model):
                 db.session.commit()
             return 1
         elif self.policy == 2:  # ALL
-            if all(
+            if self.last_executed is None or all(
                 s.last_version().created_at > self.last_executed
                 for s in self.derived_from
             ):

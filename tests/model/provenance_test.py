@@ -1,18 +1,25 @@
 import datetime
 
-from osprey.tests.conftest import Function
-from osprey.tests.conftest import Output
-from osprey.tests.conftest import Provenance
-from osprey.tests.conftest import Source
-from osprey.tests.conftest import SourceVersion
+# from unittest import mock
+
+# with (
+#     mock.patch("osprey.server.lib.globus_search.DSaaSSearchClient") as dsc_mock,
+#     mock.patch("osprey.server.jobs.timer.set_timer", return_value=1111) as st_mock,
+#     mock.patch("osprey.server.jobs.user_flow.run_flow") as rf_mock,
+# ):
+import osprey.server.models as models
 
 
 def test_create(app):
-    s: Source = Source(name="input", url="input", email="1")
-    _: SourceVersion = SourceVersion(version=1, checksum="1", source_id=s.id)
-    o: Output = Output(name="output", url="output")
-    f: Function = Function(uuid="1")
-    p: Provenance = Provenance(function_id=f.id, derived_from=[s], contributed_to=[o])
+    s: models.source.Source = models.source.Source(name="input", url="input", email="1")
+    _: models.source_version.SourceVersion = models.source_version.SourceVersion(
+        version=1, checksum="1", source_id=s.id
+    )
+    o: models.output.Output = models.output.Output(name="output", url="output")
+    f: models.function.Function = models.function.Function(uuid="1")
+    p: models.provenance.Provenance = models.provenance.Provenance(
+        function_id=f.id, derived_from=[s], contributed_to=[o]
+    )
 
     assert (
         p.id == 1
@@ -25,14 +32,16 @@ def test_create(app):
         and isinstance(p.last_executed, datetime.date)
     )
 
-    p2: Provenance = Provenance(
+    p2: models.provenance.Provenance = models.provenance.Provenance(
         function_id=f.id, derived_from=[s], contributed_to=[o], policy=0
     )
     assert p2.timer == 86400
 
 
 def test_json(app):
-    p: Provenance = Provenance.query.filter_by(id=1).first()
+    p: models.provenance.Provenance = models.provenance.Provenance.query.filter_by(
+        id=1
+    ).first()
     p_json = p.toJSON()
 
     assert list(p_json.keys()) == [
@@ -63,7 +72,9 @@ def test_json(app):
 
 
 def test_str_repr(app):
-    p: Provenance = Provenance.query.filter_by(id=1).first()
+    p: models.provenance.Provenance = models.provenance.Provenance.query.filter_by(
+        id=1
+    ).first()
     p_str = str(p)
 
     assert (
@@ -73,7 +84,9 @@ def test_str_repr(app):
 
 
 def test_start_timer_flow(app):
-    p: Provenance = Provenance.query.filter_by(id=1).first()
+    p: models.provenance.Provenance = models.provenance.Provenance.query.filter_by(
+        id=1
+    ).first()
     assert p.timer_job_id is None
 
     p._start_timer_flow()
@@ -81,7 +94,9 @@ def test_start_timer_flow(app):
 
 
 def test_run_flow(app):
-    p: Provenance = Provenance.query.filter_by(id=1).first()
+    p: models.provenance.Provenance = models.provenance.Provenance.query.filter_by(
+        id=1
+    ).first()
     p.policy = 0
     p.function_args = '{"endpoint": "1", "function": "1", "tasks": "1"}'
 

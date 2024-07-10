@@ -2,16 +2,15 @@ import datetime
 
 from uuid import uuid4
 
-from osprey.tests.conftest import Source
-from osprey.tests.conftest import SourceVersion
+import osprey.server.models as models
 
 
 def test_create_source_version(app):
     with app.app_context():
-        s: Source = Source(name="1", url="1", email="1")
+        s: models.source.Source = models.source.Source(name="1", url="1", email="1")
 
         checksum = str(uuid4())
-        v: SourceVersion = SourceVersion(
+        v: models.source_version.SourceVersion = models.source_version.SourceVersion(
             version=(s.last_version() + 1), source_id=s.id, checksum=checksum
         )
 
@@ -26,9 +25,11 @@ def test_create_source_version(app):
 
 def test_version_json(app):
     with app.app_context():
-        s: Source = Source.query.filter_by(name="test").first()
+        s: models.source.Source = models.source.Source.query.filter_by(
+            name="test"
+        ).first()
         checksum = str(uuid4())
-        v: SourceVersion = SourceVersion(
+        v: models.source_version.SourceVersion = models.source_version.SourceVersion(
             version=(s.last_version().version + 1), source_id=s.id, checksum=checksum
         )
         v_dict = v.toJSON()
@@ -47,9 +48,11 @@ def test_version_json(app):
 
 def test_version_repr(app):
     with app.app_context():
-        s: Source = Source.query.filter_by(name="test").first()
+        s: models.source.Source = models.source.Source.query.filter_by(
+            name="test"
+        ).first()
         checksum = str(uuid4())
-        v: SourceVersion = SourceVersion(
+        v: models.source_version.SourceVersion = models.source_version.SourceVersion(
             version=(s.last_version().version + 1), source_id=s.id, checksum=checksum
         )
         v_str = str(v)
@@ -62,9 +65,11 @@ def test_version_repr(app):
 
 def test_set_version_defaults(app):
     with app.app_context():
-        s: Source = Source.query.filter_by(name="test").first()
+        s: models.source.Source = models.source.Source.query.filter_by(
+            name="test"
+        ).first()
         checksum = str(uuid4())
-        v: SourceVersion = SourceVersion(
+        v: models.source_version.SourceVersion = models.source_version.SourceVersion(
             version=(s.last_version().version + 1), source_id=s.id, checksum=checksum
         )
 

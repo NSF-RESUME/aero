@@ -39,7 +39,21 @@ exclude = ["Dockerfiles*", "scripts*", "workflow*"]
 [tool.ruff]
 extend-select = ["Q"]
 
+[tool.coverage.run]
+branch = true
+
 [tool.coverage.report]
+omit = [
+    "tests/*",
+    "osprey/server/app/decorators.py",
+    "osprey/server/lib/*",
+    "osprey/server/app/utils.py",
+    "osprey/server/jobs/timer.py",
+    "osprey/server/jobs/user_flow.py"
+]
+fail_under = 100
 exclude_also = [
     "def search",
+    "except ServiceError",
+    "except Exception"
 ]

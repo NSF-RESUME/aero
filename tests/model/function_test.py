@@ -1,15 +1,15 @@
-from osprey.tests.conftest import Function
+import osprey.server.models as models
 
 
 def test_create(app):
     uuid = "1"
-    f: Function = Function(uuid=uuid)
+    f: models.function.Function = models.function.Function(uuid=uuid)
 
     assert f.id == 1 and f.uuid == uuid and f.provenances == []
 
 
 def test_json(app):
-    f: Function = Function.query.filter_by(id=1).first()
+    f: models.function.Function = models.function.Function.query.filter_by(id=1).first()
     f_json = f.toJSON()
 
     assert list(f_json.keys()) == ["id", "uuid"]
@@ -17,7 +17,7 @@ def test_json(app):
 
 
 def test_str_repr(app):
-    f: Function = Function.query.filter_by(id=1).first()
+    f: models.function.Function = models.function.Function.query.filter_by(id=1).first()
     f_str = str(f)
 
     assert f_str == f"<Function(id={f.id}, uuid='{f.uuid}')>"

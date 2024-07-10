@@ -9,7 +9,6 @@ NOTE:
     ii) Avoid using sudershan@uchicago.edu identity for all globus services
 
 """
-
 from osprey.server.lib.globus_compute import register_function
 
 
@@ -21,6 +20,7 @@ def download(*args, **kwargs):
             associated extension.
     """
     import hashlib
+    import pathlib
     import requests
     import uuid
     from mimetypes import guess_extension
@@ -28,7 +28,12 @@ def download(*args, **kwargs):
 
     from dsaas_client.config import CONF
     from dsaas_client.utils import load_tokens
-    from osprey.worker.models.utils import TEMP_DIR
+
+    if "temp_dir" in kwargs:
+        TEMP_DIR = kwargs["temp_dir"]
+    else:
+        TEMP_DIR = pathlib.Path.home() / "aero"
+        kwargs["temp_dir"] = str(TEMP_DIR)
 
     tokens = load_tokens()
     auth_token = tokens[CONF.portal_client_id]["refresh_token"]
@@ -47,7 +52,7 @@ def download(*args, **kwargs):
     bn = str(uuid.uuid4())
     fn = Path(TEMP_DIR, bn)
 
-    TEMP_DIR.mkdir(exist_ok=True)
+    TEMP_DIR.mkdir(exist_ok=True, parents=True)
 
     with open(fn, "w+") as f:
         f.write(response.content.decode("utf-8"))
@@ -69,7 +74,7 @@ def user_function_wrapper(*args, **kwargs):
     from dsaas_client.utils import load_tokens
 
     from osprey.server.lib.error import ServiceError, CUSTOM_FUNCTION_ERROR
-    from osprey.server.lib.globus_compute import execute_function, get_result
+    from osprey.server.lib.globus_compute import execute_function
 
     tokens = load_tokens()
     auth_token = tokens[CONF.portal_client_id]["refresh_token"]
@@ -77,68 +82,42 @@ def user_function_wrapper(*args, **kwargs):
 
     source_id = kwargs["source_id"]
 
-    response = requests.get(
-        f"{CONF.server_url}/source/{source_id}", headers=headers, verify=False
-    )
+    response = requests.get(f"{CONF.server_url}/source/{source_id}", headers=headers)
+
+    assert response.status_code == 200, response.content
     source = response.json()
 
     # Verifier
     if source["verifier"] is not None:
         try:
-            tracker = execute_function(
+            result = execute_function(
                 source["verifier"], source["user_endpoint"], *args, **kwargs
             )
-            args, kwargs = get_result(tracker, block=True)
+            if result is not None:
+                args, kwargs = result
         except Exception:
             raise ServiceError(CUSTOM_FUNCTION_ERROR, "Verifier failed")
 
     # Modifier
     if source["modifier"] is not None:
         try:
-            tracker = execute_function(
+            result = execute_function(
                 source["modifier"], source["user_endpoint"], *args, **kwargs
             )
-            args, kwargs = get_result(tracker, block=True)
-        except Exception:
-            raise ServiceError(CUSTOM_FUNCTION_ERROR, "Modifier failed")
+
+            if result is not None:
+                args, kwargs = result
+        except Exception as e:
+            raise ServiceError(CUSTOM_FUNCTION_ERROR, f"Modifier failed: {e}")
 
     # TODO: check if data has changed
 
     return args, kwargs
 
 
-def flow_db_update(sources: list[str], output_fn: str, function_uuid: str):
-    from osprey.worker.models.database import Session
-    from osprey.worker.models.function import Function
-    from osprey.worker.models.output import Output
-    from osprey.worker.models.provenance import Provenance
-    from osprey.worker.models.source_version import SourceVersion
-
-    source_ver: list = []
-
-    # currently just gets last version
-    with Session() as session:
-        for s_id in sources:
-            source_ver.append(
-                session.query(SourceVersion)
-                .filter(SourceVersion.source_id == int(s_id))
-                .order_by(SourceVersion.version.desc())
-                .first()
-            )
-
-        f = Function(uuid=function_uuid)
-        session.add(f)
-
-        o = Output(filename=output_fn)
-        session.add(o)
-
-        p = Provenance(function_id=f.id, derived_from=source_ver, contributed_to=[o])
-        session.add(p)
-        session.commit()
-
-
 def database_commit(*args, **kwargs):
     import json
+    import pathlib
     import requests
     from dsaas_client.config import CONF
     from dsaas_client.utils import load_tokens
@@ -160,14 +139,17 @@ def database_commit(*args, **kwargs):
     gcs_url = source["collection_url"]
     gcs_id = source["collection_uuid"]
 
-    transfer_token = tokens[gcs_id]["refresh_token"]
+    transfer_token = tokens[gcs_id]["access_token"]
 
     headers = {"Authorization": f"Bearer {transfer_token}"}
 
+    with open(kwargs["file"], "r") as f:
+        data = f.read()
+
     # save data to GCS
-    response = requests.post(
-        f"https://{gcs_url}/{file_bn}", headers=headers, verify=False
-    )
+    response = requests.put(f"{gcs_url}/{file_bn}", headers=headers, data=data)
+
+    assert response.status_code == 200, response.json()
 
     aero_headers["Content-type"] = "application/json"
 
@@ -177,20 +159,21 @@ def database_commit(*args, **kwargs):
         headers=aero_headers,
         data=json.dumps(
             {
-                "file": kwargs["file"],
+                "file": kwargs["file_bn"],
                 "file_format": kwargs["file_format"],
                 "checksum": kwargs["checksum"],
                 "size": kwargs["size"],
             }
         ),
-        verify=False,
     )
 
+    pathlib.Path(kwargs["file"]).unlink()
+    assert response.status_code == 200, response.json()
     return response.json()
 
 
 if __name__ == "__main__":
-    print("Globus Flow download", register_function(download))
-    print("Globus Flow database commit", register_function(database_commit))
-    print("Globus Flow user function commit", register_function(user_function_wrapper))
-    print("UDF Globus Flow db commit", register_function(flow_db_update))
+    with open("set_flow_uuids.sh", "w+") as f:
+        f.write(f"export FLOW_DOWNLOAD={register_function(download)}\n")
+        f.write(f"export FLOW_DB_COMMIT={register_function(database_commit)}\n")
+        f.write(f"export FLOW_USER_COMMIT={register_function(user_function_wrapper)}\n")

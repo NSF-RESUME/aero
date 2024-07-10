@@ -32,4 +32,5 @@ class OutputVersion(db.Model):
             "filename": self.filename,
             "version": self.version,
             "checksum": self.checksum,
+            "output": self.output.toJSON(),
         }

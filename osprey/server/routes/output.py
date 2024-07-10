@@ -1,22 +1,11 @@
-import uuid
-import os
-
-from pathlib import Path
-
 from flask import Blueprint, jsonify, request
 
+from osprey.server.app import db
 from osprey.server.app.decorators import authenticated
 from osprey.server.models.output import Output
+from osprey.server.models.output_version import OutputVersion
 
 output_routes = Blueprint("output_routes", __name__, url_prefix="/output")
-
-if (test := os.getenv("DSAAS_TESTENV")) is not None and int(test) == 1:
-    GCS_DIR = Path(Path.cwd(), "dsaas_storage", "output")
-else:
-    GCS_DIR = Path("/dsaas_storage/output")
-
-# TODO: Just create these directories when GCS is created
-# GCS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 @output_routes.route("/", methods=["GET"])
@@ -34,8 +23,48 @@ def show_output():
 @output_routes.route("/new", methods=["POST"])
 @authenticated
 def create_output_file():
-    filename = str(uuid.uuid4())
-    filepath = Path(GCS_DIR, filename)
-    filepath.touch()
+    data = request.json
 
-    return jsonify({"file": str(filepath)}), 200
+    assert "filename" in data
+    assert "checksum" in data
+    assert "url" in data
+    assert "name" in data
+
+    if "description" not in data:
+        data["description"] = None
+
+    o: Output = Output(name=data["name"], url=data["url"])
+    o.add_new_version(filename=data["filename"], checksum=data["checksum"])
+    return jsonify(o.toJSON()), 200
+
+
+@output_routes.route("/<id>/file", methods=["GET"])
+@authenticated
+def grap_file(id):
+    source = db.session.get(Output, id)
+    if not source:
+        return jsonify({"code": 404, "message": f"Source with id {id} not found"}), 404
+
+    version = request.args.get("version")
+    if not version:
+        s = list(
+            OutputVersion.query.filter(OutputVersion.output_id == id)
+            .order_by(OutputVersion.version.desc())
+            .limit(1)
+        )
+    else:
+        s = list(
+            OutputVersion.query.filter(OutputVersion.output_id == id)
+            .filter(OutputVersion.version == version)
+            .limit(1)
+        )
+
+    if len(s) == 0:
+        return jsonify(
+            {
+                "code": 404,
+                "message": f"Output with id {id} and version {version} not found",
+            }
+        ), 404
+
+    return jsonify(s[0].toJSON()), 200

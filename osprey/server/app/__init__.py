@@ -1,12 +1,8 @@
-import os
-
 from flask import Flask
 
 from osprey.server.app.extensions import db
 from osprey.server.config import Config
 from flask_migrate import Migrate
-
-SEARCH_INDEX = os.getenv("SEARCH_INDEX")
 
 
 def create_app(config_class=Config):

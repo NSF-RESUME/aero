@@ -18,8 +18,6 @@ This module creates a job that gets triggered by Globus Timer.
 -> To run the TimerJob, there should be authentication file that should store the token with the scope ( Ensure it run before starting the project )
 
 """
-# USER_FLOW_UUID = "0d8ace1a-d583-4f65-834e-4e1e1f450ecc"
-# USER_ENDPOINT_UUID = "1fd89678-3c6f-4bac-8e2b-306da6004b13"
 
 
 def set_timer(
@@ -96,7 +94,7 @@ def delete_job(job_id: str, flow_type: FlowEnum):
     flow_id = FLOW_IDS[flow_type]
 
     _ = SpecificFlowClient(flow_id=flow_id)
-    authorizer, specific_flow_scope = create_authorizer(flow_id)
+    authorizer, specific_flow_scope = create_authorizer(flow_id, auth_type="timer")
     timer_client = TimerClient(authorizer=authorizer, app_name="osprey-prototype")
     response = timer_client.delete_job(job_id=job_id)
     assert response.http_status == 200, response.http_reason
@@ -104,4 +102,4 @@ def delete_job(job_id: str, flow_type: FlowEnum):
 
 if __name__ == "__main__":
     flow_id = FLOW_IDS[FlowEnum.NONE]
-    create_authorizer(flow_id)
+    create_authorizer(flow_id, auth_type="timer")
