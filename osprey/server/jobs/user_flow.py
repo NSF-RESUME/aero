@@ -17,7 +17,7 @@ def run_flow(endpoint_uuid: str, function_uuid: str, tasks: JSON):
     run_input = {
         "user_endpoint": endpoint_uuid,
         "user_function": function_uuid,
-        "kwargs": json.dumps(tasks),
+        "tasks": json.dumps(tasks),
     }
     response = sfc.run_flow(body=run_input, label="Osprey Demo | User flow")
     assert response.http_status == 201
