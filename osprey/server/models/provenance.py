@@ -11,7 +11,7 @@ from osprey.server.app import db
 
 from osprey.server.jobs.user_flow import run_flow
 from osprey.server.jobs.timer import set_timer
-from osprey.server.lib.globus_flow import FlowEnum
+from osprey.server.lib.utils import FlowEnum
 
 provenance_derivation = db.Table(
     "provenance_derivation",

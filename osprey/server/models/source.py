@@ -15,7 +15,8 @@ from osprey.server.models.provenance import Provenance
 from osprey.server.models.source_file import SourceFile
 from osprey.server.models.tag import SourceTagTable
 from osprey.server.models.source_version import SourceVersion
-from osprey.server.lib.globus_flow import get_job, FlowEnum, FLOW_IDS
+from osprey.server.lib.globus_flow import get_job
+from osprey.server.lib.utils import FlowEnum, FLOW_IDS
 from osprey.server.config import Config
 
 

@@ -1,16 +1,10 @@
-from globus_sdk import AccessTokenAuthorizer
-from globus_sdk import NativeAppAuthClient
-from globus_sdk import RefreshTokenAuthorizer
 from globus_sdk import SearchClient
 from globus_sdk.scopes import SearchScopes
 from globus_sdk.services.search.errors import SearchAPIError
 
-from osprey.server.lib.globus_auth import _CLIENT_ID
-from osprey.server.lib.globus_auth import create_token_file
-from osprey.server.lib.globus_auth import TOKENS_FILE
-
 # from osprey.server.models.source import Source
 from osprey.server.models.source_version import SourceVersion
+from osprey.server.lib.globus_auth import get_authorizer
 
 GCS_PATH = "https://g-c952d0.1305de.36fe.data.globus.org/source"
 
@@ -20,7 +14,7 @@ class DSaaSSearchClient:
     client: SearchClient
 
     def __init__(self, index=None):
-        authorizer = self.create_authorizer()
+        authorizer = get_authorizer(scopes=SearchScopes.all)
         self.client = SearchClient(authorizer=authorizer)
 
         if index is not None:
@@ -28,21 +22,6 @@ class DSaaSSearchClient:
         else:
             self.index = self.create_source_idx()
             print(f"Created new search index: {self.index}")
-
-    def create_context(self) -> NativeAppAuthClient:
-        client = NativeAppAuthClient(client_id=_CLIENT_ID)
-        client.oauth2_start_flow(requested_scopes=[SearchScopes.all])
-        return client
-
-    def create_authorizer(self) -> AccessTokenAuthorizer | RefreshTokenAuthorizer:
-        client = self.create_context()
-        if TOKENS_FILE.file_exists():
-            tokens = TOKENS_FILE.get_token_data(SearchClient.resource_server)
-            search_refresh_token = tokens["refresh_token"]
-            authorizer = RefreshTokenAuthorizer(search_refresh_token, client)
-        else:
-            authorizer = create_token_file(client, SearchScopes.all, "search")
-        return authorizer
 
     def create_source_idx(self):
         r = self.client.create_index(
@@ -124,10 +103,10 @@ class DSaaSSearchClient:
     #     except SearchAPIError as e:
     #         print("Error in populating index", e.raw_json)
 
-    def create_output_idx(self) -> None:
-        _ = self.client.create_index(
-            "DSaaS outputs", "Searchable index for all outputs stored in DSaaS"
-        )
+    # def create_output_idx(self) -> None:
+    #     _ = self.client.create_index(
+    #         "DSaaS outputs", "Searchable index for all outputs stored in DSaaS"
+    #     )
 
 
 if __name__ == "__main__":
