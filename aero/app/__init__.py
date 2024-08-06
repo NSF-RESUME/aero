@@ -16,7 +16,7 @@ def create_app(config_class=Config):
     # Initialize Flask extensions here
 
     # Register blueprints here
-    from aero.app.routes import all_routes
+    from aero.routes.routes import all_routes
 
     app.register_blueprint(all_routes)
 
