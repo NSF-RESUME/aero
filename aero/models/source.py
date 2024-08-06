@@ -14,7 +14,7 @@ from aero.models.provenance import Provenance
 from aero.models.source_file import SourceFile
 from aero.models.tag import SourceTagTable
 from aero.models.source_version import SourceVersion
-from aero.globus.globus_flow import get_job
+from aero.globus.flow import get_job
 from aero.globus.utils import FlowEnum
 from aero.config import Config
 

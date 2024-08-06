@@ -24,7 +24,7 @@ def app():
 def _mock_globus():
     with (
         mock.patch("aero.jobs.timer.set_timer", return_value=1111) as _,
-        mock.patch("aero.globus.globus_search.DSaaSSearchClient", autospec=True) as _,
+        mock.patch("aero.globus.search.DSaaSSearchClient", autospec=True) as _,
         mock.patch("aero.jobs.user_flow.run_flow") as _,
     ):
         yield

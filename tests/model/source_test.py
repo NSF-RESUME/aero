@@ -244,7 +244,7 @@ def test_start_time_flow(app):
 def test_get_timer_job(app):
     with app.app_context():
         s: models.source.Source = models.source.Source(name="1", url="1", email="1")
-        with mock.patch("aero.globus.globus_flow.create_client") as _:
+        with mock.patch("aero.globus.flow.create_client") as _:
             _ = s.get_timer_job()
 
 
@@ -252,14 +252,14 @@ def test_last_refreshed_at(app):
     with app.app_context():
         s: models.source.Source = models.source.Source(name="1", url="1", email="1")
 
-        with mock.patch("aero.globus.globus_flow.create_client") as _:
+        with mock.patch("aero.globus.flow.create_client") as _:
             s.last_refreshed_at()
 
         with (
             mock.patch(
                 "aero.models.source.Source.get_timer_job", return_value=None
             ) as _,
-            mock.patch("aero.globus.globus_flow.create_client") as _,
+            mock.patch("aero.globus.flow.create_client") as _,
         ):
             s.last_refreshed_at()
 

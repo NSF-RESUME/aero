@@ -6,7 +6,7 @@ from globus_sdk import TimerClient
 from globus_sdk import TimerJob
 from globus_sdk.utils import slash_join
 from globus_sdk import SpecificFlowClient
-from aero.globus.globus_auth import get_authorizer
+from aero.globus.auth import get_authorizer
 from aero.globus.utils import _flow_scopes
 from aero.globus.utils import FLOW_IDS
 from aero.globus.utils import FlowEnum
