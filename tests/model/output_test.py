@@ -1,11 +1,13 @@
-import osprey.server.models as models
+import aero.models as models
 
 
 def test_create(app):
     name = "test"
     url = "test"
 
-    o: models.output.Output = models.output.Output(name=name, url=url)
+    o: models.output.Output = models.output.Output(
+        name=name, url=url, collection_uuid="1234"
+    )
 
     # without output_version
     assert (
@@ -30,14 +32,24 @@ def test_json(app):
     o: models.output.Output = models.output.Output.query.filter_by(id=1).first()
     o_json = o.toJSON()
 
-    assert list(o_json.keys()) == ["id", "name", "url", "provenance_id", "versions"]
+    assert sorted(list(o_json.keys())) == [
+        "available_versions",
+        "collection_uuid",
+        "description",
+        "id",
+        "name",
+        "provenance_id",
+        "url",
+    ]
 
     assert (
         o_json["id"] == o.id
+        and o_json["available_versions"] == len(o.output_versions)
         and o_json["name"] == o.name
         and o_json["url"] == o.url
+        and o_json["collection_uuid"] == o.collection_uuid
         and o_json["provenance_id"] == o.provenance_id
-        and o_json["versions"] == [v.toJSON() for v in o.output_versions]
+        and o_json["description"] == o.description
     )
 
 
@@ -54,7 +66,9 @@ def test_str_repr(app):
 def test_add_output_version(app):
     fn = "test1"
     checksum = "1"
-    o: models.output.Output = models.output.Output(name="test1", url="test1")
+    o: models.output.Output = models.output.Output(
+        name="test1", url="test1", collection_uuid="1234"
+    )
     o.add_new_version(filename=fn, checksum="1")
 
     ov: models.output_version.OutputVersion = o.output_versions[-1]

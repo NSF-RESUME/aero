@@ -1,4 +1,4 @@
-from osprey.server.app import error_handler
+from aero.app import error_handler
 
 
 def test_forbidden():

@@ -5,10 +5,10 @@ import pytest
 from unittest import mock
 from uuid import uuid4
 
-import osprey.server.models as models
-from osprey.server.app.utils import Config
-from osprey.server.lib.globus_flow import FlowEnum
-from osprey.server.lib.error import ServiceError
+import aero.models as models
+from aero.app.utils import Config
+from aero.lib.utils import FlowEnum
+from aero.lib.error import ServiceError
 
 
 def test_create_source(app):
@@ -28,7 +28,7 @@ def test_create_source(app):
             and s.email == "test"
             and s.user_endpoint is None
             and s.timer_job_id == "1111"
-            and s.flow_kind == 0
+            and s.flow_kind == -1
             and s.versions == []
             and s.tags == []
         )
@@ -244,7 +244,7 @@ def test_start_time_flow(app):
 def test_get_timer_job(app):
     with app.app_context():
         s: models.source.Source = models.source.Source(name="1", url="1", email="1")
-        with mock.patch("osprey.server.lib.globus_flow.create_client") as _:
+        with mock.patch("aero.lib.globus_flow.create_client") as _:
             _ = s.get_timer_job()
 
 
@@ -252,14 +252,14 @@ def test_last_refreshed_at(app):
     with app.app_context():
         s: models.source.Source = models.source.Source(name="1", url="1", email="1")
 
-        with mock.patch("osprey.server.lib.globus_flow.create_client") as _:
+        with mock.patch("aero.lib.globus_flow.create_client") as _:
             s.last_refreshed_at()
 
         with (
             mock.patch(
-                "osprey.server.models.source.Source.get_timer_job", return_value=None
+                "aero.models.source.Source.get_timer_job", return_value=None
             ) as _,
-            mock.patch("osprey.server.lib.globus_flow.create_client") as _,
+            mock.patch("aero.lib.globus_flow.create_client") as _,
         ):
             s.last_refreshed_at()
 

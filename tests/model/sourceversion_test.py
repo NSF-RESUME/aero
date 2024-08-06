@@ -2,7 +2,7 @@ import datetime
 
 from uuid import uuid4
 
-import osprey.server.models as models
+import aero.models as models
 
 
 def test_create_source_version(app):

@@ -1,14 +1,17 @@
-import osprey.server.models as models
+import aero.models as models
 
 
 def test_create(app):
     name = "test"
     url = "test"
+    collection_uuid = "1234"
     filename = "test"
     version = 1
     checksum = "1"
 
-    o: models.output.Output = models.output.Output(name=name, url=url)
+    o: models.output.Output = models.output.Output(
+        name=name, url=url, collection_uuid=collection_uuid
+    )
     ov: models.output_version.OutputVersion = models.output_version.OutputVersion(
         filename=filename, version=version, checksum=checksum, output_id=o.id
     )
@@ -28,12 +31,19 @@ def test_json(app):
     )
     ov_json = ov.toJSON()
 
-    assert list(ov_json.keys()) == ["id", "filename", "version", "checksum"]
+    assert sorted(list(ov_json.keys())) == [
+        "checksum",
+        "filename",
+        "id",
+        "output",
+        "version",
+    ]
     assert (
         ov_json["id"] == ov.id
         and ov_json["filename"] == ov.filename
         and ov_json["version"] == ov.version
         and ov_json["checksum"] == ov.checksum
+        and ov_json["output"] == ov.output.toJSON()
     )
 
 

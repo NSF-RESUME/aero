@@ -1,10 +1,26 @@
 ROUTE = "/osprey/api/v1.0/output/"
-OUTPUT_KEYS = sorted(["id", "name", "url", "provenance_id", "versions"])
+OUTPUT_KEYS = sorted(
+    [
+        "available_versions",
+        "collection_uuid",
+        "description",
+        "id",
+        "name",
+        "url",
+        "provenance_id",
+    ]
+)
 
 
 def test_create_output_file(client):
     headers = {"Content-Type": "application/json"}
-    data = {"filename": "fn", "checksum": "9", "url": "www.test.com", "name": "name"}
+    data = {
+        "filename": "fn",
+        "checksum": "9",
+        "url": "www.test.com",
+        "name": "name",
+        "collection_uuid": "1234",
+    }
 
     response = client.post(
         f"{ROUTE}/new", json=data, headers=headers, follow_redirects=True

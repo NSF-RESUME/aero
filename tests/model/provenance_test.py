@@ -7,7 +7,7 @@ import datetime
 #     mock.patch("osprey.server.jobs.timer.set_timer", return_value=1111) as st_mock,
 #     mock.patch("osprey.server.jobs.user_flow.run_flow") as rf_mock,
 # ):
-import osprey.server.models as models
+import aero.models as models
 
 
 def test_create(app):
@@ -15,7 +15,9 @@ def test_create(app):
     _: models.source_version.SourceVersion = models.source_version.SourceVersion(
         version=1, checksum="1", source_id=s.id
     )
-    o: models.output.Output = models.output.Output(name="output", url="output")
+    o: models.output.Output = models.output.Output(
+        name="output", url="output", collection_uuid="1234"
+    )
     f: models.function.Function = models.function.Function(uuid="1")
     p: models.provenance.Provenance = models.provenance.Provenance(
         function_id=f.id, derived_from=[s], contributed_to=[o]
@@ -29,7 +31,7 @@ def test_create(app):
         and p.timer is None
         and p.timer_job_id is None
         and p.policy == 3
-        and isinstance(p.last_executed, datetime.date)
+        and p.last_executed is None
     )
 
     p2: models.provenance.Provenance = models.provenance.Provenance(

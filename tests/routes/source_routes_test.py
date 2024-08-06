@@ -1,6 +1,6 @@
 import json
 
-import osprey.server.models as models
+import aero.models as models
 
 ROUTE = "/osprey/api/v1.0/source"
 SOURCE_KEYS = sorted(

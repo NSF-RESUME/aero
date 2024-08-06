@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-import osprey.server.models as models
+import aero.models as models
 
 
 ROUTE = "/osprey/api/v1.0/prov"
@@ -38,6 +38,7 @@ def test_add_record(client):
         "sources": [1],
         "kwargs": args,
         "description": "A test provenance example",
+        "collection_uuid": "1234",
         "name": name,
         "function_uuid": function_id,
         "output_fn": filename,
@@ -104,6 +105,7 @@ def test_register_flow(client):
     data = {
         "sources": [1],
         "kwargs": args,
+        "collection_uuid": "1234",
         "description": "A test provenance example",
         "name": name,
         "function_uuid": function_id,

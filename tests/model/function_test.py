@@ -1,4 +1,4 @@
-import osprey.server.models as models
+import aero.models as models
 
 
 def test_create(app):
