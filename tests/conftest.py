@@ -23,9 +23,9 @@ def app():
 @pytest.fixture(scope="session", autouse=True)
 def _mock_globus():
     with (
-        mock.patch("aero.jobs.timer.set_timer", return_value=1111) as _,
+        mock.patch("aero.automate.timer.set_timer", return_value=1111) as _,
+        mock.patch("aero.automate.user_flow.run_flow") as _,
         mock.patch("aero.globus.search.DSaaSSearchClient", autospec=True) as _,
-        mock.patch("aero.jobs.user_flow.run_flow") as _,
     ):
         yield
 

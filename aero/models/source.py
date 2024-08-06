@@ -9,7 +9,7 @@ from aero.globus.error import FLOW_TIMER_ERROR
 from aero.globus.error import MODEL_INSUFFICIENT_ATTRS
 from aero.globus.error import ServiceError
 
-import aero.jobs.timer as timer
+import aero.automate.timer as timer
 from aero.models.provenance import Provenance
 from aero.models.source_file import SourceFile
 from aero.models.tag import SourceTagTable
