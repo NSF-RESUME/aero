@@ -1,6 +1,6 @@
 import globus_sdk
 
-import aero.lib.globus_search as gs
+import aero.globus.globus_search as gs
 from aero.config import Config
 
 

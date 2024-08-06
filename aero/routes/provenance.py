@@ -10,7 +10,7 @@ from aero.models.function import Function
 from aero.models.output import Output
 from aero.models.provenance import Provenance
 from aero.models.source import Source
-from aero.lib.error import ServiceError
+from aero.globus.error import ServiceError
 
 provenance_routes = Blueprint("provenance_routes", __name__, url_prefix="/prov")
 

@@ -5,7 +5,7 @@ from aero.app.decorators import authenticated
 from aero.app.utils import get_search_client
 from aero.models.source import Source
 from aero.models.source_version import SourceVersion
-from aero.lib.error import ServiceError
+from aero.globus.error import ServiceError
 
 source_routes = Blueprint("source_routes", __name__, url_prefix="/source")
 

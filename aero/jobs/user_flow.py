@@ -4,10 +4,10 @@ from typing import TypeAlias
 
 from globus_sdk import SpecificFlowClient
 
-from aero.lib.globus_auth import get_authorizer
-from aero.lib.utils import FLOW_IDS
-from aero.lib.utils import FlowEnum
-from aero.lib.utils import _flow_scopes
+from aero.globus.globus_auth import get_authorizer
+from aero.globus.utils import FLOW_IDS
+from aero.globus.utils import FlowEnum
+from aero.globus.utils import _flow_scopes
 
 JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
 

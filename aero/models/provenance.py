@@ -11,7 +11,7 @@ from aero.app import db
 
 from aero.jobs.user_flow import run_flow
 from aero.jobs.timer import set_timer
-from aero.lib.utils import FlowEnum
+from aero.globus.utils import FlowEnum
 
 provenance_derivation = db.Table(
     "provenance_derivation",

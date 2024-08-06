@@ -1,7 +1,7 @@
 from globus_sdk import TimerClient
 
-from aero.lib.utils import _flow_scopes
-from aero.lib.globus_auth import get_authorizer
+from aero.globus.utils import _flow_scopes
+from aero.globus.globus_auth import get_authorizer
 
 
 def create_client(scopes):

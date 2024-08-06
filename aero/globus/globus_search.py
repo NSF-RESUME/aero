@@ -4,7 +4,7 @@ from globus_sdk.services.search.errors import SearchAPIError
 
 # from osprey.server.models.source import Source
 from aero.models.source_version import SourceVersion
-from aero.lib.globus_auth import get_authorizer
+from aero.globus.globus_auth import get_authorizer
 
 GCS_PATH = "https://g-c952d0.1305de.36fe.data.globus.org/source"
 

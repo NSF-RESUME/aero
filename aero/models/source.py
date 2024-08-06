@@ -5,18 +5,17 @@ from sqlalchemy import String
 
 from aero.app import db
 from aero.app.utils import get_search_client
-from aero.lib.error import (
-    ServiceError,
-    MODEL_INSUFFICIENT_ATTRS,
-    FLOW_TIMER_ERROR,
-)
+from aero.globus.error import FLOW_TIMER_ERROR
+from aero.globus.error import MODEL_INSUFFICIENT_ATTRS
+from aero.globus.error import ServiceError
+
 import aero.jobs.timer as timer
 from aero.models.provenance import Provenance
 from aero.models.source_file import SourceFile
 from aero.models.tag import SourceTagTable
 from aero.models.source_version import SourceVersion
-from aero.lib.globus_flow import get_job
-from aero.lib.utils import FlowEnum
+from aero.globus.globus_flow import get_job
+from aero.globus.utils import FlowEnum
 from aero.config import Config
 
 
