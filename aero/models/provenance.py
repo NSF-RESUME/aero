@@ -9,7 +9,7 @@ from sqlalchemy import String
 
 from aero.app import db
 
-from aero.automate.user_flow import run_flow
+from aero.automate.policy import run_flow
 from aero.automate.timer import set_timer
 from aero.globus.utils import FlowEnum
 
