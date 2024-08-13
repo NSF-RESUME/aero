@@ -199,7 +199,7 @@ def test_policy_flow(app):
     derived_from = [s]
 
     # default policy
-    p: models.provenance.Provenance = models.provenance.Provenance(
+    p: models.flows.Flow = models.flows.Flow(
         function_id=function_id,
         function_args=function_args,
         derived_from=derived_from,
@@ -207,7 +207,7 @@ def test_policy_flow(app):
     )
 
     policy_id = s.rerun_flow()
-    assert policy_id == [models.provenance.PolicyEnum.NONE]
+    assert policy_id == [models.flows.TriggerEnum.NONE]
 
     # p: Provenance = Provenance(function_id=function_id, derived_from=derived_from, contributed_to=contributed_to, policy=2)
 

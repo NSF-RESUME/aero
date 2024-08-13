@@ -7,26 +7,24 @@ from aero.app import db
 
 from aero.app.decorators import authenticated
 from aero.models.function import Function
-from aero.models.provenance import Provenance
+from aero.models.flows import Flow
 from aero.models.data import Data
 from aero.globus.error import ServiceError
 
-provenance_routes = Blueprint("provenance_routes", __name__, url_prefix="/prov")
+flow_routes = Blueprint("flow_routes", __name__, url_prefix="/prov")
 
 
-@provenance_routes.route("/", methods=["GET"])
+@flow_routes.route("/", methods=["GET"])
 @authenticated
 def show_provenance():
     page = request.args.get("page") or 1
     per_page = request.args.get("per_page") or 15
-    provs = Provenance.query.order_by(Provenance.id.desc()).paginate(
-        page=page, per_page=per_page
-    )
+    provs = Flow.query.order_by(Flow.id.desc()).paginate(page=page, per_page=per_page)
     result = [p.toJSON() for p in provs]
     return jsonify(result), 200
 
 
-@provenance_routes.route("/new", methods=["POST"])
+@flow_routes.route("/new", methods=["POST"])
 @authenticated
 def record_provenance():
     try:
@@ -53,9 +51,8 @@ def record_provenance():
 
         # check if provenance already exists
         if (
-            p := Provenance.query.filter(
-                Provenance.function_id == f.id
-                and Provenance.function_args == json_data["kwargs"]
+            p := Flow.query.filter(
+                Flow.function_id == f.id and Flow.function_args == json_data["kwargs"]
             ).first()
         ) is None:
             # create output and store provenance data
@@ -71,7 +68,7 @@ def record_provenance():
                 format=json_data["format"],
                 size=json_data["size"],
             )
-            p = Provenance(
+            p = Flow(
                 function_id=f.id,
                 derived_from=derived_from,
                 contributed_to=[o],
@@ -97,7 +94,7 @@ def record_provenance():
         return jsonify({"code": 500, "message": str(e)}), 500
 
 
-@provenance_routes.route("/timer/<function_uuid>", methods=["POST"])
+@flow_routes.route("/timer/<function_uuid>", methods=["POST"])
 @authenticated
 def register_flow(function_uuid):
     json_data = request.json
@@ -109,7 +106,7 @@ def register_flow(function_uuid):
     policy: int | None = json_data.get("policy")
     timer_delay: int | None = json_data.get("timer_delay")
 
-    p: Provenance | None = None
+    p: Flow | None = None
 
     # currently just gets last version
     if sources is not None:
@@ -122,8 +119,8 @@ def register_flow(function_uuid):
     if f is None:
         f = Function(uuid=function_uuid)
     else:
-        p = Provenance.query.filter(
-            Provenance.function_id == f.id and Provenance.function_args == function_args
+        p = Flow.query.filter(
+            Flow.function_id == f.id and Flow.function_args == function_args
         ).first()
 
     if p is None:
@@ -144,7 +141,7 @@ def register_flow(function_uuid):
             )
             contributed_to.append(o)
 
-        p = Provenance(
+        p = Flow(
             function_id=f.id,
             derived_from=derived_from,
             description=description,

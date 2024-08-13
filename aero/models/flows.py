@@ -19,20 +19,20 @@ from aero.globus.error import ServiceError
 from aero.globus.utils import FlowEnum
 
 
-provenance_derivation = db.Table(
-    "provenance_derivation",
-    Column("provenance_id", Uuid, db.ForeignKey("provenance.id")),
+flow_derivation = db.Table(
+    "flow_derivation",
+    Column("flow_id", Uuid, db.ForeignKey("flow.id")),
     Column("previous_data_id", Uuid, db.ForeignKey("data.id")),
 )
 
-provenance_contribution = db.Table(
+flow_contribution = db.Table(
     "provenance_contribution",
-    Column("provenance_id", Uuid, db.ForeignKey("provenance.id")),
+    Column("flow_id", Uuid, db.ForeignKey("flow.id")),
     Column("produced_data_id", Uuid, db.ForeignKey("data.id")),
 )
 
 
-class PolicyEnum(IntEnum):
+class TriggerEnum(IntEnum):
     NONE = -1
     INGESTION = 0
     TIMER = 1
@@ -40,7 +40,7 @@ class PolicyEnum(IntEnum):
     ALL_INPUT = 3
 
 
-class Provenance(db.Model):
+class Flow(db.Model):
     id = Column(Uuid, default=uuid4, index=True, primary_key=True)
     function_id = Column(Uuid, db.ForeignKey("function.id"))
     function_args = Column(String)
@@ -51,12 +51,12 @@ class Provenance(db.Model):
     last_executed = Column(DateTime)
     derived_from = db.relationship(
         "Data",
-        secondary=provenance_derivation,
+        secondary=flow_derivation,
         backref="input_data",
         uselist=True,
     )
     contributed_to = db.relationship(
-        "Data", secondary=provenance_contribution, backref="output_data", lazy=True
+        "Data", secondary=flow_contribution, backref="output_data", lazy=True
     )
 
     def __init__(
@@ -68,9 +68,9 @@ class Provenance(db.Model):
         function_args: str = "",
         timer_job_id: str | None = None,
         timer: int | None = None,
-        policy: PolicyEnum = PolicyEnum.NONE,
+        policy: TriggerEnum = TriggerEnum.NONE,
     ):
-        if policy == PolicyEnum.INGESTION and timer is None:
+        if policy == TriggerEnum.INGESTION and timer is None:
             timer = 86400
 
         last_executed = None  # datetime.now()
@@ -90,7 +90,7 @@ class Provenance(db.Model):
         db.session.commit()
 
     def __repr__(self):
-        return f"<Provenance(id={self.id}, derived_from={self.derived_from}, contributed_to={self.contributed_to}, function_id={self.function_id}, function_args='{self.function_args}', timer={self.timer}, timer_job_id='{self.timer_job_id}')>"
+        return f"<Flow(id={self.id}, derived_from={self.derived_from}, contributed_to={self.contributed_to}, function_id={self.function_id}, function_args='{self.function_args}', timer={self.timer}, timer_job_id='{self.timer_job_id}')>"
 
     def toJSON(self):
         return {
@@ -138,12 +138,12 @@ class Provenance(db.Model):
         except json.JSONDecodeError as e:
             print(e)
 
-        if self.policy == PolicyEnum.INGESTION:
+        if self.policy == TriggerEnum.INGESTION:
             self._start_ingestion_flow()
-        elif self.policy == PolicyEnum.TIMER:
+        elif self.policy == TriggerEnum.TIMER:
             self._start_timer_flow()
             self.last_executed = datetime.now()
-        elif self.policy == PolicyEnum.ANY_INPUT:  # ANY
+        elif self.policy == TriggerEnum.ANY_INPUT:  # ANY
             if self.last_executed is None or any(
                 s.last_version().created_at > self.last_executed
                 for s in self.derived_from
@@ -156,7 +156,7 @@ class Provenance(db.Model):
                 self.last_executed = datetime.now()
                 db.session.add(self)
                 db.session.commit()
-        elif self.policy == PolicyEnum.ALL_INPUT:  # ALL
+        elif self.policy == TriggerEnum.ALL_INPUT:  # ALL
             if self.last_executed is None or all(
                 s.last_version().created_at > self.last_executed
                 for s in self.derived_from

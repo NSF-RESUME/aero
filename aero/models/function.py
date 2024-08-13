@@ -6,7 +6,7 @@ from aero.app import db
 
 class Function(db.Model):
     id = Column(Uuid, primary_key=True)
-    provenances = db.relationship("Provenance", backref="function")
+    provenances = db.relationship("Flow", backref="function")
 
     def __init__(self, uuid: str):
         super().__init__(id=uuid)

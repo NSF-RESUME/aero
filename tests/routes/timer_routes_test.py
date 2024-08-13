@@ -61,9 +61,9 @@ def test_add_record(client):
         ).all()
     )
     prev_num_prov = len(
-        models.provenance.Provenance.query.filter(
-            models.provenance.Provenance.function_id == prev_funcs.id
-            and models.provenance.Provenance.function_args == args
+        models.flows.Flow.query.filter(
+            models.flows.Flow.function_id == prev_funcs.id
+            and models.flows.Flow.function_args == args
         ).all()
     )
     prev_num_outputs = len(

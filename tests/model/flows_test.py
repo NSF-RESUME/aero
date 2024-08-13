@@ -28,7 +28,7 @@ def test_create(app):
         description="test",
     )
     f: models.function.Function = models.function.Function(uuid=uuid4())
-    p: models.provenance.Provenance = models.provenance.Provenance(
+    p: models.flows.Flow = models.flows.Flow(
         function_id=f.id, derived_from=[s], contributed_to=[o]
     )
 
@@ -42,14 +42,14 @@ def test_create(app):
         and p.last_executed is None
     )
 
-    p2: models.provenance.Provenance = models.provenance.Provenance(
+    p2: models.flows.Flow = models.flows.Flow(
         function_id=f.id, derived_from=[s], contributed_to=[o], policy=0
     )
     assert p2.timer == 86400
 
 
 def test_json(app):
-    p: models.provenance.Provenance = models.provenance.Provenance.query.first()
+    p: models.flows.Flow = models.flows.Flow.query.first()
     p_json = p.toJSON()
 
     assert list(p_json.keys()) == [
@@ -80,17 +80,17 @@ def test_json(app):
 
 
 def test_str_repr(app):
-    p: models.provenance.Provenance = models.provenance.Provenance.query.first()
+    p: models.flows.Flow = models.flows.Flow.query.first()
     p_str = str(p)
 
     assert (
         p_str
-        == f"<Provenance(id={p.id}, derived_from={p.derived_from}, contributed_to={p.contributed_to}, function_id={p.function_id}, function_args='{p.function_args}', timer={p.timer}, timer_job_id='{p.timer_job_id}')>"
+        == f"<Flow(id={p.id}, derived_from={p.derived_from}, contributed_to={p.contributed_to}, function_id={p.function_id}, function_args='{p.function_args}', timer={p.timer}, timer_job_id='{p.timer_job_id}')>"
     )
 
 
 def test_start_timer_flow(app):
-    p: models.provenance.Provenance = models.provenance.Provenance.query.all()[-1]
+    p: models.flows.Flow = models.flows.Flow.query.all()[-1]
     assert p.timer_job_id is None
 
     p._start_timer_flow()
@@ -98,23 +98,23 @@ def test_start_timer_flow(app):
 
 
 def test_run_analysis_flow(app):
-    p: models.provenance.Provenance = models.provenance.Provenance.query.all()[-1]
+    p: models.flows.Flow = models.flows.Flow.query.all()[-1]
 
-    p.policy = models.provenance.PolicyEnum.NONE
+    p.policy = models.flows.TriggerEnum.NONE
     p.function_args = '{"endpoint": "1", "function": "1", "tasks": "1"}'
 
-    assert p._run_flow() == models.provenance.PolicyEnum.NONE
+    assert p._run_flow() == models.flows.TriggerEnum.NONE
 
     before_run = datetime.datetime.now()
-    p.policy = models.provenance.PolicyEnum.ANY_INPUT
+    p.policy = models.flows.TriggerEnum.ANY_INPUT
     assert p.last_executed is None
     assert (
-        p._run_flow() == models.provenance.PolicyEnum.ANY_INPUT
+        p._run_flow() == models.flows.TriggerEnum.ANY_INPUT
         and p.last_executed > before_run
     )
     before_run = datetime.datetime.now()
     assert (
-        p._run_flow() == models.provenance.PolicyEnum.ANY_INPUT
+        p._run_flow() == models.flows.TriggerEnum.ANY_INPUT
         and p.last_executed < before_run
     )
 
@@ -123,14 +123,14 @@ def test_run_analysis_flow(app):
         new_file="nv", format="json", checksum="123", size=1
     )
     assert (
-        p._run_flow() == models.provenance.PolicyEnum.ANY_INPUT
+        p._run_flow() == models.flows.TriggerEnum.ANY_INPUT
         and p.last_executed > before_run
     )
 
     before_run = datetime.datetime.now()
-    p.policy = models.provenance.PolicyEnum.ALL_INPUT
+    p.policy = models.flows.TriggerEnum.ALL_INPUT
     assert (
-        p._run_flow() == models.provenance.PolicyEnum.ALL_INPUT
+        p._run_flow() == models.flows.TriggerEnum.ALL_INPUT
         and p.last_executed < before_run
     )
 
@@ -138,7 +138,7 @@ def test_run_analysis_flow(app):
         new_file="nv", format="json", checksum="133", size=1
     )
     assert (
-        p._run_flow() == models.provenance.PolicyEnum.ALL_INPUT
+        p._run_flow() == models.flows.TriggerEnum.ALL_INPUT
         and p.last_executed > before_run
     )
 
@@ -156,11 +156,11 @@ def test_ingestion_flow(app):
     )
 
     f: models.function.Function = models.function.Function(uuid=s.vm_func)
-    p: models.provenance.Provenance = models.provenance.Provenance(
+    p: models.flows.Flow = models.flows.Flow(
         function_id=f.id,
         derived_from=[],
         contributed_to=[s],
-        policy=models.provenance.PolicyEnum.INGESTION,
+        policy=models.flows.TriggerEnum.INGESTION,
     )
 
     p._start_ingestion_flow()

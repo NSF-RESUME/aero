@@ -14,7 +14,7 @@ from aero.globus.error import MODEL_INSUFFICIENT_ATTRS
 from aero.globus.error import ServiceError
 
 import aero.automate.timer as globus_timer
-from aero.models.provenance import Provenance
+from aero.models.flows import Flow
 from aero.models.data_file import DataFile
 from aero.models.tag import DataTagTable
 from aero.models.tag import Tag
@@ -202,9 +202,7 @@ class Data(db.Model):
 
     def rerun_flow(self) -> int:
         # TODO: Fix implementation
-        provenances = Provenance.query.filter(
-            Provenance.derived_from.any(Data.id == self.id)
-        )
+        provenances = Flow.query.filter(Flow.derived_from.any(Data.id == self.id))
 
         policies = []
         for prov in provenances:
