@@ -1,36 +1,42 @@
 import datetime
 
-# from unittest import mock
+from uuid import uuid4
 
-# with (
-#     mock.patch("osprey.server.lib.globus_search.DSaaSSearchClient") as dsc_mock,
-#     mock.patch("osprey.server.jobs.timer.set_timer", return_value=1111) as st_mock,
-#     mock.patch("osprey.server.jobs.user_flow.run_flow") as rf_mock,
-# ):
 import aero.models as models
 
 
 def test_create(app):
-    s: models.source.Source = models.source.Source(name="input", url="input", email="1")
-    _: models.source_version.SourceVersion = models.source_version.SourceVersion(
-        version=1, checksum="1", source_id=s.id
+    s: models.data.Data = models.data.Data(
+        name="input",
+        url="input",
+        email="1",
+        collection_uuid="1234",
+        collection_url="https://1234",
+        description="test",
     )
-    o: models.output.Output = models.output.Output(
-        name="output", url="output", collection_uuid="1234"
+    _: models.data_version.DataVersion = models.data_version.DataVersion(
+        version=1, checksum="1", data_id=s.id
     )
-    f: models.function.Function = models.function.Function(uuid="1")
+    o: models.data.Data = models.data.Data(
+        name="output",
+        url="output",
+        email="1",
+        collection_uuid="1234",
+        collection_url="https://1234",
+        description="test",
+    )
+    f: models.function.Function = models.function.Function(uuid=uuid4())
     p: models.provenance.Provenance = models.provenance.Provenance(
         function_id=f.id, derived_from=[s], contributed_to=[o]
     )
 
     assert (
-        p.id == 1
-        and p.function_id == f.id
+        p.function_id == f.id
         and p.function_args == ""
         and p.description == ""
         and p.timer is None
         and p.timer_job_id is None
-        and p.policy == 3
+        and p.policy == -1
         and p.last_executed is None
     )
 
@@ -41,9 +47,7 @@ def test_create(app):
 
 
 def test_json(app):
-    p: models.provenance.Provenance = models.provenance.Provenance.query.filter_by(
-        id=1
-    ).first()
+    p: models.provenance.Provenance = models.provenance.Provenance.query.first()
     p_json = p.toJSON()
 
     assert list(p_json.keys()) == [
@@ -74,9 +78,7 @@ def test_json(app):
 
 
 def test_str_repr(app):
-    p: models.provenance.Provenance = models.provenance.Provenance.query.filter_by(
-        id=1
-    ).first()
+    p: models.provenance.Provenance = models.provenance.Provenance.query.first()
     p_str = str(p)
 
     assert (
@@ -86,9 +88,7 @@ def test_str_repr(app):
 
 
 def test_start_timer_flow(app):
-    p: models.provenance.Provenance = models.provenance.Provenance.query.filter_by(
-        id=1
-    ).first()
+    p: models.provenance.Provenance = models.provenance.Provenance.query.first()
     assert p.timer_job_id is None
 
     p._start_timer_flow()
@@ -96,29 +96,45 @@ def test_start_timer_flow(app):
 
 
 def test_run_flow(app):
-    p: models.provenance.Provenance = models.provenance.Provenance.query.filter_by(
-        id=1
-    ).first()
-    p.policy = 0
+    p: models.provenance.Provenance = models.provenance.Provenance.query.first()
+    p.policy = models.provenance.PolicyEnum.NONE
     p.function_args = '{"endpoint": "1", "function": "1", "tasks": "1"}'
 
-    assert p._run_flow() == 0
+    assert p._run_flow() == models.provenance.PolicyEnum.NONE
 
     before_run = datetime.datetime.now()
-    p.policy = 1
-    assert p._run_flow() == 1 and p.last_executed < before_run
+    p.policy = models.provenance.PolicyEnum.ANY_INPUT
+    assert p.last_executed is None
+    assert (
+        p._run_flow() == models.provenance.PolicyEnum.ANY_INPUT
+        and p.last_executed > before_run
+    )
+    before_run = datetime.datetime.now()
+    assert (
+        p._run_flow() == models.provenance.PolicyEnum.ANY_INPUT
+        and p.last_executed < before_run
+    )
 
     before_run = datetime.datetime.now()
     p.derived_from[0].add_new_version(
         new_file="nv", format="json", checksum="123", size=1
     )
-    assert p._run_flow() == 1 and p.last_executed > before_run
+    assert (
+        p._run_flow() == models.provenance.PolicyEnum.ANY_INPUT
+        and p.last_executed > before_run
+    )
 
     before_run = datetime.datetime.now()
-    p.policy = 2
-    assert p._run_flow() == 2 and p.last_executed < before_run
+    p.policy = models.provenance.PolicyEnum.ALL_INPUT
+    assert (
+        p._run_flow() == models.provenance.PolicyEnum.ALL_INPUT
+        and p.last_executed < before_run
+    )
 
     p.derived_from[0].add_new_version(
         new_file="nv", format="json", checksum="133", size=1
     )
-    assert p._run_flow() == 2 and p.last_executed > before_run
+    assert (
+        p._run_flow() == models.provenance.PolicyEnum.ALL_INPUT
+        and p.last_executed > before_run
+    )

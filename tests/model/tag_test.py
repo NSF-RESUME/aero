@@ -2,15 +2,32 @@ import aero.models as models
 
 
 def test_create(app):
-    s: models.source.Source = models.source.Source(name="1", url="1", email="1")
-    t: models.tag.Tag = models.tag.Tag(name="test", sources=[s])
+    collection_uuid = "1234"
+    collection_url = "https://1234"
+    description = "test"
 
-    assert t.id == 1 and t.name == "test" and t.sources == [s]
-    t2: models.tag.Tag = models.tag.Tag(name="test2", sources=[s])
+    s: models.data.Data = models.data.Data(
+        name="1",
+        url="1",
+        email="1",
+        collection_uuid=collection_uuid,
+        collection_url=collection_url,
+        description=description,
+    )
+    t: models.tag.Tag = models.tag.Tag(name="test", data=[s])
+
+    assert t.id == 1 and t.name == "test" and t.data == [s]
+    t2: models.tag.Tag = models.tag.Tag(name="test2", data=[s])
     assert t2.id == 2
 
-    s: models.source.Source = models.source.Source(
-        name="source_with_tags", url="1", email="1", tags=[t, t2]
+    s: models.data.Data = models.data.Data(
+        name="source_with_tags",
+        url="1",
+        email="1",
+        tags=[t, t2],
+        collection_uuid=collection_uuid,
+        collection_url=collection_url,
+        description=description,
     )
     assert s.tags == [t, t2]
 

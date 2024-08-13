@@ -1,5 +1,7 @@
 import json
 
+from uuid import uuid4
+
 import aero.models as models
 
 ROUTE = "/osprey/api/v1.0/source"
@@ -12,11 +14,10 @@ SOURCE_KEYS = sorted(
         "description",
         "email",
         "id",
-        "modifier",
+        "vm_func",
         "name",
         "timer",
         "url",
-        "verifier",
     ]
 )
 
@@ -27,6 +28,9 @@ def test_create_source(client):
         "name": "test",
         "url": "https://dummyjson.com/products/1",
         "email": "vhayot@uchicago.edu",
+        "collection_uuid": str(uuid4()),
+        "collection_url": "https://1234",
+        "description": "this data is x",
     }
     response = client.post(ROUTE, json=data, headers=headers, follow_redirects=True)
     resp_dict = response.json
@@ -50,28 +54,35 @@ def test_list_sources(client, mocker):
     resp_data = response.json
 
     assert len(resp_data) >= 1  # should have at least a single element
-    assert all([sorted(r.keys()) == SOURCE_KEYS for r in resp_data]) is True
+    assert all([sorted(r.keys()) == SOURCE_KEYS for r in resp_data]) is True, sorted(
+        resp_data[0].keys()
+    )
 
 
 def test_get_source(client, mocker):
-    response = client.get(f"{ROUTE}/1", follow_redirects=True)
+    data_id = models.data.Data.query.first().id
+    response = client.get(f"{ROUTE}/{data_id}", follow_redirects=True)
     assert sorted(response.json.keys()) == SOURCE_KEYS
 
-    response = client.get(f"{ROUTE}/100", follow_redirects=True)
+    data_id = uuid4()
+    response = client.get(f"{ROUTE}/{data_id}", follow_redirects=True)
     assert response.json["code"] == 404
 
 
 def test_list_versions(client, mocker):
-    response = client.get(f"{ROUTE}/1/versions", follow_redirects=True)
+    data_id = models.data.Data.query.first().id
+    response = client.get(f"{ROUTE}/{data_id}/versions", follow_redirects=True)
     assert response.status_code == 200
 
-    response = client.get(f"{ROUTE}/1000/versions", follow_redirects=True)
+    data_id = uuid4()
+    response = client.get(f"{ROUTE}/{data_id}/versions", follow_redirects=True)
     assert response.status_code == 404
 
 
 def test_new_verion(client, mocker):
     # Check how many versions exist
-    response = client.get(f"{ROUTE}/1/versions", follow_redirects=True)
+    data_id = models.data.Data.query.first().id
+    response = client.get(f"{ROUTE}/{data_id}/versions", follow_redirects=True)
     original_versions = len(response.json)
 
     headers = {"Content-Type": "application/json"}
@@ -79,39 +90,57 @@ def test_new_verion(client, mocker):
     # Add new version
     data = json.dumps({"file": "fn", "file_format": "ff", "checksum": "10", "size": 4})
     response = client.post(
-        f"{ROUTE}/1/new-version", data=data, headers=headers, follow_redirects=True
+        f"{ROUTE}/{data_id}/new-version",
+        data=data,
+        headers=headers,
+        follow_redirects=True,
     )
     assert response.status_code == 200, response.json
     assert (
-        len(models.source.Source.query.filter_by(id=1).first().versions)
+        len(models.data.Data.query.filter_by(id=data_id).first().versions)
         == original_versions + 1
     )
 
     # attempt to dump the same data again
     response = client.post(
-        f"{ROUTE}/1/new-version", data=data, headers=headers, follow_redirects=True
+        f"{ROUTE}/{data_id}/new-version",
+        data=data,
+        headers=headers,
+        follow_redirects=True,
     )
     assert response.status_code == 200, response.json
     assert (
-        len(models.source.Source.query.filter_by(id=1).first().versions)
+        len(models.data.Data.query.filter_by(id=data_id).first().versions)
         == original_versions + 1
     )
 
+    data_id = uuid4()
     # test when source does not exist
     response = client.post(
-        f"{ROUTE}/1000/new-version", data=data, headers=headers, follow_redirects=True
+        f"{ROUTE}/{data_id}/new-version",
+        data=data,
+        headers=headers,
+        follow_redirects=True,
     )
     assert response.status_code == 404
 
 
 def test_grap_file(client, mocker):
-    response = client.get(f"{ROUTE}/1/file", follow_redirects=True)
+    data_id = models.data.Data.query.first().id
+    response = client.get(f"{ROUTE}/{data_id}/file", follow_redirects=True)
     assert response.json is not None
 
-    response = client.get(f"{ROUTE}/500/file", follow_redirects=True)
+    data_id = uuid4()
+    response = client.get(f"{ROUTE}/{data_id}/file", follow_redirects=True)
     assert response.status_code == 404
 
-    s: models.source.Source = models.source.Source(name="newsource", url="test")
+    s: models.data.Data = models.data.Data(
+        name="newsource",
+        url="test",
+        collection_uuid=str(uuid4()),
+        collection_url="https://1234",
+        description="test",
+    )
 
     response = client.get(f"{ROUTE}/{s.id}/file", follow_redirects=True)
     assert response.status_code

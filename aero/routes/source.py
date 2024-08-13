@@ -3,8 +3,8 @@ from flask import Blueprint, jsonify, request
 from aero.app import db
 from aero.app.decorators import authenticated
 from aero.app.utils import get_search_client
-from aero.models.source import Source
-from aero.models.source_version import SourceVersion
+from aero.models.data import Data
+from aero.models.data_version import DataVersion
 from aero.globus.error import ServiceError
 
 source_routes = Blueprint("source_routes", __name__, url_prefix="/source")
@@ -15,9 +15,7 @@ source_routes = Blueprint("source_routes", __name__, url_prefix="/source")
 def all_sources():
     page = request.args.get("page") or 1
     per_page = request.args.get("per_page") or 15
-    sources = Source.query.order_by(Source.id.desc()).paginate(
-        page=page, per_page=per_page
-    )
+    sources = Data.query.order_by(Data.id.desc()).paginate(page=page, per_page=per_page)
     result = [source.toJSON() for source in sources]
     return jsonify(result), 200
 
@@ -40,7 +38,7 @@ def search():
 def create_source():
     try:
         json_data = request.json
-        s = Source(**json_data)
+        s = Data(**json_data)
         return jsonify(s.toJSON()), 200
     except ServiceError as s:
         return jsonify(s.toJSON()), s.code
@@ -51,7 +49,7 @@ def create_source():
 @source_routes.route("/<id>", methods=["GET"])
 @authenticated
 def get_data(id):
-    s = db.session.get(Source, id)
+    s = db.session.get(Data, id)
     if s is None:
         return jsonify({"code": 404, "message": "Not found"}), 404
 
@@ -61,7 +59,7 @@ def get_data(id):
 @source_routes.route("/<id>/versions", methods=["GET"])
 @authenticated
 def list_versions(id):
-    s = db.session.get(Source, id)
+    s = db.session.get(Data, id)
     if s is None:
         return jsonify({"code": 404, "message": "Not found"}), 404
 
@@ -71,21 +69,21 @@ def list_versions(id):
 @source_routes.route("/<id>/file", methods=["GET"])
 @authenticated
 def grap_file(id):
-    source = db.session.get(Source, id)
+    source = db.session.get(Data, id)
     if not source:
-        return jsonify({"code": 404, "message": f"Source with id {id} not found"}), 404
+        return jsonify({"code": 404, "message": f"Data with id {id} not found"}), 404
 
     version = request.args.get("version")
     if not version:
         s = list(
-            SourceVersion.query.filter(SourceVersion.source_id == id)
-            .order_by(SourceVersion.version.desc())
+            DataVersion.query.filter(DataVersion.data_id == id)
+            .order_by(DataVersion.version.desc())
             .limit(1)
         )
     else:
         s = list(
-            SourceVersion.query.filter(SourceVersion.source_id == id)
-            .filter(SourceVersion.version == version)
+            DataVersion.query.filter(DataVersion.data_id == id)
+            .filter(DataVersion.version == version)
             .limit(1)
         )
 
@@ -103,7 +101,7 @@ def grap_file(id):
 @source_routes.route("/<id>/new-version", methods=["POST"])
 @authenticated
 def add_version(id):
-    source = db.session.get(Source, id)
+    source = db.session.get(Data, id)
 
     if not source:
         return jsonify({"code": 404, "message": f"Source with id {id} not found"}), 404

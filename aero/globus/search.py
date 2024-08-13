@@ -3,7 +3,7 @@ from globus_sdk.scopes import SearchScopes
 from globus_sdk.services.search.errors import SearchAPIError
 
 # from osprey.server.models.source import Source
-from aero.models.source_version import SourceVersion
+from aero.models.data_version import DataVersion
 from aero.globus.auth import get_authorizer
 
 GCS_PATH = "https://g-c952d0.1305de.36fe.data.globus.org/source"
@@ -31,7 +31,7 @@ class DSaaSSearchClient:
         idx = r["id"]
         return idx
 
-    def add_entry(self, source_version: SourceVersion) -> str:
+    def add_entry(self, source_version: DataVersion) -> str:
         entry = {
             "ingest_type": "GMetaEntry",
             "ingest_data": {

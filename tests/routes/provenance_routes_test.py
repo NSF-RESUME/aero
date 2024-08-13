@@ -29,13 +29,14 @@ def test_show_prov(client):
 
 def test_add_record(client):
     name = "test_prov_1234"
-    function_id = "12345"
+    function_id = uuid4()
     filename = f"test-{uuid4()}.txt"
     args = '{ "test": true }'
 
+    inputs = [i.id for i in models.data.Data.query.all()]
     headers = {"Content-Type": "application/json"}
     data = {
-        "sources": [1],
+        "data": inputs,
         "kwargs": args,
         "description": "A test provenance example",
         "collection_uuid": "1234",
@@ -44,19 +45,19 @@ def test_add_record(client):
         "output_fn": filename,
         "url": "www.test.com",
         "checksum": "123",
+        "format": "csv",
+        "size": 2,
     }
     response = client.post(f"{ROUTE}/new", json=data, headers=headers)
     assert response.status_code == 200, response.json
 
     prev_funcs = models.function.Function.query.filter(
-        models.function.Function.uuid == function_id
+        models.function.Function.id == function_id
     ).first()
-    prev_outputs = models.output.Output.query.filter(
-        models.output.Output.name == name
-    ).first()
+    prev_outputs = models.data.Data.query.filter(models.data.Data.name == name).first()
     prev_num_funcs = len(
         models.function.Function.query.filter(
-            models.function.Function.uuid == function_id
+            models.function.Function.id == function_id
         ).all()
     )
     prev_num_prov = len(
@@ -66,11 +67,11 @@ def test_add_record(client):
         ).all()
     )
     prev_num_outputs = len(
-        models.output.Output.query.filter(models.output.Output.name == name).all()
+        models.data.Data.query.filter(models.data.Data.name == name).all()
     )
     prev_num_output_versions = len(
-        models.output_version.OutputVersion.query.filter(
-            models.output_version.OutputVersion.output_id == prev_outputs.id
+        models.data_version.DataVersion.query.filter(
+            models.data_version.DataVersion.data_id == prev_outputs.id
         ).all()
     )
 
@@ -97,21 +98,24 @@ def test_add_record(client):
 
 def test_register_flow(client):
     name = "test_prov_1234567"
-    function_id = "12345678"
+    function_id = uuid4()
     filename = "test.txt"
     args = '{ "test": true }'
 
     headers = {"Content-Type": "application/json"}
     data = {
-        "sources": [1],
+        "data": [i.id for i in models.data.Data.query.all()],
         "kwargs": args,
         "collection_uuid": "1234",
+        "collection_url": "https://1234",
         "description": "A test provenance example",
         "name": name,
         "function_uuid": function_id,
         "output_fn": filename,
         "url": "www.test.com",
         "checksum": "123",
+        "format": "json",
+        "size": 2,
     }
 
     # create prov record
@@ -123,7 +127,7 @@ def test_register_flow(client):
     assert response.status_code == 200, response.text
 
     # with new function id
-    function_id = "111"
+    function_id = uuid4()
     response = client.post(f"{ROUTE}/timer/{function_id}", json=data, headers=headers)
     assert response.status_code == 200
 
@@ -131,7 +135,7 @@ def test_register_flow(client):
     data.pop("name")
     data.pop("url")
 
-    function_id = "1212"
+    function_id = uuid4()
     response = client.post(f"{ROUTE}/timer/{function_id}", json=data, headers=headers)
     assert response.status_code == 200
 

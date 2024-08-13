@@ -1,11 +1,14 @@
 from aero.app import db
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column
+from sqlalchemy import Integer
+from sqlalchemy import String
+from sqlalchemy import Uuid
 
 # NOTE: Does not auto-increment id, need to add migration
-SourceTagTable = db.Table(
-    "source_tag",
+DataTagTable = db.Table(
+    "data_tag",
     Column("id", Integer, primary_key=True),
-    Column("source_id", Integer, db.ForeignKey("source.id")),
+    Column("data_id", Uuid, db.ForeignKey("data.id")),
     Column("tag_id", Integer, db.ForeignKey("tag.id")),
 )
 
@@ -13,12 +16,12 @@ SourceTagTable = db.Table(
 class Tag(db.Model):
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    sources = db.relationship(
-        "Source", secondary=SourceTagTable, back_populates="tags", uselist=True
+    data = db.relationship(
+        "Data", secondary=DataTagTable, back_populates="tags", uselist=True
     )
 
-    def __init__(self, name, sources=None):
-        super().__init__(name=name, sources=sources)
+    def __init__(self, name, data=None):
+        super().__init__(name=name, data=data)
         db.session.add(self)
         db.session.commit()
 

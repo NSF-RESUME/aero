@@ -1,7 +1,11 @@
 import datetime
+
+from uuid import uuid4
+
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import String
+from sqlalchemy import Uuid
 
 from aero.app import db
 from aero.app.utils import get_search_client
@@ -9,48 +13,111 @@ from aero.globus.error import FLOW_TIMER_ERROR
 from aero.globus.error import MODEL_INSUFFICIENT_ATTRS
 from aero.globus.error import ServiceError
 
-import aero.automate.timer as timer
+import aero.automate.timer as globus_timer
 from aero.models.provenance import Provenance
-from aero.models.source_file import SourceFile
-from aero.models.tag import SourceTagTable
-from aero.models.source_version import SourceVersion
+from aero.models.data_file import DataFile
+from aero.models.tag import DataTagTable
+from aero.models.tag import Tag
+from aero.models.data_version import DataVersion
 from aero.globus.flow import get_job
 from aero.globus.utils import FlowEnum
 from aero.config import Config
 
 
-class Source(db.Model):
-    id = Column(Integer, primary_key=True)
+class Data(db.Model):
+    """All file-related metadata.
+
+    This class contains metadata information on where data is
+    stored within the user-provided Globus Connect Server.
+    our
+    """
+
+    id = Column(Uuid, default=uuid4, index=True, primary_key=True)
     name = Column(String)
     url = Column(String)
     collection_uuid = Column(String)
     collection_url = Column(String)
     description = Column(String)
     timer = Column(Integer)  # in seconds
-    verifier = Column(String)
-    modifier = Column(String)
+    vm_func = Column(String)
     email = Column(String)
     # Ensure to delete timer_job_id when either `verifier` or `modifier` is altered
     user_endpoint = Column(String)
     timer_job_id = Column(String)
+    provenance_job_id = Column(String)
     flow_kind = Column(Integer)
     versions = db.relationship(
-        "SourceVersion",
-        back_populates="source",
-        order_by="SourceVersion.version",
+        "DataVersion",
+        back_populates="data",
+        order_by="DataVersion.version",
         lazy=False,
     )
-    tags = db.relationship("Tag", secondary=SourceTagTable, back_populates="sources")
+    tags = db.relationship("Tag", secondary=DataTagTable, back_populates="data")
     # outputs       = db.relationship("Output", back_populates="source")
 
     # TODO: Validate duplicate source links and everything else
-    def __init__(self, **kwargs):
-        # validate
-        kwargs = self._set_defaults(**kwargs)
-        self._validate(**kwargs)
+    def __init__(
+        self,
+        name: str,
+        collection_uuid: str,
+        collection_url: str,  # maybe remove in favour of just querying globus
+        description: str,
+        url: str | None = None,
+        timer: int | None = None,
+        vm_func: str | None = None,
+        email: str | None = None,
+        user_endpoint: str | None = None,
+        timer_job_id: str | None = None,
+        provenance_job_id: int | None = None,
+        flow_kind: int | None = None,
+        tags: list[Tag] = [],
+    ):
+        self.name = name
+        self.url = url
+        self.collection_uuid = collection_uuid
+        self.collection_url = collection_url
+        self.description = description
+        self.vm_func = vm_func
+        self.email = email
+        self.timer_job_id = timer_job_id
+        self.provenance_job_id = provenance_job_id
+        self.tags = tags
+
+        if timer is None:
+            self.timer = 86400  # 1 day
+
+        if vm_func is not None and user_endpoint is None:
+            raise ServiceError(
+                code=MODEL_INSUFFICIENT_ATTRS,
+                message="vm_func needs a user_endpoint to be executed on",
+            )
+
+        if flow_kind is None:
+            if vm_func is not None:
+                self.flow_kind = FlowEnum.VERIFY_AND_MODIFY
+            else:
+                self.flow_kind = FlowEnum.NONE
+
+        if user_endpoint is None:
+            self.user_endpoint = Config.GLOBUS_WORKER_UUID
 
         # create
-        super().__init__(**kwargs)
+        super().__init__(
+            name=self.name,
+            url=self.url,
+            collection_uuid=self.collection_uuid,
+            collection_url=self.collection_url,
+            description=self.description,
+            timer=self.timer,
+            vm_func=self.vm_func,
+            email=self.email,
+            user_endpoint=self.user_endpoint,
+            timer_job_id=self.timer_job_id,
+            provenance_job_id=self.provenance_job_id,
+            flow_kind=self.flow_kind,
+            tags=self.tags,
+        )
+
         db.session.add(self)
         db.session.commit()
 
@@ -59,7 +126,7 @@ class Source(db.Model):
 
     def __repr__(self):
         return (
-            f"<Source(id={self.id}, "
+            f"<Data(id={self.id}, "
             f"name={self.name}, "
             f"url={self.url}, "
             f"collection_uuid={self.collection_uuid}, "
@@ -78,8 +145,7 @@ class Source(db.Model):
             "user_endpoint": self.user_endpoint,
             "description": self.description,
             "timer": self.timer,
-            "verifier": self.verifier,
-            "modifier": self.modifier,
+            "vm_func": self.vm_func,
             "email": self.email,
             "available_versions": len(self.versions),
         }
@@ -112,18 +178,18 @@ class Source(db.Model):
         if old_checksum == checksum:
             return {"code": 201, "message": "Version already exists"}
 
-        new_version = SourceVersion(
+        new_version = DataVersion(
             version=version_number,
-            source_id=self.id,
+            data_id=self.id,
             checksum=checksum,
         )
 
-        new_version.source_file = SourceFile(
+        new_version.data_file = DataFile(
             encoding=encoding,
             file_type=format,
             file_name=new_file,
             size=size,
-            source_version_id=version_number,
+            version_id=new_version.id,
         )
 
         db.session.add(new_version)
@@ -134,7 +200,7 @@ class Source(db.Model):
     def rerun_flow(self) -> int:
         # TODO: Fix implementation
         provenances = Provenance.query.filter(
-            Provenance.derived_from.any(Source.id == self.id)
+            Provenance.derived_from.any(Data.id == self.id)
         )
 
         policies = []
@@ -142,7 +208,7 @@ class Source(db.Model):
             policies.append(prov._run_flow())
         return policies
 
-    def last_version(self) -> int | SourceVersion:
+    def last_version(self) -> int | DataVersion:
         try:
             l_version = self.versions[len(self.versions) - 1]
             return l_version
@@ -156,40 +222,11 @@ class Source(db.Model):
 
         return str(datetime.timedelta(seconds=self.timer))
 
-    def _validate(self, **kwargs):
-        for attr in ["name", "url", "timer"]:  # Required attributes
-            if attr not in kwargs.keys():
-                raise ServiceError(
-                    code=MODEL_INSUFFICIENT_ATTRS,
-                    message="Name, url and timer values are required",
-                )
-
-    def _set_defaults(self, **kwargs):
-        if "timer" not in kwargs:
-            kwargs["timer"] = 86400  # 1 day
-        if "flow_kind" not in kwargs:
-            if (
-                kwargs.get("verifier") is not None
-                and kwargs.get("modifier") is not None
-            ):
-                kwargs["flow_kind"] = FlowEnum.VERIFY_AND_MODIFY
-            elif (
-                kwargs.get("verifier") is not None or kwargs.get("modifier") is not None
-            ):
-                kwargs["flow_kind"] = FlowEnum.VERIFY_OR_MODIFY
-            else:
-                kwargs["flow_kind"] = FlowEnum.NONE
-
-        if "user_endpoint" not in kwargs:
-            kwargs["user_endpoint"] = Config.GLOBUS_WORKER_UUID
-
-        return kwargs
-
     def _start_timer_flow(self, flush=False):
         if not flush and self.timer_job_id is not None:
             raise ServiceError(FLOW_TIMER_ERROR, "source already has a flow timer")
 
-        self.timer_job_id = timer.set_timer(
+        self.timer_job_id = globus_timer.set_timer(
             self.timer,
             self.id,
             self.email,

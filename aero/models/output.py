@@ -1,4 +1,7 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column
+from sqlalchemy import Integer
+from sqlalchemy import String
+from sqlalchemy import Uuid
 
 from aero.app import db
 from aero.models.output_version import OutputVersion
@@ -13,7 +16,7 @@ class Output(db.Model):
     url = Column(String)
     collection_uuid = Column(String)
     description = Column(String)
-    provenance_id = db.Column(db.Integer, db.ForeignKey("provenance.id"))
+    provenance_id = Column(Uuid, db.ForeignKey("provenance.id"))
     output_versions = db.relationship(
         "OutputVersion",
         back_populates="output",

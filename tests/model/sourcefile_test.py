@@ -10,21 +10,19 @@ def test_create_source_file(app):
         size = 1
         encoding = "utf-8"
 
-        s: models.source.Source = models.source.Source.query.filter_by(
-            name="test"
-        ).first()
+        s: models.data.Data = models.data.Data.query.filter_by(name="test").first()
         checksum = str(uuid4())
-        v: models.source_version.SourceVersion = models.source_version.SourceVersion(
-            version=(s.last_version().version + 1), source_id=s.id, checksum=checksum
+        v: models.data_version.DataVersion = models.data_version.DataVersion(
+            version=(s.last_version().version + 1), data_id=s.id, checksum=checksum
         )
 
-        f: models.source_file.SourceFile = models.source_file.SourceFile(
+        f: models.data_file.DataFile = models.data_file.DataFile(
             file_name=file_name,
             file_type=file_type,
             size=size,
             encoding=encoding,
-            source_version_id=v.id,
-            source_version=v,
+            version_id=v.id,
+            version=v,
         )
 
         assert (
@@ -32,13 +30,13 @@ def test_create_source_file(app):
             and f.file_type == file_type
             and f.size == size
             and f.encoding == encoding
-            and f.source_version_id == v.id
-            and f.source_version == v
+            and f.version_id == v.id
+            and f.version == v
         )
 
 
 def test_json(app):
-    f: models.source_file.SourceFile = models.source_file.SourceFile.query.filter_by(
+    f: models.data_file.DataFile = models.data_file.DataFile.query.filter_by(
         file_name="test"
     ).first()
     f_json = f.toJSON()
@@ -53,7 +51,7 @@ def test_json(app):
 
     assert (
         f_json["file_name"] == "test"
-        and f_json["collection_url"] == f.source_version.source.collection_url
+        and f_json["collection_url"] == f.version.data.collection_url
         and f_json["file_type"] == "json"
         and f_json["file_size"] == 1
         and f_json["encoding"] == "utf-8"
@@ -61,19 +59,19 @@ def test_json(app):
 
 
 def test_str_repr(app):
-    f: models.source_file.SourceFile = models.source_file.SourceFile.query.filter_by(
+    f: models.data_file.DataFile = models.data_file.DataFile.query.filter_by(
         file_name="test"
     ).first()
     f_str = str(f)
 
     assert (
         f_str
-        == f"<SourceFile(id={f.id}, file_name={f.file_name}, file_size={f.size}, encoding={f.encoding})>"
+        == f"<DataFile(id={f.id}, file_name={f.file_name}, file_size={f.size}, encoding={f.encoding})>"
     )
 
 
 def test_set_defaults(app):
-    f: models.source_file.SourceFile = models.source_file.SourceFile.query.filter_by(
+    f: models.data_file.DataFile = models.data_file.DataFile.query.filter_by(
         file_name="test"
     ).first()
     kwargs = f._set_defaults(**{})

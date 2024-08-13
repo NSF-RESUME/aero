@@ -1,20 +1,24 @@
 import datetime
 
-from sqlalchemy import Column, Integer, String, DateTime
+from uuid import uuid4
+
+from sqlalchemy import Column
+from sqlalchemy import DateTime
+from sqlalchemy import Integer
+from sqlalchemy import String
+from sqlalchemy import Uuid
 from aero.app import db
 
 
-class SourceVersion(db.Model):
-    id = Column(Integer, primary_key=True)
+class DataVersion(db.Model):
+    id = Column(Uuid, default=uuid4, index=True, primary_key=True)
     version = Column(Integer)
     checksum = Column(String)
     created_at = Column(DateTime)
-    source_id = Column(Integer, db.ForeignKey("source.id"))
-    source = db.relationship("Source", back_populates="versions", uselist=False)
+    data_id = Column(Uuid, db.ForeignKey("data.id"))
+    data = db.relationship("Data", back_populates="versions", uselist=False)
     # proxy = db.relationship("Proxy", back_populates="source_version", uselist=False)
-    source_file = db.relationship(
-        "SourceFile", back_populates="source_version", uselist=False
-    )
+    data_file = db.relationship("DataFile", back_populates="version", uselist=False)
     # provenance    = db.relationship("Provenance", back_populates='source_version', uselist=False)
     # contributed_to= db.relationship("Provenance", secondary=provenance_derivation, back_populates='outputs')
 
@@ -32,8 +36,8 @@ class SourceVersion(db.Model):
         db.session.commit()
 
     def __repr__(self):
-        return "<SourceVersion(id={}, version={}, source_id={}, checksum={}, source_file={})>".format(
-            self.id, self.version, self.source_id, self.checksum, self.source_file
+        return "<DataVersion(id={}, version={}, data_id={}, checksum={}, data_file={})>".format(
+            self.id, self.version, self.data_id, self.checksum, self.data_file
         )
 
     def _set_defaults(self, **kwargs):
@@ -44,12 +48,12 @@ class SourceVersion(db.Model):
     def toJSON(self):
         return {
             "id": self.id,
-            "source": self.source.toJSON(),
+            "data": self.data.toJSON(),
             "version": self.version,
             "created_at": self.created_at,
             "checksum": self.checksum,
-            "source_file": self.source_file.toJSON()
-            if self.source_file is not None
+            "data_file": self.data_file.toJSON()
+            if self.data_file is not None
             else None,
         }
 

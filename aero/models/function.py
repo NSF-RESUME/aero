@@ -1,24 +1,23 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column
+from sqlalchemy import Uuid
 
 from aero.app import db
 
 
 class Function(db.Model):
-    id = Column(Integer, primary_key=True)
-    uuid = Column(String)
+    id = Column(Uuid, primary_key=True)
     provenances = db.relationship("Provenance", backref="function")
 
     def __init__(self, uuid: str):
-        super().__init__(uuid=uuid)
+        super().__init__(id=uuid)
 
         db.session.add(self)
         db.session.commit()
 
     def __repr__(self):
-        return f"<Function(id={self.id}, uuid='{self.uuid}')>"
+        return f"<Function(id={self.id})>"
 
     def toJSON(self):
         return {
             "id": self.id,
-            "uuid": self.uuid,
         }
