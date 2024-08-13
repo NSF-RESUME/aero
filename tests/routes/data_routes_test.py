@@ -4,8 +4,8 @@ from uuid import uuid4
 
 import aero.models as models
 
-ROUTE = "/osprey/api/v1.0/source"
-SOURCE_KEYS = sorted(
+ROUTE = "/osprey/api/v1.0/data"
+KEYS = sorted(
     [
         "available_versions",
         "collection_url",
@@ -54,7 +54,7 @@ def test_list_sources(client, mocker):
     resp_data = response.json
 
     assert len(resp_data) >= 1  # should have at least a single element
-    assert all([sorted(r.keys()) == SOURCE_KEYS for r in resp_data]) is True, sorted(
+    assert all([sorted(r.keys()) == KEYS for r in resp_data]) is True, sorted(
         resp_data[0].keys()
     )
 
@@ -62,7 +62,7 @@ def test_list_sources(client, mocker):
 def test_get_source(client, mocker):
     data_id = models.data.Data.query.first().id
     response = client.get(f"{ROUTE}/{data_id}", follow_redirects=True)
-    assert sorted(response.json.keys()) == SOURCE_KEYS
+    assert sorted(response.json.keys()) == KEYS
 
     data_id = uuid4()
     response = client.get(f"{ROUTE}/{data_id}", follow_redirects=True)

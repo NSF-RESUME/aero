@@ -7,10 +7,10 @@ from aero.models.data import Data
 from aero.models.data_version import DataVersion
 from aero.globus.error import ServiceError
 
-source_routes = Blueprint("source_routes", __name__, url_prefix="/source")
+data_routes = Blueprint("data_routes", __name__, url_prefix="/data")
 
 
-@source_routes.route("/", methods=["GET"])
+@data_routes.route("/", methods=["GET"])
 @authenticated
 def all_sources():
     page = request.args.get("page") or 1
@@ -20,7 +20,7 @@ def all_sources():
     return jsonify(result), 200
 
 
-@source_routes.route("/search", methods=["GET"])
+@data_routes.route("/search", methods=["GET"])
 @authenticated
 def search():
     query = request.args.get("query")
@@ -33,7 +33,7 @@ def search():
     return result.text, 200
 
 
-@source_routes.route("/", methods=["POST"])
+@data_routes.route("/", methods=["POST"])
 @authenticated
 def create_source():
     try:
@@ -46,7 +46,7 @@ def create_source():
         return jsonify({"code": 500, "message": str(e)}), 500
 
 
-@source_routes.route("/<id>", methods=["GET"])
+@data_routes.route("/<id>", methods=["GET"])
 @authenticated
 def get_data(id):
     s = db.session.get(Data, id)
@@ -56,7 +56,7 @@ def get_data(id):
     return jsonify(s.toJSON()), 200
 
 
-@source_routes.route("/<id>/versions", methods=["GET"])
+@data_routes.route("/<id>/versions", methods=["GET"])
 @authenticated
 def list_versions(id):
     s = db.session.get(Data, id)
@@ -66,7 +66,7 @@ def list_versions(id):
     return jsonify([v.toJSON() for v in s.versions]), 200
 
 
-@source_routes.route("/<id>/file", methods=["GET"])
+@data_routes.route("/<id>/file", methods=["GET"])
 @authenticated
 def grap_file(id):
     source = db.session.get(Data, id)
@@ -98,7 +98,7 @@ def grap_file(id):
     return jsonify(s[0].toJSON()), 200
 
 
-@source_routes.route("/<id>/new-version", methods=["POST"])
+@data_routes.route("/<id>/new-version", methods=["POST"])
 @authenticated
 def add_version(id):
     source = db.session.get(Data, id)

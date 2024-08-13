@@ -88,7 +88,7 @@ def test_str_repr(app):
 
 
 def test_start_timer_flow(app):
-    p: models.provenance.Provenance = models.provenance.Provenance.query.first()
+    p: models.provenance.Provenance = models.provenance.Provenance.query.all()[-1]
     assert p.timer_job_id is None
 
     p._start_timer_flow()
@@ -96,7 +96,8 @@ def test_start_timer_flow(app):
 
 
 def test_run_flow(app):
-    p: models.provenance.Provenance = models.provenance.Provenance.query.first()
+    p: models.provenance.Provenance = models.provenance.Provenance.query.all()[-1]
+
     p.policy = models.provenance.PolicyEnum.NONE
     p.function_args = '{"endpoint": "1", "function": "1", "tasks": "1"}'
 
