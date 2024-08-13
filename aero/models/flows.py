@@ -44,11 +44,13 @@ class Flow(db.Model):
     id = Column(Uuid, default=uuid4, index=True, primary_key=True)
     function_id = Column(Uuid, db.ForeignKey("function.id"))
     function_args = Column(String)
+    email = Column(String)
     description = Column(String)
     timer = Column(Integer)
     timer_job_id = Column(String)
     policy = Column(Integer)
     last_executed = Column(DateTime)
+    user_endpoint = Column(String)
     derived_from = db.relationship(
         "Data",
         secondary=flow_derivation,
@@ -61,12 +63,11 @@ class Flow(db.Model):
 
     def __init__(
         self,
-        function_id: str,
         derived_from: list,
         contributed_to: list,
+        function_id: str | None = None,
         description: str = "",
         function_args: str = "",
-        timer_job_id: str | None = None,
         timer: int | None = None,
         policy: TriggerEnum = TriggerEnum.NONE,
     ):
@@ -88,6 +89,8 @@ class Flow(db.Model):
 
         db.session.add(self)
         db.session.commit()
+
+        self._run_flow()
 
     def __repr__(self):
         return f"<Flow(id={self.id}, derived_from={self.derived_from}, contributed_to={self.contributed_to}, function_id={self.function_id}, function_args='{self.function_args}', timer={self.timer}, timer_job_id='{self.timer_job_id}')>"
@@ -125,9 +128,9 @@ class Flow(db.Model):
         self.timer_job_id = set_timer(
             self.timer,
             self.id,
-            self.contributed_to[0].email,
+            self.email,
             FlowEnum.VERIFY_AND_MODIFY,
-            user_endpoint=self.contributed_to[0].user_endpoint,
+            user_endpoint=self.user_endpoint,
         )
         db.session.add(self)
         db.session.commit()

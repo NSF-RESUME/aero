@@ -9,7 +9,6 @@ def test_create(app):
     s: models.data.Data = models.data.Data(
         name="1",
         url="1",
-        email="1",
         collection_uuid=collection_uuid,
         collection_url=collection_url,
         description=description,
@@ -23,7 +22,6 @@ def test_create(app):
     s: models.data.Data = models.data.Data(
         name="source_with_tags",
         url="1",
-        email="1",
         tags=[t, t2],
         collection_uuid=collection_uuid,
         collection_url=collection_url,

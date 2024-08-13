@@ -10,13 +10,9 @@ KEYS = sorted(
         "available_versions",
         "collection_url",
         "collection_uuid",
-        "user_endpoint",
         "description",
-        "email",
         "id",
-        "vm_func",
         "name",
-        "timer",
         "url",
     ]
 )
@@ -27,7 +23,6 @@ def test_create_source(client):
     data = {
         "name": "test",
         "url": "https://dummyjson.com/products/1",
-        "email": "vhayot@uchicago.edu",
         "collection_uuid": str(uuid4()),
         "collection_url": "https://1234",
         "description": "this data is x",
@@ -37,12 +32,10 @@ def test_create_source(client):
 
     assert resp_dict["name"] == data["name"]
     assert resp_dict["url"] == data["url"]
-    assert resp_dict["email"] == data["email"]
 
     # Create source without url
     data = {
         "name": "test",
-        "email": "vhayot@uchicago.edu",
     }
 
     response = client.post(ROUTE, json=data, headers=headers, follow_redirects=True)

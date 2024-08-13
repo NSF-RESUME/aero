@@ -11,7 +11,6 @@ def test_create(app):
     s: models.data.Data = models.data.Data(
         name="input",
         url="input",
-        email="1",
         collection_uuid="1234",
         collection_url="https://1234",
         description="test",
@@ -22,7 +21,6 @@ def test_create(app):
     o: models.data.Data = models.data.Data(
         name="output",
         url="output",
-        email="1",
         collection_uuid="1234",
         collection_url="https://1234",
         description="test",
@@ -91,7 +89,9 @@ def test_str_repr(app):
 
 def test_start_timer_flow(app):
     p: models.flows.Flow = models.flows.Flow.query.all()[-1]
-    assert p.timer_job_id is None
+    assert p.timer_job_id == "1111"
+
+    p.timer_job_id = "1234"
 
     p._start_timer_flow()
     assert p.timer_job_id == "1111"
@@ -147,25 +147,18 @@ def test_ingestion_flow(app):
     s: models.data.Data = models.data.Data(
         name="input",
         url="input",
-        email="1",
         collection_uuid="1234",
         collection_url="https://1234",
         description="test",
-        vm_func=uuid4(),
-        user_endpoint="22222",
     )
 
-    f: models.function.Function = models.function.Function(uuid=s.vm_func)
+    f: models.function.Function = models.function.Function(uuid=uuid4())
     p: models.flows.Flow = models.flows.Flow(
         function_id=f.id,
         derived_from=[],
         contributed_to=[s],
         policy=models.flows.TriggerEnum.INGESTION,
     )
-
-    p._start_ingestion_flow()
-
-    assert p.timer_job_id is not None
 
     with pytest.raises(ServiceError):
         _ = p._run_flow()

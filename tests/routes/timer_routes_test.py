@@ -5,7 +5,7 @@ import aero.models as models
 
 ROUTE = "/osprey/api/v1.0/prov"
 
-PROVENANCE_KEYS = sorted(
+FLOW_KEYS = sorted(
     [
         "id",
         "derived_from",
@@ -21,10 +21,10 @@ PROVENANCE_KEYS = sorted(
 )
 
 
-def test_show_prov(client):
+def test_show_flow(client):
     response = client.get(ROUTE, follow_redirects=True)
     assert response.status_code == 200
-    assert all([sorted(r.keys()) == PROVENANCE_KEYS for r in response.json]) is True
+    assert all([sorted(r.keys()) == FLOW_KEYS for r in response.json]) is True
 
 
 def test_add_record(client):
@@ -40,6 +40,7 @@ def test_add_record(client):
         "kwargs": args,
         "description": "A test provenance example",
         "collection_uuid": "1234",
+        "collection_url": "https://1234",
         "name": name,
         "function_uuid": function_id,
         "output_fn": filename,

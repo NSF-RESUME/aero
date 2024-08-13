@@ -10,7 +10,6 @@ def test_create_source_version(app):
         s: models.data.Data = models.data.Data(
             name="1",
             url="1",
-            email="1",
             collection_uuid="1234",
             collection_url="https://1234",
             description="test",

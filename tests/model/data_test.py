@@ -1,13 +1,9 @@
 import datetime
 import json
-import pytest
 
-from unittest import mock
 from uuid import uuid4
 
 import aero.models as models
-from aero.globus.error import ServiceError
-from aero.globus.utils import FlowEnum
 
 
 def test_create_source(app):
@@ -18,7 +14,6 @@ def test_create_source(app):
     s: models.data.Data = models.data.Data(
         name="test",
         url="test",
-        email="test",
         collection_uuid=collection_uuid,
         collection_url=collection_url,
         description=description,
@@ -29,12 +24,6 @@ def test_create_source(app):
         and s.collection_uuid == collection_uuid
         and s.collection_url == collection_url
         and s.description == description
-        and s.timer == 86400
-        and s.vm_func is None
-        and s.email == "test"
-        and s.user_endpoint is None
-        and s.timer_job_id == "1111"
-        and s.flow_kind == -1
         and s.versions == []
         and s.tags == []
     )
@@ -50,11 +39,7 @@ def test_json_repr(app):
         "url",
         "collection_uuid",
         "collection_url",
-        "user_endpoint",
         "description",
-        "timer",
-        "vm_func",
-        "email",
         "available_versions",
     ], list(s_dict.keys())
 
@@ -65,9 +50,6 @@ def test_json_repr(app):
         and s_dict["collection_uuid"] == s.collection_uuid
         and s_dict["collection_url"] == s.collection_url
         and s_dict["description"] == s.description
-        and s_dict["timer"] == s.timer
-        and s_dict["vm_func"] == s.vm_func
-        and s_dict["email"] == s.email
         and s_dict["available_versions"] == 0
     )
 
@@ -122,67 +104,6 @@ def test_add_source_version(app):
     assert len(s.versions) == 2
 
 
-def test_missing_endpoint(app):
-    collection_uuid = "1234"
-    collection_url = "https://1234"
-    description = "test"
-
-    with pytest.raises(ServiceError):
-        _: models.data.Data = models.data.Data(
-            name="test",
-            url="test",
-            email="test",
-            collection_uuid=collection_uuid,
-            collection_url=collection_url,
-            description=description,
-            vm_func="1111",
-        )
-
-
-def test_flow_kind():
-    collection_uuid = "1234"
-    collection_url = "https://1234"
-    description = "test"
-
-    s: models.data.Data = models.data.Data(
-        name="test",
-        url="test",
-        email="test",
-        collection_uuid=collection_uuid,
-        collection_url=collection_url,
-        description=description,
-        vm_func="1111",
-        user_endpoint="2222",
-    )
-
-    assert s.flow_kind == FlowEnum.VERIFY_AND_MODIFY
-
-    s: models.data.Data = models.data.Data(
-        name="test",
-        url="test",
-        email="test",
-        collection_uuid=collection_uuid,
-        collection_url=collection_url,
-        description=description,
-        user_endpoint="2222",
-    )
-
-    assert s.flow_kind == FlowEnum.NONE
-
-    s: models.data.Data = models.data.Data(
-        name="test",
-        url="test",
-        email="test",
-        collection_uuid=collection_uuid,
-        collection_url=collection_url,
-        description=description,
-        user_endpoint="2222",
-        flow_kind=FlowEnum.USER_FLOW,
-    )
-
-    assert s.flow_kind == FlowEnum.USER_FLOW
-
-
 def test_policy_flow(app):
     f: models.function.Function = models.function.Function(uuid=uuid4())
     function_id = f.id
@@ -230,7 +151,6 @@ def test_last_version(app):
     s: models.data.Data = models.data.Data(
         name="1",
         url="1",
-        email="1",
         collection_uuid="1234",
         collection_url="https://1234",
         description="test",
@@ -241,20 +161,20 @@ def test_last_version(app):
     assert isinstance(s.last_version(), models.data_version.DataVersion)
 
 
-def test_timer_readable(app):
-    s: models.data.Data = models.data.Data.query.filter_by(name="test").first()
-    assert isinstance(s.timer_readable(), str)  # probably should test str formats
+# def test_timer_readable(app):
+#     s: models.data.Data = models.data.Data.query.filter_by(name="test").first()
+#     assert isinstance(s.timer_readable(), str)  # probably should test str formats
 
-    s: models.data.Data = models.data.Data(
-        name="1",
-        url="1",
-        email="1",
-        timer=0,
-        collection_uuid="1234",
-        collection_url="https://1234",
-        description="test",
-    )
-    assert s.timer_readable() is None
+#     s: models.data.Data = models.data.Data(
+#         name="1",
+#         url="1",
+#         email="1",
+#         timer=0,
+#         collection_uuid="1234",
+#         collection_url="https://1234",
+#         description="test",
+#     )
+#     assert s.timer_readable() is None
 
 
 # TODO: delete as validation like this is not necessary
@@ -295,58 +215,10 @@ def test_timer_readable(app):
 #         assert kwargs["flow_kind"] == FlowEnum.USER_FLOW
 
 
-def test_start_time_flow(app):
-    s: models.data.Data = models.data.Data(
-        name="1",
-        url="1",
-        email="1",
-        collection_uuid="1234",
-        collection_url="https://1234",
-        description="test",
-    )
-
-    with pytest.raises(ServiceError):
-        s._start_timer_flow()
-
-
-def test_get_timer_job(app):
-    s: models.data.Data = models.data.Data(
-        name="1",
-        url="1",
-        email="1",
-        collection_uuid="1234",
-        collection_url="https://1234",
-        description="test",
-    )
-    with mock.patch("aero.globus.flow.create_client") as _:
-        _ = s.get_timer_job()
-
-
-def test_last_refreshed_at(app):
-    s: models.data.Data = models.data.Data(
-        name="1",
-        url="1",
-        email="1",
-        collection_uuid="1234",
-        collection_url="https://1234",
-        description="test",
-    )
-
-    with mock.patch("aero.globus.flow.create_client") as _:
-        s.last_refreshed_at()
-
-    with (
-        mock.patch("aero.models.data.Data.get_timer_job", return_value=None) as _,
-        mock.patch("aero.globus.flow.create_client") as _,
-    ):
-        s.last_refreshed_at()
-
-
 def test_create_source_version(app):
     s: models.data.Data = models.data.Data(
         name="1",
         url="1",
-        email="1",
         collection_uuid="1234",
         collection_url="https://1234",
         description="test",

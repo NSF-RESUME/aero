@@ -16,7 +16,7 @@ flow_routes = Blueprint("flow_routes", __name__, url_prefix="/prov")
 
 @flow_routes.route("/", methods=["GET"])
 @authenticated
-def show_provenance():
+def show_flows():
     page = request.args.get("page") or 1
     per_page = request.args.get("per_page") or 15
     provs = Flow.query.order_by(Flow.id.desc()).paginate(page=page, per_page=per_page)
@@ -26,7 +26,7 @@ def show_provenance():
 
 @flow_routes.route("/new", methods=["POST"])
 @authenticated
-def record_provenance():
+def record_flow():
     try:
         json_data = request.json
 
@@ -59,7 +59,7 @@ def record_provenance():
             o = Data(
                 name=json_data["name"],
                 description=json_data["description"],
-                collection_url=json_data["url"],
+                collection_url=json_data["collection_url"],
                 collection_uuid=json_data["collection_uuid"],
             )
             o.add_new_version(
@@ -103,7 +103,7 @@ def register_flow(function_uuid):
     function_args = json.dumps(json_data)
     sources = json_data.get("data", None)
     description = json_data["description"]
-    policy: int | None = json_data.get("policy")
+    trigger: int | None = json_data.get("policy")
     timer_delay: int | None = json_data.get("timer_delay")
 
     p: Flow | None = None
@@ -146,15 +146,15 @@ def register_flow(function_uuid):
             derived_from=derived_from,
             description=description,
             function_args=function_args,
-            policy=policy,
+            policy=trigger,
             timer=timer_delay,
             contributed_to=contributed_to,
         )
 
-    if policy is not None and policy == 0:
+    if trigger is not None and trigger == 0:
         job_id = p._start_timer_flow()
         p.timer_job_id = job_id
-    elif policy is not None:
+    elif trigger is not None:
         p._run_flow()
 
     db.session.add(p)
