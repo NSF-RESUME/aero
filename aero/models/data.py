@@ -97,7 +97,10 @@ class Data(db.Model):
                 self.flow_kind = FlowEnum.VERIFY_AND_MODIFY
             else:
                 self.flow_kind = FlowEnum.NONE
+        else:
+            self.flow_kind = flow_kind
 
+        # TODO: don't set it to anything
         if user_endpoint is None:
             self.user_endpoint = Config.GLOBUS_WORKER_UUID
 

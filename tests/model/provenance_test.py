@@ -1,7 +1,9 @@
 import datetime
+import pytest
 
 from uuid import uuid4
 
+from aero.globus.error import ServiceError
 import aero.models as models
 
 
@@ -95,7 +97,7 @@ def test_start_timer_flow(app):
     assert p.timer_job_id == "1111"
 
 
-def test_run_flow(app):
+def test_run_analysis_flow(app):
     p: models.provenance.Provenance = models.provenance.Provenance.query.all()[-1]
 
     p.policy = models.provenance.PolicyEnum.NONE
@@ -139,3 +141,31 @@ def test_run_flow(app):
         p._run_flow() == models.provenance.PolicyEnum.ALL_INPUT
         and p.last_executed > before_run
     )
+
+
+def test_ingestion_flow(app):
+    s: models.data.Data = models.data.Data(
+        name="input",
+        url="input",
+        email="1",
+        collection_uuid="1234",
+        collection_url="https://1234",
+        description="test",
+        vm_func=uuid4(),
+        user_endpoint="22222",
+    )
+
+    f: models.function.Function = models.function.Function(uuid=s.vm_func)
+    p: models.provenance.Provenance = models.provenance.Provenance(
+        function_id=f.id,
+        derived_from=[],
+        contributed_to=[s],
+        policy=models.provenance.PolicyEnum.INGESTION,
+    )
+
+    p._start_ingestion_flow()
+
+    assert p.timer_job_id is not None
+
+    with pytest.raises(ServiceError):
+        _ = p._run_flow()

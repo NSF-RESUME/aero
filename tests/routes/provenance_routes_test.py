@@ -95,6 +95,22 @@ def test_add_record(client):
     response = client.post(f"{ROUTE}/new", json=data, headers=headers)
     assert response.status_code == 200, response.json
 
+    # test with no input sources
+    data = {
+        "kwargs": args,
+        "description": "A test provenance example",
+        "collection_uuid": "1234",
+        "name": name,
+        "function_uuid": function_id,
+        "output_fn": filename,
+        "url": "www.test.com",
+        "checksum": "123",
+        "format": "csv",
+        "size": 2,
+    }
+    response = client.post(f"{ROUTE}/new", json=data, headers=headers)
+    assert response.status_code == 200, response.json
+
 
 def test_register_flow(client):
     name = "test_prov_1234567"
@@ -145,5 +161,10 @@ def test_register_flow(client):
     assert response.status_code == 200
 
     data["policy"] = 1
+    response = client.post(f"{ROUTE}/timer/{function_id}", json=data, headers=headers)
+    assert response.status_code == 200
+
+    # without sources
+    data.pop("data")
     response = client.post(f"{ROUTE}/timer/{function_id}", json=data, headers=headers)
     assert response.status_code == 200

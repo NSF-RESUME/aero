@@ -70,7 +70,7 @@ class Provenance(db.Model):
         timer: int | None = None,
         policy: PolicyEnum = PolicyEnum.NONE,
     ):
-        if policy == 0 and timer is None:
+        if policy == PolicyEnum.INGESTION and timer is None:
             timer = 86400
 
         last_executed = None  # datetime.now()
@@ -117,6 +117,7 @@ class Provenance(db.Model):
         db.session.add(self)
         db.session.commit()
 
+    # TODO: remove all the execution-related parts from data and put in here
     def _start_ingestion_flow(self, flush=False):
         if not flush and self.timer_job_id is not None:
             raise ServiceError(FLOW_TIMER_ERROR, "source already has a flow timer")
@@ -124,15 +125,18 @@ class Provenance(db.Model):
         self.timer_job_id = set_timer(
             self.timer,
             self.id,
-            self.email,
+            self.contributed_to[0].email,
             FlowEnum.VERIFY_AND_MODIFY,
-            user_endpoint=self.user_endpoint,
+            user_endpoint=self.contributed_to[0].user_endpoint,
         )
         db.session.add(self)
         db.session.commit()
 
     def _run_flow(self) -> int:
-        function_args = json.loads(self.function_args)
+        try:
+            function_args = json.loads(self.function_args)
+        except json.JSONDecodeError as e:
+            print(e)
 
         if self.policy == PolicyEnum.INGESTION:
             self._start_ingestion_flow()

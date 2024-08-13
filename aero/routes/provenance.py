@@ -34,7 +34,7 @@ def record_provenance():
 
         assert "output_fn" in json_data
 
-        sources: list[int] = json_data["data"]
+        sources: list[str] | None = json_data.get("data", None)
         derived_from: list[Data] = []
         function_uuid = (
             json_data["function_uuid"] if "function_uuid" in json_data else None
@@ -104,7 +104,7 @@ def register_flow(function_uuid):
 
     derived_from: list[Data] = []
     function_args = json.dumps(json_data)
-    sources = json_data["data"]
+    sources = json_data.get("data", None)
     description = json_data["description"]
     policy: int | None = json_data.get("policy")
     timer_delay: int | None = json_data.get("timer_delay")
