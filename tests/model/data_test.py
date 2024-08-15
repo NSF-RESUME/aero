@@ -125,6 +125,7 @@ def test_policy_flow(app):
         function_args=function_args,
         derived_from=derived_from,
         contributed_to=contributed_to,
+        endpoint="1234",
     )
 
     policy_id = s.rerun_flow()

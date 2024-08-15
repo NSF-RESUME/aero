@@ -27,7 +27,7 @@ def test_create(app):
     )
     f: models.function.Function = models.function.Function(uuid=uuid4())
     p: models.flows.Flow = models.flows.Flow(
-        function_id=f.id, derived_from=[s], contributed_to=[o]
+        function_id=f.id, derived_from=[s], contributed_to=[o], endpoint="1222"
     )
 
     assert (
@@ -41,7 +41,11 @@ def test_create(app):
     )
 
     p2: models.flows.Flow = models.flows.Flow(
-        function_id=f.id, derived_from=[s], contributed_to=[o], policy=0
+        function_id=f.id,
+        derived_from=[s],
+        contributed_to=[o],
+        policy=0,
+        endpoint="1234",
     )
     assert p2.timer == 86400
 
@@ -158,6 +162,7 @@ def test_ingestion_flow(app):
         derived_from=[],
         contributed_to=[s],
         policy=models.flows.TriggerEnum.INGESTION,
+        endpoint="1234",
     )
 
     with pytest.raises(ServiceError):

@@ -74,6 +74,7 @@ def record_flow():
                 contributed_to=[o],
                 description=json_data["description"],
                 function_args=json_data["kwargs"],
+                endpoint=json_data["endpoint"],
             )
         else:
             # find output instance and add a new version
@@ -105,6 +106,7 @@ def register_flow(function_uuid):
     description = json_data["description"]
     trigger: int | None = json_data.get("policy")
     timer_delay: int | None = json_data.get("timer_delay")
+    endpoint: str = json_data["endpoint"]
 
     p: Flow | None = None
 
@@ -149,6 +151,7 @@ def register_flow(function_uuid):
             policy=trigger,
             timer=timer_delay,
             contributed_to=contributed_to,
+            endpoint=endpoint,
         )
 
     if trigger is not None and trigger == 0:

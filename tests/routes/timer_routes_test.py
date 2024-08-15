@@ -48,6 +48,7 @@ def test_add_record(client):
         "checksum": "123",
         "format": "csv",
         "size": 2,
+        "endpoint": "1234",
     }
     response = client.post(f"{ROUTE}/new", json=data, headers=headers)
     assert response.status_code == 200, response.json
@@ -133,6 +134,7 @@ def test_register_flow(client):
         "checksum": "123",
         "format": "json",
         "size": 2,
+        "endpoint": "1234",
     }
 
     # create prov record

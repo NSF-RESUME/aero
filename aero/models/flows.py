@@ -65,16 +65,18 @@ class Flow(db.Model):
         self,
         derived_from: list,
         contributed_to: list,
+        endpoint: str,
         function_id: str | None = None,
         description: str = "",
         function_args: str = "",
         timer: int | None = None,
         policy: TriggerEnum = TriggerEnum.NONE,
+        email: str = "",
     ):
         if policy == TriggerEnum.INGESTION and timer is None:
             timer = 86400
 
-        last_executed = None  # datetime.now()
+        last_executed = None
 
         super().__init__(
             function_id=function_id,
@@ -85,6 +87,8 @@ class Flow(db.Model):
             timer=timer,
             policy=policy,
             last_executed=last_executed,
+            user_endpoint=endpoint,
+            email=email,
         )
 
         db.session.add(self)
