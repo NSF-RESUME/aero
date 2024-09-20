@@ -7,7 +7,7 @@ F_UUID = uuid4()
 def test_create(app):
     f: models.function.Function = models.function.Function(uuid=F_UUID)
 
-    assert f.id == F_UUID and f.provenances == []
+    assert f.id == F_UUID
 
 
 def test_json(app):

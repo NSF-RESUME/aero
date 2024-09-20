@@ -18,6 +18,7 @@ site/
 # vhs - local stuff i should maybe remove
 aero/config_db.py
 aero/lib/test_flow.py
+aero/migrations/versions_old
 aero/ssl
 
 *tokens*

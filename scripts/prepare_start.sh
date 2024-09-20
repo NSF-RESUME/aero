@@ -17,17 +17,17 @@ docker compose run -it --rm web flask db upgrade
 docker compose down
 
 echo "\nThe Globus Flow Functions UUIDs are : "
-docker compose run -it --rm web python /app/osprey/worker/lib/globus_flow_helper.py
-source osprey/server/set_flow_uuids.sh
+docker compose run -it --rm web python /app/aero/worker/lib/globus_flow_helper.py
+source aero/set_flow_uuids.sh
 
 echo "\nThe Globus Search index is":
-search_idx=`docker compose run -it --rm web python /app/osprey/server/lib/globus_search.py | head -n 1 | awk '{print $NF}' | tr -d '\r'`
+search_idx=`docker compose run -it --rm web python /app/aero/globus/search.py | head -n 1 | awk '{print $NF}' | tr -d '\r'`
 
 echo "${search_idx}"
 
 echo "\n\nSetting up Globus Flow Worker"
-docker compose run -it --rm web python /app/osprey/server/jobs/timer.py
-docker compose run -it --rm web python /app/osprey/server/lib/globus_compute.py
+docker compose run -it --rm web python /app/aero/automate/timer.py
+docker compose run -it --rm web python /app/aero/globus/compute.py
 
 if [[ $(uname -a) == *"Darwin"* ]]
 then

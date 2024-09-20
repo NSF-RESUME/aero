@@ -88,12 +88,15 @@ def grap_file(id):
         )
 
     if len(s) == 0:
-        return jsonify(
-            {
-                "code": 404,
-                "message": f"Source with id {id} and version {version} not found",
-            }
-        ), 404
+        return (
+            jsonify(
+                {
+                    "code": 404,
+                    "message": f"Source with id {id} and version {version} not found",
+                }
+            ),
+            404,
+        )
 
     return jsonify(s[0].toJSON()), 200
 
@@ -101,14 +104,16 @@ def grap_file(id):
 @data_routes.route("/<id>/new-version", methods=["POST"])
 @authenticated
 def add_version(id):
-    source = db.session.get(Data, id)
+    data = db.session.get(Data, id)
 
-    if not source:
-        return jsonify({"code": 404, "message": f"Source with id {id} not found"}), 404
+    if not data:
+        return jsonify({"code": 404, "message": f"Data with id {id} not found"}), 404
+
+    # Check if there's a provenance record for this data
 
     try:
         json_data = request.json
-        response = source.add_new_version(
+        response = data.add_new_version(
             json_data["file"],
             json_data["file_format"],
             json_data["checksum"],
@@ -120,3 +125,15 @@ def add_version(id):
         return jsonify(s.toJSON()), s.code
     except Exception as e:  # pragma: no cover
         return jsonify({"code": 500, "message": str(e)}), 500
+
+
+@data_routes.route("/<id>/latest", methods=["GET"])
+@authenticated
+def get_latest(id):
+    data = db.session.get(Data, id)
+
+    if not data:
+        return jsonify({"code": 404, "message": f"Data with id {id} not found"}), 404
+
+    version = data.last_version()
+    return jsonify({"code": 200, "data_version": version.toJSON()})

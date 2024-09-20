@@ -1,4 +1,5 @@
 from uuid import uuid4
+from datetime import datetime
 
 from sqlalchemy import Column
 from sqlalchemy import String
@@ -58,7 +59,7 @@ class Data(db.Model):
         # create
         super().__init__(
             name=self.name,
-            url=self.url,
+            url=url,
             collection_uuid=self.collection_uuid,
             collection_url=self.collection_url,
             description=self.description,
@@ -96,6 +97,7 @@ class Data(db.Model):
         format: str,
         checksum: str,
         size: int,
+        created_at: datetime | None = None,
         encoding: str = "utf-8",
     ) -> str:
         """Commit data to the database.
@@ -135,7 +137,7 @@ class Data(db.Model):
         db.session.add(new_version)
         db.session.commit()
 
-        return get_search_client().add_entry(source_version=new_version)
+        return get_search_client().add_entry(data_version=new_version)
 
     def rerun_flow(self) -> int:
         # TODO: Fix implementation

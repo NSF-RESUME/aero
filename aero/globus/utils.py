@@ -1,7 +1,7 @@
 from enum import IntEnum
 
 from globus_sdk import SpecificFlowClient
-from globus_sdk.scopes.data import TimerScopes
+from globus_sdk.scopes import TimerScopes
 
 _TIMER_CLIENT_UUID: str = "524230d7-ea86-4a52-8312-86065a9e0417"
 

@@ -13,6 +13,7 @@ dependencies = [
     "flask",
     "flask-sqlalchemy",
     "flask-migrate",
+    "jsonschema",
     "psycopg2",
     "globus_compute_sdk"
 ]

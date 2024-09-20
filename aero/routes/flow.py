@@ -8,10 +8,11 @@ from aero.app import db
 from aero.app.decorators import authenticated
 from aero.models.function import Function
 from aero.models.flows import Flow
+from aero.models.flows import TriggerEnum
 from aero.models.data import Data
 from aero.globus.error import ServiceError
 
-flow_routes = Blueprint("flow_routes", __name__, url_prefix="/prov")
+flow_routes = Blueprint("flow_routes", __name__, url_prefix="/flow")
 
 
 @flow_routes.route("/", methods=["GET"])
@@ -22,6 +23,16 @@ def show_flows():
     provs = Flow.query.order_by(Flow.id.desc()).paginate(page=page, per_page=per_page)
     result = [p.toJSON() for p in provs]
     return jsonify(result), 200
+
+
+@flow_routes.route("/<flow_id>", methods=["GET"])
+@authenticated
+def get_flow(flow_id):
+    flow = db.session.get(Flow, flow_id)
+
+    if flow is None:
+        return jsonify({"code": 404, "message": "Not found"}), 404
+    return jsonify(flow.toJSON()), 200
 
 
 @flow_routes.route("/new", methods=["POST"])
@@ -94,6 +105,93 @@ def record_flow():
     except Exception as e:
         print("test", e)
         return jsonify({"code": 500, "message": str(e)}), 500
+
+
+@flow_routes.route("/register", methods=["POST"])
+@authenticated
+def register():
+    json_data = request.json
+
+    function_args = json.dumps(json_data)
+
+    # required
+    collection_uuid = json_data["collection_uuid"]
+    collection_url = json_data["collection_url"]
+    gc_endpoint = json_data["gc_endpoint"]
+
+    # optional parameters
+    function_uuid = json_data.get("function_uuid", uuid.UUID(int=0))
+    input_data = json_data.get("input_data", [])
+    output_data = json_data.get("output_data", None)
+    description = json_data.get("description", None)
+    _ = json_data.get("tags", [])
+    rule = json_data.get("rule", None)
+    timer = json_data.get("timer", 86400)
+    email = json_data.get("email", "")
+
+    fl: Flow | None = None
+
+    # check if function already exists
+
+    f = Function.query.filter(Function.id == function_uuid).first()
+
+    # function does not already exist, so record it
+    if f is None:
+        f = Function(uuid=function_uuid)
+    else:  # function already exists, check if exact flow already exists
+        fl = Flow.query.filter(
+            Flow.function_id == f.id and Flow.function_args == function_args
+        ).first()
+
+    if fl is None:  # flow does not already exist, so we can go ahead and register it
+        contributed_to = []
+
+        for out_data in output_data:
+            if rule == TriggerEnum.INGESTION:
+                o = Data(
+                    name=out_data["name"],
+                    url=out_data["url"],
+                    collection_uuid=collection_uuid,
+                    collection_url=collection_url,
+                    description=description,
+                )
+            else:
+                o = Data(
+                    name=out_data["name"],
+                    collection_uuid=collection_uuid,
+                    collection_url=collection_url,
+                    description=description,
+                )
+
+            contributed_to.append(o)
+
+        fl = Flow(
+            function_id=f.id,
+            derived_from=input_data,
+            description=description,
+            function_args=function_args,
+            policy=rule,
+            timer=timer,
+            contributed_to=contributed_to,
+            endpoint=gc_endpoint,
+            email=email,
+        )
+    else:
+        fl.timer = 86400
+        # return {'status': 'flow exists'}
+
+    if rule is not None and rule == TriggerEnum.INGESTION:
+        fl.timer_job_id = None
+        job_id = fl._start_ingestion_flow()
+        out = job_id
+        fl.timer_job_id = job_id
+    elif rule is not None:
+        out = fl._run_flow()
+
+    else:
+        out = fl._run_flow()
+
+    return json.dumps({"my out": out})
 
 
 @flow_routes.route("/timer/<function_uuid>", methods=["POST"])

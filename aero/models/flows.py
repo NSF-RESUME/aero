@@ -26,7 +26,7 @@ flow_derivation = db.Table(
 )
 
 flow_contribution = db.Table(
-    "provenance_contribution",
+    "flow_contribution",
     Column("flow_id", Uuid, db.ForeignKey("flow.id")),
     Column("produced_data_id", Uuid, db.ForeignKey("data.id")),
 )
@@ -68,7 +68,7 @@ class Flow(db.Model):
         endpoint: str,
         function_id: str | None = None,
         description: str = "",
-        function_args: str = "",
+        function_args: str = "{}",
         timer: int | None = None,
         policy: TriggerEnum = TriggerEnum.NONE,
         email: str = "",
@@ -97,7 +97,15 @@ class Flow(db.Model):
         self._run_flow()
 
     def __repr__(self):
-        return f"<Flow(id={self.id}, derived_from={self.derived_from}, contributed_to={self.contributed_to}, function_id={self.function_id}, function_args='{self.function_args}', timer={self.timer}, timer_job_id='{self.timer_job_id}')>"
+        return (
+            f"<Flow(id={self.id}, "
+            f"derived_from={self.derived_from}, "
+            f"contributed_to={self.contributed_to}, "
+            f"function_id={self.function_id}, "
+            f"function_args='{self.function_args}', "
+            f"timer={self.timer}, "
+            f"timer_job_id='{self.timer_job_id}')>"
+        )
 
     def toJSON(self):
         return {
@@ -105,6 +113,7 @@ class Flow(db.Model):
             "derived_from": [s.toJSON() for s in self.derived_from],
             "contributed_to": [o.toJSON() for o in self.contributed_to],
             "description": self.description,
+            "endpoint": self.user_endpoint,
             "function_id": self.function_id,
             "function_args": self.function_args,
             "timer": self.timer,
@@ -123,6 +132,8 @@ class Flow(db.Model):
         )
         db.session.add(self)
         db.session.commit()
+
+        return self.timer_job_id
 
     # TODO: remove all the execution-related parts from data and put in here
     def _start_ingestion_flow(self, flush=False):
@@ -143,7 +154,7 @@ class Flow(db.Model):
         try:
             function_args = json.loads(self.function_args)
         except json.JSONDecodeError as e:
-            print(e)
+            print(f"WARNING: Function args cannot be loaded: {e}")
 
         if self.policy == TriggerEnum.INGESTION:
             self._start_ingestion_flow()
@@ -163,6 +174,7 @@ class Flow(db.Model):
                 self.last_executed = datetime.now()
                 db.session.add(self)
                 db.session.commit()
+
         elif self.policy == TriggerEnum.ALL_INPUT:  # ALL
             if self.last_executed is None or all(
                 s.last_version().created_at > self.last_executed
@@ -176,4 +188,5 @@ class Flow(db.Model):
                 self.last_executed = datetime.now()
                 db.session.add(self)
                 db.session.commit()
+
         return self.policy

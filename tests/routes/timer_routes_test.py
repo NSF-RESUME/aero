@@ -3,7 +3,7 @@ from uuid import uuid4
 import aero.models as models
 
 
-ROUTE = "/osprey/api/v1.0/prov"
+ROUTE = "/osprey/api/v1.0/flow"
 
 FLOW_KEYS = sorted(
     [
@@ -11,6 +11,7 @@ FLOW_KEYS = sorted(
         "derived_from",
         "contributed_to",
         "description",
+        "endpoint",
         "function_id",
         "function_args",
         "timer",

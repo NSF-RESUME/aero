@@ -6,7 +6,7 @@ from uuid import uuid4
 import aero.models as models
 
 
-def test_create_source(app):
+def test_create_data(app):
     collection_uuid = "1234"
     collection_url = "https://1234"
     description = "test"
@@ -110,8 +110,8 @@ def test_policy_flow(app):
     function_args = json.dumps(
         {
             "endpoint": "123",
-            "function": "456",
-            "tasks": {"endpoint": "123", "function": "456"},
+            "function": str(f.id),
+            "tasks": {"endpoint": "123", "function": str(f.id)},
         }
     )
     contributed_to = []

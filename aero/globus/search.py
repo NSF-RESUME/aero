@@ -25,34 +25,35 @@ class DSaaSSearchClient:
 
     def create_source_idx(self):
         r = self.client.create_index(
-            "DSaaS sources",
-            "Searchable index for all sources stored in DSaaS",
+            "AERO data",
+            "Searchable index for all AERO data",
         )
         idx = r["id"]
         return idx
 
-    def add_entry(self, source_version: DataVersion) -> str:
+    def add_entry(self, data_version: DataVersion) -> str:
         entry = {
             "ingest_type": "GMetaEntry",
             "ingest_data": {
-                "subject": f"{source_version.source.name}-{source_version.source.id}.{source_version.version}",
+                "subject": f"{data_version.data.name}-{data_version.data.id}.{data_version.version}",
                 "visible_to": ["public"],
                 "content": {
-                    "name": source_version.source.name,
-                    "description": source_version.source.description,
-                    "email": source_version.source.email,
-                    "tags": [t.toJSON() for t in source_version.source.tags],
-                    "source": source_version.source.url,
-                    "source_id": source_version.source.id,
-                    "version": source_version.id,
-                    "checksum": source_version.checksum,
-                    "file_size": str(source_version.source_file.size)
-                    if source_version.source_file is not None
+                    "name": data_version.data.name,
+                    "description": data_version.data.description,
+                    "created_by": data_version.data.output_data[0].toJSON(),
+                    "tags": [t.toJSON() for t in data_version.data.tags],
+                    "source": data_version.data.url,
+                    "data_id": data_version.data.id,
+                    "version_id": data_version.id,
+                    "version": data_version.version,
+                    "checksum": data_version.checksum,
+                    "file_size": str(data_version.data_file.size)
+                    if data_version.data_file is not None
                     else None,
-                    "created": source_version.created_at.strftime("%Y/%m/%d")
-                    if source_version.created_at is not None
+                    "created": data_version.created_at.strftime("%Y/%m/%d")
+                    if data_version.created_at is not None
                     else None,
-                    "url": f"{GCS_PATH}/{source_version.source_file.file_name}",
+                    "url": f"{data_version.data.collection_url}/{data_version.data_file.file_name}",
                 },
             },
         }

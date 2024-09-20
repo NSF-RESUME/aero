@@ -1,4 +1,5 @@
 import datetime
+import json
 import pytest
 
 from uuid import uuid4
@@ -27,12 +28,16 @@ def test_create(app):
     )
     f: models.function.Function = models.function.Function(uuid=uuid4())
     p: models.flows.Flow = models.flows.Flow(
-        function_id=f.id, derived_from=[s], contributed_to=[o], endpoint="1222"
+        function_id=f.id,
+        derived_from=[s],
+        contributed_to=[o],
+        endpoint="1222",
+        function_args=json.dumps({}),
     )
 
     assert (
         p.function_id == f.id
-        and p.function_args == ""
+        and p.function_args == "{}"
         and p.description == ""
         and p.timer is None
         and p.timer_job_id is None
@@ -46,6 +51,7 @@ def test_create(app):
         contributed_to=[o],
         policy=0,
         endpoint="1234",
+        function_args=json.dumps("{}"),
     )
     assert p2.timer == 86400
 
@@ -59,6 +65,7 @@ def test_json(app):
         "derived_from",
         "contributed_to",
         "description",
+        "endpoint",
         "function_id",
         "function_args",
         "timer",
@@ -163,6 +170,7 @@ def test_ingestion_flow(app):
         contributed_to=[s],
         policy=models.flows.TriggerEnum.INGESTION,
         endpoint="1234",
+        function_args=json.dumps({}),
     )
 
     with pytest.raises(ServiceError):

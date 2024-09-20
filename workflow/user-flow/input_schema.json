@@ -1,22 +1,26 @@
 {
     "type": "object",
     "required": [
-        "user_endpoint",
-        "user_function",
-        "db_endpoint",
-        "db_function"
+        "tasks",
+        "endpoint",
+        "version_function",
+        "commit_function"
     ],
     "properties": {
-        "user_endpoint": {
+        "endpoint": {
             "type": "string",
-            "description": "The UUID of the endpoint to execute the function on"
+            "description": "The Globus Compute endpoint on which to execute the actions"
         },
-        "user_function": {
+        "version_function": {
             "type": "string",
-            "description": "The UUID of the function to execute"
+            "description": "The UUID of the function which fetches the latest data version"
+        },
+        "commit_function": {
+            "type": "string",
+            "description": "The UUID of the function which updates AERO metadata"
         },
         "args": {
-            "type": "string",
+            "type": "array",
             "description": "args to the task, ie. 123, \"hello world\" or [456, \"my string\"]"
         },
         "kwargs": {
@@ -24,18 +28,17 @@
             "description": "kwargs to the task, ie. {\"first\": 123, \"second\": \"my string\"}"
         },
         "tasks": {
-            "type": "string",
+            "type": "array",
             "description": "Additional task inputs as a JSON array, if desired, i.e. [{'endpoint':'...', 'function':'...', 'args':[...], 'kwargs':{...}}]"
         }
     },
     "propertyOrder": [
-        "user_endpoint",
-        "user_function",
-        "db_endpoint",
-        "db_function",
+        "endpoint",
+        "version_function",
+        "commit_function",
         "args",
         "kwargs",
         "tasks"
-    ],
+     ],
     "additionalProperties": true
 }

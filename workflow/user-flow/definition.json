@@ -1,18 +1,36 @@
 {
   "Comment": "Execute user-defined function",
-  "StartAt": "execute",
+  "StartAt": "getVersions",
   "States": {
+    "getVersions": {
+        "Type": "Action",
+        "ActionUrl": "https://compute.actions.globus.org/",
+        "Parameters": {
+          "endpoint.$": "$.endpoint",
+          "function.$": "$.version_function",
+          "args.=": "getattr('tasks')"
+        },
+        "ResultPath": "$.VersionResult",
+        "Next": "execute"
+    },
     "execute": {
         "Type": "Action",
         "ActionUrl": "https://compute.actions.globus.org/",
         "Parameters": {
-          "endpoint.$": "$.user_endpoint",
-          "function.$": "$.user_function",
-          "args.=": "getattr('args')",
-          "kwargs.=": "getattr('kwargs')",
-          "tasks.=": "getattr('tasks')"
+          "tasks.$": "$.VersionResult.details.result[0]"
         },
         "ResultPath": "$.UDFResult",
+        "Next": "updateMetadata"
+    },
+    "updateMetadata": {
+        "Type": "Action",
+        "ActionUrl": "https://compute.actions.globus.org/",
+        "Parameters": {
+          "endpoint.$": "$.endpoint",
+          "function.$": "$.commit_function",
+          "args.$": "$.UDFResult.details.result"
+        },
+        "ResultPath": "$.metadataResult",
         "End": true
     }
   }
