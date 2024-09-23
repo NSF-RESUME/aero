@@ -6,7 +6,7 @@ from unittest import mock
 # st_mock = mock.patch("osprey.server.jobs.timer.set_timer", return_value=1111)
 # rf_mock = mock.patch("osprey.server.jobs.user_flow.run_flow")
 
-from osprey.server.app import create_app, db
+from aero.app import create_app, db
 
 
 @pytest.fixture(scope="session")
@@ -14,6 +14,7 @@ def app():
     app = create_app()
     app.config.update({"TESTING": True})
     with app.app_context():
+        db.drop_all()
         db.create_all()
         yield app
         db.session.remove()
@@ -23,11 +24,9 @@ def app():
 @pytest.fixture(scope="session", autouse=True)
 def _mock_globus():
     with (
-        mock.patch("osprey.server.jobs.timer.set_timer", return_value=1111) as _,
-        mock.patch(
-            "osprey.server.lib.globus_search.DSaaSSearchClient", autospec=True
-        ) as _,
-        mock.patch("osprey.server.jobs.user_flow.run_flow") as _,
+        mock.patch("aero.automate.timer.set_timer", return_value=1111) as _,
+        mock.patch("aero.automate.policy.run_flow") as _,
+        mock.patch("aero.globus.search.DSaaSSearchClient", autospec=True) as _,
     ):
         yield
 

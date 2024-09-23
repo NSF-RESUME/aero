@@ -16,12 +16,22 @@ site/
 
 
 # vhs - local stuff i should maybe remove
-osprey/server/config_db.py
-osprey/server/lib/test_flow.py
+aero/config_db.py
+aero/lib/test_flow.py
+aero/migrations/versions_old
+aero/ssl
 
-*tokens.json*
+*tokens*
 scope.json
+scopes.json
 secrets.txt
 source
+set_environment.sh
+
+certs/
+dsaas/
+dsaas_portal/
+paper-remodnav/
+test_client/
 
 workflow/send-email-test

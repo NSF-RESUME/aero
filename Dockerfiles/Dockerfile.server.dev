@@ -1,10 +1,10 @@
 FROM python:3.10
 WORKDIR /app
-COPY osprey/server/requirements.txt requirements.txt
+COPY aero/requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 COPY . .
 RUN pip install -e .
-WORKDIR /app/osprey/server
+WORKDIR /app/aero
 # RUN flask db upgrade | TODO: Figure out if you can do it in `CMD`
 
 CMD ["python", "app/run.py"]

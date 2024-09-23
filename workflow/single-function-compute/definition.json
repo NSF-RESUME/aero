@@ -1,108 +1,82 @@
 {
-    "Comment": "Download, executes a function and commits to database",
-    "StartAt": "download",
-    "States": {
-        "download": {
-            "Type": "Action",
-            "ActionUrl": "https://compute.actions.globus.org/",
-            "Parameters": {
-                "tasks.=": "getattr('tasks')"
-            },
-            "ResultPath": "$.DownloadResult",
-            "Next": "prepare-custom-function"
+  "Comment": "Download, executes a function and commits to database",
+  "StartAt": "download",
+  "States": {
+    "download": {
+      "Type": "Action",
+      "ActionUrl": "https://compute.actions.globus.org/",
+      "Parameters": {
+        "endpoint.$": "$.osprey-worker-endpoint",
+        "function.$": "$.download-function",
+        "kwargs.=": "getattr('kwargs')"
+      },
+      "ResultPath": "$.DownloadResult",
+      "Next": "custom-user-function"
+    },
+    "custom-user-function": {
+      "Type": "Action",
+      "ActionUrl": "https://compute.actions.globus.org/",
+      "Parameters": {
+        "endpoint.$": "$.osprey-worker-endpoint",
+        "function.$": "$.user-wrapper-function",
+        "kwargs.$": "$.DownloadResult.details.result[0][1]"
+      },
+      "Catch": [
+        {
+          "Next": "ActionFailureHandler",
+          "ErrorEquals": [
+            "ActionFailedException"
+          ],
+          "ResultPath": "$.ErrorOutput"
+        }
+      ],
+      "ResultPath": "$.CustomFunctionResult",
+      "Next": "database-commit"
+    },
+    "database-commit": {
+      "Type": "Action",
+      "ActionUrl": "https://compute.actions.globus.org/",
+      "Parameters": {
+        "endpoint.$": "$.osprey-worker-endpoint",
+        "function.$": "$.database-commit-function",
+        "kwargs.$": "$.CustomFunctionResult.details.result[0]"
+      },
+      "End": true
+    },
+    "ActionFailureHandler": {
+      "End": true,
+      "Type": "Action",
+      "Comment": "Send email to user to notify of flow status ",
+      "ActionUrl": "https://actions.globus.org/notification/notify",
+      "Parameters": {
+        "sender": "dsaas-test@outlook.com",
+        "subject": "DSaaS: Error with source verifier or modifier",
+        "body_mimetype": "text/html",
+        "body_template": "<html><body><h1>Verifier or Modifier failed</h1>Endpoint: $Endpoint<br />Function UUID: $Function<br />File: <a href=\"https://g-c952d0.1305de.36fe.data.globus.org/temp/$File\">$File</a><br /><br />Stack Trace:<br /><code>$Error</code><body></html>",
+        "body_variables": {
+          "Endpoint.$": "$.osprey-worker-endpoint",
+          "Function.$": "$.user-wrapper-function",
+          "File.$": "$.CustomFuncParams.tasks[0].kwargs.file",
+          "Error.$": "$.ErrorOutput.Cause"
         },
-        "prepare-custom-function": {
-            "Type": "ExpressionEval",
-            "Comment": "Set details for custom process",
-            "Parameters": {
-                "tasks": [
-                    {
-                        "endpoint.$": "$.osprey-worker-endpoint",
-                        "function.$": "$.user-wrapper-function",
-                        "args.$": "$.DownloadResult.details.result[0][0]",
-                        "kwargs.$": "$.DownloadResult.details.result[0][1]"
-                    }
-                ]
-            },
-            "ResultPath": "$.CustomFuncParams",
-            "Next": "custom-user-function"
-        },
-        "custom-user-function": {
-            "Type": "Action",
-            "ActionUrl": "https://compute.actions.globus.org/",
-            "Parameters": {
-                "tasks.$": "$.CustomFuncParams.tasks"
-            },
-            "Catch": [
-                {
-                  "Next": "ActionFailureHandler",
-                  "ErrorEquals": [
-                    "ActionFailedException"
-                  ],
-                  "ResultPath": "$.ErrorOutput"
-                }
-            ],
-            "ResultPath": "$.CustomFunctionResult",
-            "Next": "prepare-commit"
-        },
-        "prepare-commit": {
-            "Type": "ExpressionEval",
-            "Comment": "Set details for database commit process",
-            "Parameters": {
-                "tasks": [
-                    {
-                        "endpoint.$": "$.osprey-worker-endpoint",
-                        "function.$": "$.database-commit-function",
-                        "args.$": "$.CustomFunctionResult.details.result[0][0]",
-                        "kwargs.$": "$.CustomFunctionResult.details.result[0][1]"
-                    }
-                ]
-            },
-            "ResultPath": "$.CommitParams",
-            "Next": "database-commit"
-        },
-        "database-commit": {
-            "Type": "Action",
-            "ActionUrl": "https://compute.actions.globus.org/",
-            "Parameters": {
-                "tasks.$": "$.CommitParams.tasks"
-            },
-            "End": true
-        },
-        "ActionFailureHandler": {
-            "End": true,
-            "Type": "Action",
-            "Comment": "Send email to user to notify of flow status ",
-            "ActionUrl": "https://actions.globus.org/notification/notify",
-            "Parameters": {
-              "sender": "dsaas-test@outlook.com",
-              "subject": "DSaaS: Error with source verifier or modifier",
-              "body_mimetype": "text/html",
-              "body_template": "<html><body><h1>Verifier or Modifier failed</h1>Endpoint: $Endpoint<br />Function UUID: $Function<br />File: <a href=\"https://g-c952d0.1305de.36fe.data.globus.org/temp/$File\">$File</a><br /><br />Stack Trace:<br /><code>$Error</code><body></html>",
-              "body_variables": {
-                "Endpoint.$": "$.osprey-worker-endpoint",
-                "Function.$": "$.user-wrapper-function",
-                "File.$": "$.CustomFuncParams.tasks[0].kwargs.file",
-                "Error.$": "$.ErrorOutput.Cause"
-              },
-              "destination.$": "$.author-email",
-              "send_credentials": [
-                {
-                  "credential_type": "smtp",
-                  "credential_value": {
-                    "hostname": "smtp.office365.com",
-                    "username": "dsaas-test@outlook.com",
-                    "password.$": "$._private_password",
-                    "__Private_Parameters": [
-                      "password"
-                    ]
-                  }
-                }
-              ],
-              "notification_method": "any",
-              "notification_priority": "low"
-            },
-            "ActionScope": "https://auth.globus.org/scopes/5fac2e64-c734-4e6b-90ea-ff12ddbf9653/notification_notify"
+        "destination.$": "$.author-email",
+        "send_credentials": [
+          {
+            "credential_type": "smtp",
+            "credential_value": {
+              "hostname": "smtp.office365.com",
+              "username": "dsaas-test@outlook.com",
+              "password.$": "$._private_password",
+              "__Private_Parameters": [
+                "password"
+              ]
+            }
           }
+        ],
+        "notification_method": "any",
+        "notification_priority": "low"
+      },
+      "ActionScope": "https://auth.globus.org/scopes/5fac2e64-c734-4e6b-90ea-ff12ddbf9653/notification_notify"
     }
+  }
 }

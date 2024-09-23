@@ -17,28 +17,32 @@ docker compose run -it --rm web flask db upgrade
 docker compose down
 
 echo "\nThe Globus Flow Functions UUIDs are : "
-docker compose run -it --rm web python /app/osprey/worker/lib/globus_flow_helper.py
-source osprey/server/set_flow_uuids.sh
+docker compose run -it --rm web python /app/aero/worker/lib/globus_flow_helper.py
+source aero/set_flow_uuids.sh
 
 echo "\nThe Globus Search index is":
-search_idx=`docker compose run -it --rm web python /app/osprey/server/lib/globus_search.py | head -n 1 | awk '{print $NF}' | tr -d '\r'`
+search_idx=`docker compose run -it --rm web python /app/aero/globus/search.py | head -n 1 | awk '{print $NF}' | tr -d '\r'`
 
 echo "${search_idx}"
 
 echo "\n\nSetting up Globus Flow Worker"
-docker compose run -it --rm web python /app/osprey/server/jobs/timer.py
-docker compose run -it --rm web python /app/osprey/server/lib/globus_compute.py
+docker compose run -it --rm web python /app/aero/automate/timer.py
+docker compose run -it --rm web python /app/aero/globus/compute.py
 
 if [[ $(uname -a) == *"Darwin"* ]]
 then
     sed -i '' "s/GLOBUS_FLOW_DOWNLOAD_FUNCTION=.*/GLOBUS_FLOW_DOWNLOAD_FUNCTION=${FLOW_DOWNLOAD}/g" docker-compose.yml
     sed -i '' "s/GLOBUS_FLOW_COMMIT_FUNCTION=.*/GLOBUS_FLOW_COMMIT_FUNCTION=${FLOW_DB_COMMIT}/g" docker-compose.yml
     sed -i '' "s/GLOBUS_FLOW_USER_COMMIT_FUNCTION=.*/GLOBUS_FLOW_USER_COMMIT_FUNCTION=${FLOW_USER_COMMIT}/g" docker-compose.yml
+    sed -i '' "s/GLOBUS_FLOW_ANALYSIS_VERSION_FUNCTION=.*/GLOBUS_FLOW_ANALYSIS_VERSION_FUNCTION=${FLOW_ANALYSIS_VER}/g" docker-compose.yml
+    sed -i '' "s/GLOBUS_FLOW_ANALYSIS_COMMIT_FUNCTION=.*/GLOBUS_FLOW_ANALYSIS_COMMIT_FUNCTION=${FLOW_ANALYSIS_COMMIT}/g" docker-compose.yml
     sed -i '' "s/SEARCH_INDEX=.*/SEARCH_INDEX=${search_idx}/g" docker-compose.yml
 else
     sed -i "s/GLOBUS_FLOW_DOWNLOAD_FUNCTION=.*/GLOBUS_FLOW_DOWNLOAD_FUNCTION=${FLOW_DOWNLOAD}/g" docker-compose.yml
     sed -i "s/GLOBUS_FLOW_COMMIT_FUNCTION=.*/GLOBUS_FLOW_COMMIT_FUNCTION=${FLOW_DB_COMMIT}/g" docker-compose.yml
     sed -i "s/GLOBUS_FLOW_USER_COMMIT_FUNCTION=.*/GLOBUS_FLOW_USER_COMMIT_FUNCTION=${FLOW_USER_COMMIT}/g" docker-compose.yml
+    sed -i "s/GLOBUS_FLOW_ANALYSIS_VERSION_FUNCTION=.*/GLOBUS_FLOW_ANALYSIS_VERSION_FUNCTION=${FLOW_ANALYSIS_VER}/g" docker-compose.yml
+    sed -i "s/GLOBUS_FLOW_ANALYSIS_COMMIT_FUNCTION=.*/GLOBUS_FLOW_ANALYSIS_COMMIT_FUNCTION=${FLOW_ANALYSIS_COMMIT}/g" docker-compose.yml
     sed -i "s/SEARCH_INDEX=.*/SEARCH_INDEX=${search_idx}/g" docker-compose.yml
 fi
 

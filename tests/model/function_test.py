@@ -1,23 +1,29 @@
-import osprey.server.models as models
+from uuid import uuid4
+import aero.models as models
+
+F_UUID = uuid4()
 
 
 def test_create(app):
-    uuid = "1"
-    f: models.function.Function = models.function.Function(uuid=uuid)
+    f: models.function.Function = models.function.Function(uuid=F_UUID)
 
-    assert f.id == 1 and f.uuid == uuid and f.provenances == []
+    assert f.id == F_UUID
 
 
 def test_json(app):
-    f: models.function.Function = models.function.Function.query.filter_by(id=1).first()
+    f: models.function.Function = models.function.Function.query.filter_by(
+        id=F_UUID
+    ).first()
     f_json = f.toJSON()
 
-    assert list(f_json.keys()) == ["id", "uuid"]
-    assert f_json["id"] == f.id and f_json["uuid"] == f.uuid
+    assert list(f_json.keys()) == ["id"]
+    assert f_json["id"] == f.id
 
 
 def test_str_repr(app):
-    f: models.function.Function = models.function.Function.query.filter_by(id=1).first()
+    f: models.function.Function = models.function.Function.query.filter_by(
+        id=F_UUID
+    ).first()
     f_str = str(f)
 
-    assert f_str == f"<Function(id={f.id}, uuid='{f.uuid}')>"
+    assert f_str == f"<Function(id={f.id})>"
