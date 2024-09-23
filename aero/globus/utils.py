@@ -22,7 +22,7 @@ FLOW_IDS = {
 }
 
 
-def _flow_scopes():
+def _timer_scopes():
     timer_scope = TimerScopes.make_mutable("timer")
     scopes = [timer_scope]
     # assert False, flows_scope
@@ -32,5 +32,15 @@ def _flow_scopes():
         specific_flow_scope = sfc.scopes.url_scope_string(specific_flow_scope_name)
         scopes.append(sfc.scopes.user)
         timer_scope.add_dependency(specific_flow_scope)
+
+    return scopes
+
+
+def _flow_scopes(flow_id):
+    scopes = []
+    sfc = SpecificFlowClient(flow_id=flow_id)
+    specific_flow_scope_name = f"flow_{flow_id.replace('-', '_')}_user"
+    _ = sfc.scopes.url_scope_string(specific_flow_scope_name)
+    scopes.append(sfc.scopes.user)
 
     return scopes

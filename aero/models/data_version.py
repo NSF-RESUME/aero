@@ -41,7 +41,7 @@ class DataVersion(db.Model):
         )
 
     def _set_defaults(self, **kwargs):
-        if "created_at" not in kwargs:
+        if "created_at" not in kwargs or kwargs["created_at"] is None:
             kwargs["created_at"] = datetime.datetime.now()
         return kwargs
 
@@ -50,11 +50,11 @@ class DataVersion(db.Model):
             "id": self.id,
             "data": self.data.toJSON(),
             "version": self.version,
-            "created_at": self.created_at,
+            "created_at": str(self.created_at),
             "checksum": self.checksum,
-            "data_file": self.data_file.toJSON()
-            if self.data_file is not None
-            else None,
+            "data_file": (
+                self.data_file.toJSON() if self.data_file is not None else None
+            ),
         }
 
     # def create_proxy(self, replace=False):

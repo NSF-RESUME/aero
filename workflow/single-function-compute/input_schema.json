@@ -7,7 +7,7 @@
         "database-commit-function",
         "download-function",
         "user-wrapper-function",
-        "tasks"
+        "kwargs"
     ],
     "properties": {
         "_private_password": {
@@ -40,7 +40,7 @@
         },
         "database-commit-function": {
             "type": "string",
-            "description": "The function UUID that is used for commiting to database"
+            "description": "The function UUID that is used for committing to database"
         },
         "download-function": {
             "type": "string",

@@ -44,8 +44,8 @@ def add_record():
         for o in outputs.values():
             d = db.session.get(Data, o["id"])
             d.add_new_version(
-                new_file=o["filename"],
-                format=o["format"],
+                new_file=o["file_bn"],
+                format=o["file_format"],
                 checksum=o["checksum"],
                 size=o["size"],
                 created_at=o["created_at"],

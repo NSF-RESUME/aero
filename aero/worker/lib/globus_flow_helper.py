@@ -30,11 +30,13 @@ def download(*args, **kwargs):
     from aero_client.config import CONF
     from aero_client.utils import load_tokens
 
-    if "temp_dir" in kwargs:
-        TEMP_DIR = Path(kwargs["temp_dir"])
+    outputs = list(kwargs["aero"]["output_data"].items())
+
+    if "temp_dir" in outputs[0][1]:
+        TEMP_DIR = Path(outputs[0][1]["temp_dir"])
     else:
         TEMP_DIR = pathlib.Path.home() / "aero"
-        kwargs["temp_dir"] = str(TEMP_DIR)
+        outputs[0][1]["temp_dir"] = str(TEMP_DIR)
 
     tokens = load_tokens()
     auth_token = tokens[CONF.portal_client_id]["refresh_token"]
@@ -43,7 +45,9 @@ def download(*args, **kwargs):
 
     # assert False, CONF.server_url
     response = requests.get(
-        f'{CONF.server_url}/flow/{kwargs["flow_id"]}', headers=headers, verify=False
+        f'{CONF.server_url}/flow/{kwargs["aero"]["flow_id"]}',
+        headers=headers,
+        verify=False,
     )
     flow = response.json()
 
@@ -63,58 +67,60 @@ def download(*args, **kwargs):
     with open(fn, "w+") as f:
         f.write(response.content.decode("utf-8"))
 
-    kwargs["data_id"] = data["id"]
-    kwargs["file"] = str(fn)
-    kwargs["file_bn"] = bn
-    kwargs["file_format"] = ext
-    kwargs["checksum"] = hashlib.md5(response.content).hexdigest()
-    kwargs["size"] = fn.stat().st_size
-    kwargs["download"] = True
+    kwargs["aero"]["output_data"][data["name"]]["id"] = data["id"]
+    kwargs["aero"]["output_data"][data["name"]]["file"] = str(fn)
+    kwargs["aero"]["output_data"][data["name"]]["file_bn"] = bn
+    kwargs["aero"]["output_data"][data["name"]]["file_format"] = ext
+    kwargs["aero"]["output_data"][data["name"]]["checksum"] = hashlib.md5(
+        response.content
+    ).hexdigest()
+    kwargs["aero"]["output_data"][data["name"]]["size"] = fn.stat().st_size
+    kwargs["aero"]["output_data"][data["name"]]["download"] = True
 
     return args, kwargs
 
 
-def user_function_wrapper(*args, **kwargs):
-    import requests
+# def user_function_wrapper(*args, **kwargs):
+#     import requests
 
-    from uuid import UUID
+#     from uuid import UUID
 
-    from aero_client.config import CONF
-    from aero_client.utils import load_tokens
+#     from aero_client.config import CONF
+#     from aero_client.utils import load_tokens
 
-    from aero.globus.error import ServiceError, CUSTOM_FUNCTION_ERROR
-    from aero.globus.compute import execute_function
+#     from aero.globus.error import ServiceError, CUSTOM_FUNCTION_ERROR
+#     from aero.globus.compute import execute_function
 
-    tokens = load_tokens()
-    auth_token = tokens[CONF.portal_client_id]["refresh_token"]
-    headers = {"Authorization": f"Bearer {auth_token}"}
+#     tokens = load_tokens()
+#     auth_token = tokens[CONF.portal_client_id]["refresh_token"]
+#     headers = {"Authorization": f"Bearer {auth_token}"}
 
-    flow_id = kwargs["flow_id"]
+#     flow_id = kwargs["flow_id"]
 
-    response = requests.get(
-        f"{CONF.server_url}/flow/{flow_id}", headers=headers, verify=False
-    )
+#     response = requests.get(
+#         f"{CONF.server_url}/flow/{flow_id}", headers=headers, verify=False
+#     )
 
-    assert response.status_code == 200, response.content
-    flow = response.json()
+#     assert response.status_code == 200, response.content
+#     flow = response.json()
 
-    # Verifier
-    null_uuid = str(UUID(int=0))
-    if flow["function_id"] != null_uuid:
-        try:
-            result = execute_function(
-                flow["function_id"], flow["endpoint"], *args, **kwargs
-            )
-            if result is not None:
-                args, kwargs = result
-        except Exception:
-            raise ServiceError(
-                CUSTOM_FUNCTION_ERROR, "Verifier/Transformation function failed"
-            )
+#     # Verifier
+#     null_uuid = str(UUID(int=0))
+#     if flow["function_id"] != null_uuid:
+#         try:
+#             result = execute_function(
+#                 flow["function_id"], flow["endpoint"], *args, **kwargs
+#             )
+#             if result is not None:
+#                 args, kwargs = result
+#         except Exception:
+#             raise ServiceError(
+#                 CUSTOM_FUNCTION_ERROR, "Verifier/Transformation function failed"
+#             )
 
-    # TODO: check if data has changed
+#     # TODO: check if data has changed
 
-    return args, kwargs
+#     return args, kwargs
 
 
 def database_commit(*args, **kwargs):
@@ -129,23 +135,25 @@ def database_commit(*args, **kwargs):
     auth_token = tokens[CONF.portal_client_id]["refresh_token"]
     aero_headers = {"Authorization": f"Bearer {auth_token}"}
 
-    data_id = kwargs["data_id"]
-    file_bn = kwargs["file_bn"]
+    output_items = list(kwargs["aero"]["output_data"].items())
+
+    data_id = output_items[0][1]["id"]
+    file_bn = output_items[0][1]["file_bn"]
 
     # get source
     response = requests.get(
         f"{CONF.server_url}/data/{data_id}", headers=aero_headers, verify=False
     )
-    source = response.json()
+    data = response.json()
 
-    gcs_url = source["collection_url"]
-    gcs_id = source["collection_uuid"]
+    gcs_url = data["collection_url"]
+    gcs_id = data["collection_uuid"]
 
     transfer_token = tokens[gcs_id]["access_token"]
 
     headers = {"Authorization": f"Bearer {transfer_token}"}
 
-    with open(kwargs["file"], "r") as f:
+    with open(output_items[0][1]["file"], "r") as f:
         data = f.read()
 
     # save data to GCS
@@ -162,15 +170,23 @@ def database_commit(*args, **kwargs):
         verify=False,
         data=json.dumps(
             {
-                "file": kwargs["file_bn"],
-                "file_format": kwargs["file_format"],
-                "checksum": kwargs["checksum"],
-                "size": kwargs["size"],
+                "file": output_items[0][1]["file_bn"],
+                "file_format": output_items[0][1]["file_format"],
+                "checksum": output_items[0][1]["checksum"],
+                "size": output_items[0][1]["size"],
             }
         ),
     )
 
-    pathlib.Path(kwargs["file"]).unlink()
+    # add provenance
+    response = requests.post(
+        f"{CONF.server_url}/prov/new",
+        headers=aero_headers,
+        verify=False,
+        data=json.dumps(kwargs),
+    )
+
+    pathlib.Path(output_items[0][1]["file"]).unlink()
     assert response.status_code == 200, response.json()
     return response.json()
 
@@ -204,7 +220,7 @@ def get_versions(*function_params):
     return function_params
 
 
-def commit_analysis(*task_args):
+def commit_analysis(*arglist):
     import json
     import requests
     from aero_client.config import CONF
@@ -217,23 +233,21 @@ def commit_analysis(*task_args):
     aero_headers["Content-type"] = "application/json"
 
     responses = []
-    for tasks in task_args:
-        kw = tasks["kwargs"]
-        assert "input_data" in kw["aero"]
-        assert "output_data" in kw["aero"]
-        assert "flow_id" in kw["aero"]
+    for task_kwargs in arglist:
+        assert "input_data" in task_kwargs["aero"]
+        assert "output_data" in task_kwargs["aero"]
+        assert "flow_id" in task_kwargs["aero"]
 
         # do something about provenance here
         response = requests.post(
             f"{CONF.server_url}/prov/new",
             headers=aero_headers,
             verify=False,
-            data=json.dumps(kw),
+            data=json.dumps(task_kwargs),
         )
 
         assert response.status_code == 200, response.content
         responses.append(response.json())
-
     return responses
 
 
@@ -241,4 +255,5 @@ if __name__ == "__main__":  # pragma: no cover
     with open("set_flow_uuids.sh", "w+") as f:
         f.write(f"export FLOW_DOWNLOAD={register_function(download)}\n")
         f.write(f"export FLOW_DB_COMMIT={register_function(database_commit)}\n")
-        f.write(f"export FLOW_USER_COMMIT={register_function(user_function_wrapper)}\n")
+        f.write(f"export FLOW_ANALYSIS_VER={register_function(get_versions)}\n")
+        f.write(f"export FLOW_ANALYSIS_COMMIT={register_function(commit_analysis)}\n")

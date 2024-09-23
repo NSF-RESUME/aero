@@ -1,5 +1,4 @@
 import datetime
-import json
 import pytest
 
 from uuid import uuid4
@@ -32,12 +31,17 @@ def test_create(app):
         derived_from=[s],
         contributed_to=[o],
         endpoint="1222",
-        function_args=json.dumps({}),
+        function_args={"aero": {"flow_id": None}},
     )
 
     assert (
         p.function_id == f.id
-        and p.function_args == "{}"
+        and p.function_args
+        == (
+            '{"kwargs": {"aero": {"flow_id": "None"}}, '
+            f'"function": "{f.id}", '
+            '"endpoint": "1222"}'
+        )
         and p.description == ""
         and p.timer is None
         and p.timer_job_id is None
@@ -51,7 +55,7 @@ def test_create(app):
         contributed_to=[o],
         policy=0,
         endpoint="1234",
-        function_args=json.dumps("{}"),
+        function_args={"aero": {"flow_id": None}},
     )
     assert p2.timer == 86400
 
@@ -75,16 +79,16 @@ def test_json(app):
     ]
 
     assert (
-        p_json["id"] == p.id
+        p_json["id"] == str(p.id)
         and p_json["derived_from"] == [s.toJSON() for s in p.derived_from]
         and p_json["contributed_to"] == [o.toJSON() for o in p.contributed_to]
         and p_json["description"] == p.description
-        and p_json["function_id"] == p.function_id
+        and p_json["function_id"] == str(p.function_id)
         and p_json["function_args"] == p.function_args
         and p_json["timer"] == p.timer
         and p_json["policy"] == p.policy
         and p_json["timer_job_id"] == p.timer_job_id
-        and p_json["last_executed"] == p.last_executed
+        and p_json["last_executed"] == p.last_executed.ctime()
     )
 
 
@@ -136,7 +140,7 @@ def test_run_analysis_flow(app):
     assert (
         p._run_flow() == models.flows.TriggerEnum.ANY_INPUT
         and p.last_executed > before_run
-    )
+    ), p.last_executed > before_run
 
     before_run = datetime.datetime.now()
     p.policy = models.flows.TriggerEnum.ALL_INPUT
@@ -170,7 +174,7 @@ def test_ingestion_flow(app):
         contributed_to=[s],
         policy=models.flows.TriggerEnum.INGESTION,
         endpoint="1234",
-        function_args=json.dumps({}),
+        function_args={"aero": {"flow_id": None}},
     )
 
     with pytest.raises(ServiceError):

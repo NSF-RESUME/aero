@@ -7,9 +7,9 @@ from globus_sdk import TimerJob
 from globus_sdk.utils import slash_join
 from globus_sdk import SpecificFlowClient
 from aero.globus.auth import get_authorizer
-from aero.globus.utils import _flow_scopes
 from aero.globus.utils import FLOW_IDS
 from aero.globus.utils import FlowEnum
+from aero.globus.utils import _timer_scopes
 from aero.config import Config
 
 """
@@ -28,6 +28,8 @@ def set_timer(
     id: int,
     email: str,
     flow_type: FlowEnum,
+    user_function: str,
+    function_args: str,
     user_endpoint: str,
     **kwargs,
 ) -> None:
@@ -47,26 +49,19 @@ def set_timer(
     authorizer = get_authorizer(scopes=_TIMER_SCOPE)
     timer_client = TimerClient(authorizer=authorizer, app_name="osprey-prototype")
 
+    kwargs = json.loads(function_args)["kwargs"]
     if flow_id != 2:
         run_input = {
             "osprey-worker-endpoint": str(user_endpoint),
             "download-function": Config.GLOBUS_FLOW_DOWNLOAD_FUNCTION,
             "database-commit-function": Config.GLOBUS_FLOW_COMMIT_FUNCTION,
-            "user-wrapper-function": Config.GLOBUS_FLOW_USER_WRAPPER_FUNC,
-            "tasks": json.dumps(
-                [
-                    {
-                        "endpoint": str(user_endpoint),
-                        "function": Config.GLOBUS_FLOW_DOWNLOAD_FUNCTION,
-                        "kwargs": {"flow_id": str(id)},
-                    }
-                ]
-            ),
+            "user-wrapper-function": user_function,
+            "kwargs": json.dumps(kwargs),
             "author-email": email,
             "_private_password": os.environ.get("DSAAS_EMAIL_PASSWORD"),
         }
-        run_label = f"Osprey Demo | Ingestion flow {id}"
-        name = f"osprey-demo-ingestion-{id}"
+        run_label = f"AERO Demo | Ingestion flow {str(id)[:8]}"
+        name = f"AERO-ingestion-{str(id)[:8]}"
 
     else:
         run_input = {
@@ -74,8 +69,8 @@ def set_timer(
             "user_function": kwargs["function"],
             "kwargs": json.dumps(kwargs["tasks"]),
         }
-        run_label = "Osprey Demo | User flow"
-        name = f"osprey-demo-user-flow-{id}"
+        run_label = "AERO Demo | User flow"
+        name = f"AERO-user-flow-{id}"
 
     url = slash_join(sfc.base_url, f"/flows/{flow_id}/run")
 
@@ -99,7 +94,7 @@ def set_timer(
 
 
 def delete_job(job_id: str):
-    authorizer = get_authorizer(scopes=_flow_scopes)
+    authorizer = get_authorizer(scopes=_timer_scopes)
     timer_client = TimerClient(authorizer=authorizer, app_name="osprey-prototype")
     response = timer_client.delete_job(job_id=job_id)
     assert response.http_status == 200, response.http_reason

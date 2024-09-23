@@ -1,5 +1,4 @@
 import datetime
-import json
 
 from uuid import uuid4
 
@@ -44,7 +43,7 @@ def test_json_repr(app):
     ], list(s_dict.keys())
 
     assert (
-        s_dict["id"] == s.id
+        s_dict["id"] == str(s.id)
         and s_dict["name"] == s.name
         and s_dict["url"] == s.url
         and s_dict["collection_uuid"] == s.collection_uuid
@@ -107,13 +106,7 @@ def test_add_source_version(app):
 def test_policy_flow(app):
     f: models.function.Function = models.function.Function(uuid=uuid4())
     function_id = f.id
-    function_args = json.dumps(
-        {
-            "endpoint": "123",
-            "function": str(f.id),
-            "tasks": {"endpoint": "123", "function": str(f.id)},
-        }
-    )
+    function_args = {"aero": {"input_data": [], "flow_id": None}}
     contributed_to = []
 
     s: models.data.Data = models.data.Data.query.filter_by(name="test").first()

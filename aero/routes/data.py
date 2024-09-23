@@ -15,7 +15,7 @@ data_routes = Blueprint("data_routes", __name__, url_prefix="/data")
 def all_sources():
     page = request.args.get("page") or 1
     per_page = request.args.get("per_page") or 15
-    sources = Data.query.order_by(Data.id.desc()).paginate(page=page, per_page=per_page)
+    sources = Data.query.paginate(page=page, per_page=per_page)
     result = [source.toJSON() for source in sources]
     return jsonify(result), 200
 

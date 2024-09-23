@@ -71,7 +71,7 @@ class Data(db.Model):
 
     def __repr__(self):
         return (
-            f"<Data(id={self.id}, "
+            f"<Data(id={str(self.id)}, "
             f"name={self.name}, "
             f"url={self.url}, "
             f"collection_uuid={self.collection_uuid}, "
@@ -82,7 +82,7 @@ class Data(db.Model):
     # TODO: Should send hash_id instead of id
     def toJSON(self):
         return {
-            "id": self.id,
+            "id": str(self.id),
             "name": self.name,
             "url": self.url,
             "collection_uuid": self.collection_uuid,
@@ -124,6 +124,7 @@ class Data(db.Model):
             version=version_number,
             data_id=self.id,
             checksum=checksum,
+            created_at=created_at,
         )
 
         new_version.data_file = DataFile(

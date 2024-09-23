@@ -60,15 +60,17 @@ class Flow(db.Model):
     contributed_to = db.relationship(
         "Data", secondary=flow_contribution, backref="output_data", lazy=True
     )
+    arg_hash = Column(String)
 
     def __init__(
         self,
         derived_from: list,
         contributed_to: list,
         endpoint: str,
+        arg_hash: str,
         function_id: str | None = None,
         description: str = "",
-        function_args: str = "{}",
+        function_args: dict | list = {},
         timer: int | None = None,
         policy: TriggerEnum = TriggerEnum.NONE,
         email: str = "",
@@ -77,8 +79,10 @@ class Flow(db.Model):
             timer = 86400
 
         last_executed = None
+        self.id = uuid4()
 
         super().__init__(
+            id=self.id,
             function_id=function_id,
             derived_from=derived_from,
             contributed_to=contributed_to,
@@ -88,8 +92,31 @@ class Flow(db.Model):
             policy=policy,
             last_executed=last_executed,
             user_endpoint=endpoint,
+            arg_hash=arg_hash,
             email=email,
         )
+
+        if isinstance(function_args, list):
+            task_list = []
+            task_invocation: dict = {}
+
+            for fargs in self.function_args:
+                fargs["aero"]["flow_id"] = str(self.id)
+
+                task_invocation["kwargs"] = fargs
+                task_invocation["function"] = str(self.function_id)
+                task_invocation["endpoint"] = self.user_endpoint
+
+                task_list.append(task_invocation)
+
+        else:
+            task_list = {}
+            self.function_args["aero"]["flow_id"] = str(self.id)
+            task_list["kwargs"] = self.function_args
+            task_list["function"] = str(self.function_id)
+            task_list["endpoint"] = self.user_endpoint
+
+        self.function_args = json.dumps(task_list)
 
         db.session.add(self)
         db.session.commit()
@@ -98,10 +125,10 @@ class Flow(db.Model):
 
     def __repr__(self):
         return (
-            f"<Flow(id={self.id}, "
+            f"<Flow(id={str(self.id)}, "
             f"derived_from={self.derived_from}, "
             f"contributed_to={self.contributed_to}, "
-            f"function_id={self.function_id}, "
+            f"function_id={str(self.function_id)}, "
             f"function_args='{self.function_args}', "
             f"timer={self.timer}, "
             f"timer_job_id='{self.timer_job_id}')>"
@@ -109,17 +136,21 @@ class Flow(db.Model):
 
     def toJSON(self):
         return {
-            "id": self.id,
+            "id": str(self.id),
             "derived_from": [s.toJSON() for s in self.derived_from],
             "contributed_to": [o.toJSON() for o in self.contributed_to],
             "description": self.description,
-            "endpoint": self.user_endpoint,
-            "function_id": self.function_id,
+            "endpoint": str(self.user_endpoint),
+            "function_id": str(self.function_id),
             "function_args": self.function_args,
             "timer": self.timer,
             "policy": self.policy,
             "timer_job_id": self.timer_job_id,
-            "last_executed": self.last_executed,
+            "last_executed": (
+                self.last_executed.ctime()
+                if self.last_executed is not None
+                else self.last_executed
+            ),
         }
 
     def _start_timer_flow(self):
@@ -128,7 +159,9 @@ class Flow(db.Model):
             self.id,
             "",
             FlowEnum.USER_FLOW,
-            self.function_args,
+            user_function=self.function_id,
+            function_args=self.function_args,
+            user_endpoint=self.user_endpoint,
         )
         db.session.add(self)
         db.session.commit()
@@ -145,6 +178,8 @@ class Flow(db.Model):
             self.id,
             self.email,
             FlowEnum.VERIFY_AND_MODIFY,
+            user_function=self.function_id,
+            function_args=self.function_args,
             user_endpoint=self.user_endpoint,
         )
         db.session.add(self)
@@ -167,9 +202,9 @@ class Flow(db.Model):
                 for s in self.derived_from
             ):
                 run_flow(
-                    endpoint_uuid=function_args["endpoint"],
-                    function_uuid=function_args["function"],
-                    tasks=function_args["tasks"],
+                    endpoint_uuid=self.user_endpoint,
+                    function_uuid=self.function_id,
+                    tasks=function_args,
                 )
                 self.last_executed = datetime.now()
                 db.session.add(self)
@@ -181,9 +216,9 @@ class Flow(db.Model):
                 for s in self.derived_from
             ):
                 run_flow(
-                    endpoint_uuid=function_args["endpoint"],
-                    function_uuid=function_args["function"],
-                    tasks=function_args["tasks"],
+                    endpoint_uuid=self.user_endpoint,
+                    function_uuid=self.function_id,
+                    tasks=function_args,
                 )
                 self.last_executed = datetime.now()
                 db.session.add(self)
