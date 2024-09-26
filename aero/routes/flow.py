@@ -172,11 +172,16 @@ def register():
 
             contributed_to.append(o)
             md["id"] = str(o.id)
+            md["collection_url"] = o.collection_url
+            md["collection_uuid"] = o.collection_uuid
 
         derived_from = []
 
         for in_data in input_data.values():
             d = db.session.get(Data, in_data["id"])
+            # add collection url to in_data
+            in_data["collection_url"] = d.collection_url
+            in_data["collection_uuid"] = d.collection_uuid
             derived_from.append(d)
 
         flow_invocation = []
