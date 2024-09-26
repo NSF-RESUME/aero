@@ -57,6 +57,7 @@ def download(*args, **kwargs):
 
     response = requests.get(data["url"])
     content_type = response.headers["content-type"]
+    encoding = response.encoding
     ext = guess_extension(content_type.split(";")[0])
 
     bn = str(uuid.uuid4())
@@ -65,7 +66,7 @@ def download(*args, **kwargs):
     TEMP_DIR.mkdir(exist_ok=True, parents=True)
 
     with open(fn, "w+") as f:
-        f.write(response.content.decode("utf-8"))
+        f.write(response.content.decode(encoding=encoding))
 
     kwargs["aero"]["output_data"][data["name"]]["id"] = data["id"]
     kwargs["aero"]["output_data"][data["name"]]["file"] = str(fn)
@@ -76,6 +77,7 @@ def download(*args, **kwargs):
     ).hexdigest()
     kwargs["aero"]["output_data"][data["name"]]["size"] = fn.stat().st_size
     kwargs["aero"]["output_data"][data["name"]]["download"] = True
+    kwargs["aero"]["output_data"][data["name"]]["encoding"] = encoding
 
     return args, kwargs
 
@@ -125,7 +127,6 @@ def download(*args, **kwargs):
 
 def database_commit(*args, **kwargs):
     import json
-    import pathlib
     import requests
     from aero_client.config import CONF
     from aero_client.utils import load_tokens
@@ -135,48 +136,33 @@ def database_commit(*args, **kwargs):
     auth_token = tokens[CONF.portal_client_id]["refresh_token"]
     aero_headers = {"Authorization": f"Bearer {auth_token}"}
 
-    output_items = list(kwargs["aero"]["output_data"].items())
+    # output_items = list(kwargs["aero"]["output_data"].items())
 
-    data_id = output_items[0][1]["id"]
-    file_bn = output_items[0][1]["file_bn"]
+    # data_id = output_items[0][1]["id"]
+    # file_bn = output_items[0][1]["file_bn"]
 
-    # get source
-    response = requests.get(
-        f"{CONF.server_url}/data/{data_id}", headers=aero_headers, verify=False
-    )
-    data = response.json()
+    # # get source
+    # response = requests.get(
+    #     f"{CONF.server_url}/data/{data_id}", headers=aero_headers, verify=False
+    # )
+    # data = response.json()
 
-    gcs_url = data["collection_url"]
-    gcs_id = data["collection_uuid"]
+    # gcs_url = data["collection_url"]
+    # gcs_id = data["collection_uuid"]
 
-    transfer_token = tokens[gcs_id]["access_token"]
+    # transfer_token = tokens[gcs_id]["access_token"]
 
-    headers = {"Authorization": f"Bearer {transfer_token}"}
+    # headers = {"Authorization": f"Bearer {transfer_token}"}
 
-    with open(output_items[0][1]["file"], "r") as f:
-        data = f.read()
+    # with open(output_items[0][1]["file"], "r") as f:
+    #     data = f.read()
 
     # save data to GCS
-    response = requests.put(f"{gcs_url}/{file_bn}", headers=headers, data=data)
+    # response = requests.put(f"{gcs_url}/{file_bn}", headers=headers, data=data)
 
-    assert response.status_code == 200, response.json()
+    # assert response.status_code == 200, response.json()
 
     aero_headers["Content-type"] = "application/json"
-
-    # add new version
-    response = requests.post(
-        f"{CONF.server_url}/data/{data_id}/new-version",
-        headers=aero_headers,
-        verify=False,
-        data=json.dumps(
-            {
-                "file": output_items[0][1]["file_bn"],
-                "file_format": output_items[0][1]["file_format"],
-                "checksum": output_items[0][1]["checksum"],
-                "size": output_items[0][1]["size"],
-            }
-        ),
-    )
 
     # add provenance
     response = requests.post(
@@ -186,7 +172,7 @@ def database_commit(*args, **kwargs):
         data=json.dumps(kwargs),
     )
 
-    pathlib.Path(output_items[0][1]["file"]).unlink()
+    # pathlib.Path(output_items[0][1]["file"]).unlink()
     assert response.status_code == 200, response.json()
     return response.json()
 
@@ -216,6 +202,12 @@ def get_versions(*function_params):
 
                 assert response.status_code == 200, response.content
                 md["version"] = response.json()["data_version"]["version"]
+                md["file_bn"] = response.json()["data_version"]["data_file"][
+                    "file_name"
+                ]
+                md["encoding"] = response.json()["data_version"]["data_file"][
+                    "encoding"
+                ]
 
     return function_params
 
