@@ -12,8 +12,8 @@ provenance_routes = Blueprint("provenance_routes", __name__, url_prefix="/prov")
 @provenance_routes.route("/", methods=["GET"])
 @authenticated
 def list_prov():
-    page = request.args.get("page") or 1
-    per_page = request.args.get("per_page") or 15
+    page = request.args.get("page", type=int) or 1
+    per_page = request.args.get("per_page", type=int) or 15
     provs = Provenance.query.order_by(Provenance.id.desc()).paginate(
         page=page, per_page=per_page
     )
