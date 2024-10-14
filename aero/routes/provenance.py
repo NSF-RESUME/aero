@@ -51,6 +51,9 @@ def add_record():
                 created_at=o["created_at"],
                 encoding=o.get("encoding", "utf-8"),
             )
+
+            # TODO: maybe fix
+            d.rerun_flow()
             output_versions.append(d.last_version())
 
         p = Provenance(
