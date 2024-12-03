@@ -162,6 +162,7 @@ class Flow(db.Model):
             user_function=self.function_id,
             function_args=self.function_args,
             user_endpoint=self.user_endpoint,
+            email=self.email,
         )
         db.session.add(self)
         db.session.commit()
@@ -205,6 +206,7 @@ class Flow(db.Model):
                     endpoint_uuid=self.user_endpoint,
                     function_uuid=self.function_id,
                     tasks=function_args,
+                    email=self.email,
                 )
                 self.last_executed = datetime.now()
                 db.session.add(self)
@@ -219,6 +221,7 @@ class Flow(db.Model):
                     endpoint_uuid=self.user_endpoint,
                     function_uuid=self.function_id,
                     tasks=function_args,
+                    email=self.email,
                 )
                 self.last_executed = datetime.now()
                 db.session.add(self)

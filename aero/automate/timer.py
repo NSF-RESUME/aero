@@ -4,8 +4,9 @@ import os
 
 from globus_sdk import TimerClient
 from globus_sdk import TimerJob
-from globus_sdk.utils import slash_join
 from globus_sdk import SpecificFlowClient
+from globus_sdk.scopes import TimerScopes
+from globus_sdk.utils import slash_join
 from aero.globus.auth import get_authorizer
 from aero.globus.utils import FLOW_IDS
 from aero.globus.utils import FlowEnum
@@ -39,15 +40,16 @@ def set_timer(
         func_uuid: The Globus Compute registered function UUID.
     """
     flow_id = FLOW_IDS[flow_type]
-    _TIMER_CLIENT_UUID: str = "524230d7-ea86-4a52-8312-86065a9e0417"
-    _TIMER_SCOPE = f"https://auth.globus.org/scopes/{_TIMER_CLIENT_UUID}/timer"
 
+    # Generate scopes
+    timer_scope = TimerScopes.make_mutable("timer")
     sfc = SpecificFlowClient(flow_id=flow_id)
     specific_flow_scope_name = f"flow_{flow_id.replace('-', '_')}_user"
     specific_flow_scope = sfc.scopes.url_scope_string(specific_flow_scope_name)
+    timer_scope.add_dependency(specific_flow_scope)
 
-    authorizer = get_authorizer(scopes=_TIMER_SCOPE)
-    timer_client = TimerClient(authorizer=authorizer, app_name="osprey-prototype")
+    authorizer = get_authorizer(scopes=timer_scope)
+    timer_client = TimerClient(authorizer=authorizer, app_name=Config.APP_NAME)
 
     kwargs = json.loads(function_args)["kwargs"]
     if flow_id != 2:
@@ -95,6 +97,6 @@ def set_timer(
 
 def delete_job(job_id: str):
     authorizer = get_authorizer(scopes=_timer_scopes)
-    timer_client = TimerClient(authorizer=authorizer, app_name="osprey-prototype")
+    timer_client = TimerClient(authorizer=authorizer, app_name=Config.APP_NAME)
     response = timer_client.delete_job(job_id=job_id)
     assert response.http_status == 200, response.http_reason
