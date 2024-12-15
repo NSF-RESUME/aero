@@ -24,11 +24,18 @@ def download(*args, **kwargs):
     import pathlib
     import requests
     import uuid
+    import time
     from mimetypes import guess_extension
     from pathlib import Path
 
     from aero_client.config import CONF
     from aero_client.utils import load_tokens
+
+    task_start: float
+    task_end: float
+
+    if "metrics" in kwargs and kwargs["metrics"] is True:
+        task_start = time.time_ns()
 
     outputs = list(kwargs["aero"]["output_data"].items())
 
@@ -65,8 +72,11 @@ def download(*args, **kwargs):
 
     TEMP_DIR.mkdir(exist_ok=True, parents=True)
 
-    with open(fn, "w+") as f:
-        f.write(response.content.decode(encoding=encoding))
+    try:
+        with open(fn, "w+") as f:
+            f.write(response.content.decode(encoding=encoding))
+    except UnicodeEncodeError:
+        pass  # data is in bytes and cannot be decoded
 
     kwargs["aero"]["output_data"][data["name"]]["id"] = data["id"]
     kwargs["aero"]["output_data"][data["name"]]["file"] = str(fn)
@@ -79,88 +89,34 @@ def download(*args, **kwargs):
     kwargs["aero"]["output_data"][data["name"]]["download"] = True
     kwargs["aero"]["output_data"][data["name"]]["encoding"] = encoding
 
+    if "metrics" in kwargs and kwargs["metrics"] is True:
+        task_end = time.time_ns()
+        kwargs["download_metrics"] = {
+            "task_start": task_start,
+            "task_end": task_end,
+            "duration": task_end - task_start,
+        }
+
     return args, kwargs
-
-
-# def user_function_wrapper(*args, **kwargs):
-#     import requests
-
-#     from uuid import UUID
-
-#     from aero_client.config import CONF
-#     from aero_client.utils import load_tokens
-
-#     from aero.globus.error import ServiceError, CUSTOM_FUNCTION_ERROR
-#     from aero.globus.compute import execute_function
-
-#     tokens = load_tokens()
-#     auth_token = tokens[CONF.portal_client_id]["refresh_token"]
-#     headers = {"Authorization": f"Bearer {auth_token}"}
-
-#     flow_id = kwargs["flow_id"]
-
-#     response = requests.get(
-#         f"{CONF.server_url}/flow/{flow_id}", headers=headers, verify=False
-#     )
-
-#     assert response.status_code == 200, response.content
-#     flow = response.json()
-
-#     # Verifier
-#     null_uuid = str(UUID(int=0))
-#     if flow["function_id"] != null_uuid:
-#         try:
-#             result = execute_function(
-#                 flow["function_id"], flow["endpoint"], *args, **kwargs
-#             )
-#             if result is not None:
-#                 args, kwargs = result
-#         except Exception:
-#             raise ServiceError(
-#                 CUSTOM_FUNCTION_ERROR, "Verifier/Transformation function failed"
-#             )
-
-#     # TODO: check if data has changed
-
-#     return args, kwargs
 
 
 def database_commit(*args, **kwargs):
     import json
     import requests
+    import time
     from aero_client.config import CONF
     from aero_client.utils import load_tokens
+
+    task_start: float
+    task_end: float
+
+    if "metrics" in kwargs and kwargs["metrics"] is True:
+        task_start = time.time_ns()
 
     tokens = load_tokens()
 
     auth_token = tokens[CONF.portal_client_id]["refresh_token"]
     aero_headers = {"Authorization": f"Bearer {auth_token}"}
-
-    # output_items = list(kwargs["aero"]["output_data"].items())
-
-    # data_id = output_items[0][1]["id"]
-    # file_bn = output_items[0][1]["file_bn"]
-
-    # # get source
-    # response = requests.get(
-    #     f"{CONF.server_url}/data/{data_id}", headers=aero_headers, verify=False
-    # )
-    # data = response.json()
-
-    # gcs_url = data["collection_url"]
-    # gcs_id = data["collection_uuid"]
-
-    # transfer_token = tokens[gcs_id]["access_token"]
-
-    # headers = {"Authorization": f"Bearer {transfer_token}"}
-
-    # with open(output_items[0][1]["file"], "r") as f:
-    #     data = f.read()
-
-    # save data to GCS
-    # response = requests.put(f"{gcs_url}/{file_bn}", headers=headers, data=data)
-
-    # assert response.status_code == 200, response.json()
 
     aero_headers["Content-type"] = "application/json"
 
@@ -172,15 +128,35 @@ def database_commit(*args, **kwargs):
         data=json.dumps(kwargs),
     )
 
-    # pathlib.Path(output_items[0][1]["file"]).unlink()
     assert response.status_code == 200, response.json()
-    return response.json()
+
+    if "metrics" in kwargs and kwargs["metrics"] is True:
+        task_end = time.time_ns()
+        kwargs["download_metrics"] = {
+            "task_start": task_start,
+            "task_end": task_end,
+            "duration": task_end - task_start,
+        }
+
+        outkwargs = response.json()
+        outkwargs["database_commit"] = kwargs["download_metrics"]
+    else:
+        outkwargs = response.json()
+
+    return outkwargs
 
 
 def get_versions(*function_params):
     import requests
+    import time
     from aero_client.config import CONF
     from aero_client.utils import load_tokens
+
+    task_start: float
+    task_end: float
+
+    if function_params["metrics"] is True:
+        task_start = time.time_ns()
 
     tokens = load_tokens()
 
@@ -209,14 +185,30 @@ def get_versions(*function_params):
                     "encoding"
                 ]
 
+    if function_params["metrics"] is True:
+        task_end = time.time_ns()
+        function_params["get_versions_metrics"] = {
+            "task_start": task_start,
+            "task_end": task_end,
+            "duration": task_end - task_start,
+        }
+
     return function_params
 
 
 def commit_analysis(*arglist):
     import json
     import requests
+    import time
+
     from aero_client.config import CONF
     from aero_client.utils import load_tokens
+
+    task_start: float
+    task_end: float
+
+    if arglist["metrics"] is True:
+        task_start = time.time_ns()
 
     tokens = load_tokens()
 
@@ -240,6 +232,19 @@ def commit_analysis(*arglist):
 
         assert response.status_code == 200, response.content
         responses.append(response.json())
+
+    if arglist["metrics"] is True:
+        task_end = time.time_ns()
+        responses.append(
+            {
+                "get_versions_metrics": {
+                    "task_start": task_start,
+                    "task_end": task_end,
+                    "duration": task_end - task_start,
+                }
+            }
+        )
+
     return responses
 
 
