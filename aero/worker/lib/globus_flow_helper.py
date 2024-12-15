@@ -75,8 +75,9 @@ def download(*args, **kwargs):
     try:
         with open(fn, "w+") as f:
             f.write(response.content.decode(encoding=encoding))
-    except UnicodeEncodeError:
-        pass  # data is in bytes and cannot be decoded
+    except UnicodeDecodeError:
+        with open(fn, "wb") as f:
+            f.write(response.content)
 
     kwargs["aero"]["output_data"][data["name"]]["id"] = data["id"]
     kwargs["aero"]["output_data"][data["name"]]["file"] = str(fn)
