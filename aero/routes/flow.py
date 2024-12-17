@@ -10,7 +10,6 @@ from aero.app import db
 from aero.app.decorators import authenticated
 from aero.models.function import Function
 from aero.models.flows import Flow
-from aero.models.flows import TriggerEnum
 from aero.models.data import Data
 
 flow_routes = Blueprint("flow_routes", __name__, url_prefix="/flow")
@@ -154,21 +153,18 @@ def register():
         contributed_to = []
 
         for name, md in output_data.items():
-            if rule == TriggerEnum.INGESTION:
-                o = Data(
-                    name=name,
-                    url=md["url"],
-                    collection_uuid=md["collection_uuid"],
-                    collection_url=md["collection_url"],
-                    description=description,
-                )
+            if "url" in md:
+                url = md["url"]
             else:
-                o = Data(
-                    name=name,
-                    collection_uuid=md["collection_uuid"],
-                    collection_url=md["collection_url"],
-                    description=description,
-                )
+                url = None
+
+            o = Data(
+                name=name,
+                url=url,
+                collection_uuid=md["collection_uuid"],
+                collection_url=md["collection_url"],
+                description=description,
+            )
 
             contributed_to.append(o)
             md["id"] = str(o.id)
