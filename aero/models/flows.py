@@ -9,6 +9,7 @@ from sqlalchemy import DateTime
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Uuid
+from sqlalchemy import JSON
 
 from aero.app import db
 
@@ -43,7 +44,9 @@ class TriggerEnum(IntEnum):
 class Flow(db.Model):
     id = Column(Uuid, default=uuid4, index=True, primary_key=True)
     function_id = Column(Uuid, db.ForeignKey("function.id"))
-    function_args = Column(String)
+    function_args = Column(JSON)
+    pull_function_id = Column(Uuid)
+    commit_function_id = Column(Uuid)
     email = Column(String)
     description = Column(String)
     timer = Column(Integer)
@@ -69,6 +72,8 @@ class Flow(db.Model):
         endpoint: str,
         arg_hash: str,
         function_id: str | None = None,
+        pull_function_id: str | None = None,
+        commit_function_id: str | None = None,
         description: str = "",
         function_args: dict | list = {},
         timer: int | None = None,
@@ -84,6 +89,8 @@ class Flow(db.Model):
         super().__init__(
             id=self.id,
             function_id=function_id,
+            pull_function_id=pull_function_id,
+            commit_function_id=commit_function_id,
             derived_from=derived_from,
             contributed_to=contributed_to,
             description=description,
@@ -116,7 +123,7 @@ class Flow(db.Model):
             task_list["function"] = str(self.function_id)
             task_list["endpoint"] = self.user_endpoint
 
-        self.function_args = json.dumps(task_list)
+        self.function_args = task_list
 
         db.session.add(self)
         db.session.commit()
@@ -130,6 +137,8 @@ class Flow(db.Model):
             f"contributed_to={self.contributed_to}, "
             f"function_id={str(self.function_id)}, "
             f"function_args='{self.function_args}', "
+            f"pull_function_id='{self.pull_function_id}'"
+            f"commit_function_id='{self.commit_function_id}'"
             f"timer={self.timer}, "
             f"timer_job_id='{self.timer_job_id}')>"
         )
@@ -143,6 +152,8 @@ class Flow(db.Model):
             "endpoint": str(self.user_endpoint),
             "function_id": str(self.function_id),
             "function_args": self.function_args,
+            "pull_function_id": str(self.pull_function_id),
+            "commit_function_id": str(self.commit_function_id),
             "timer": self.timer,
             "policy": self.policy,
             "timer_job_id": self.timer_job_id,
@@ -160,6 +171,8 @@ class Flow(db.Model):
             "",
             FlowEnum.USER_FLOW,
             user_function=self.function_id,
+            pull_function_uuid=self.pull_function_id,
+            commit_function_uuid=self.commit_function_id,
             function_args=self.function_args,
             user_endpoint=self.user_endpoint,
             email=self.email,
@@ -180,17 +193,19 @@ class Flow(db.Model):
             self.email,
             FlowEnum.VERIFY_AND_MODIFY,
             user_function=self.function_id,
-            function_args=self.function_args,
+            pull_function_uuid=self.pull_function_id,
+            commit_function_uuid=self.commit_function_id,
+            function_args=json.dumps(self.function_args),
             user_endpoint=self.user_endpoint,
         )
         db.session.add(self)
         db.session.commit()
 
     def _run_flow(self) -> int:
-        try:
-            function_args = json.loads(self.function_args)
-        except json.JSONDecodeError as e:
-            print(f"WARNING: Function args cannot be loaded: {e}")
+        # try:
+        function_args = self.function_args
+        # except json.JSONDecodeError as e:
+        #     print(f"WARNING: Function args cannot be loaded: {e}")
 
         if self.policy == TriggerEnum.INGESTION:
             self._start_ingestion_flow()
@@ -205,6 +220,8 @@ class Flow(db.Model):
                 run_flow(
                     endpoint_uuid=self.user_endpoint,
                     function_uuid=self.function_id,
+                    pull_function_uuid=self.pull_function_id,
+                    commit_function_uuid=self.commit_function_id,
                     tasks=function_args,
                     email=self.email,
                 )
@@ -220,6 +237,8 @@ class Flow(db.Model):
                 run_flow(
                     endpoint_uuid=self.user_endpoint,
                     function_uuid=self.function_id,
+                    pull_function_uuid=self.pull_function_id,
+                    commit_function_uuid=self.commit_function_id,
                     tasks=function_args,
                     email=self.email,
                 )

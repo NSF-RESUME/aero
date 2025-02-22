@@ -35,78 +35,6 @@ def get_flow(flow_id):
     return jsonify(flow.toJSON()), 200
 
 
-# @flow_routes.route("/new", methods=["POST"])
-# @authenticated
-# def record_flow():
-#     try:
-#         json_data = request.json
-
-#         assert "output_fn" in json_data
-
-#         sources: list[str] | None = json_data.get("data", None)
-#         derived_from: list[Data] = []
-#         function_uuid = (
-#             json_data["function_uuid"] if "function_uuid" in json_data else None
-#         )
-
-#         # currently just gets last version
-#         if sources is not None:
-#             for k in sources:
-#                 derived_from.append(Data.query.filter(Data.id == k).first())
-
-#         # check if function exists, if not create one
-#         if function_uuid is None:
-#             function_uuid = str(uuid.uuid4())
-#         if (f := Function.query.filter(Function.id == function_uuid).first()) is None:
-#             f = Function(uuid=function_uuid)
-
-#         # check if provenance already exists
-#         if (
-#             p := Flow.query.filter(
-#                 Flow.function_id == f.id and Flow.function_args == json_data["kwargs"]
-#             ).first()
-#         ) is None:
-#             # create output and store provenance data
-#             o = Data(
-#                 name=json_data["name"],
-#                 description=json_data["description"],
-#                 collection_url=json_data["collection_url"],
-#                 collection_uuid=json_data["collection_uuid"],
-#             )
-#             o.add_new_version(
-#                 new_file=json_data["output_fn"],
-#                 checksum=json_data["checksum"],
-#                 format=json_data["format"],
-#                 size=json_data["size"],
-#             )
-#             p = Flow(
-#                 function_id=f.id,
-#                 derived_from=derived_from,
-#                 contributed_to=[o],
-#                 description=json_data["description"],
-#                 function_args=json_data["kwargs"],
-#                 endpoint=json_data["endpoint"],
-#                 email=json_data.get("email", None),
-#             )
-#         else:
-#             # find output instance and add a new version
-#             # assumes no duplicate names
-#             o = Data.query.filter(Data.name == json_data["name"]).first()
-#             o.add_new_version(
-#                 new_file=json_data["output_fn"],
-#                 checksum=json_data["checksum"],
-#                 format=json_data["format"],
-#                 size=json_data["size"],
-#             )
-
-#         return jsonify(p.toJSON()), 200
-#     except ServiceError as s:
-#         return jsonify(p.toJSON()), s.code
-#     except Exception as e:
-#         print("test", e)
-#         return jsonify({"code": 500, "message": str(e)}), 500
-
-
 @flow_routes.route("/register", methods=["POST"])
 @authenticated
 def register():
@@ -118,6 +46,8 @@ def register():
     # collection_uuid = json_data["collection_uuid"]
     # collection_url = json_data["collection_url"]
     gc_endpoint = json_data["gc_endpoint"]
+    pull_function_uuid = json_data["pull_function_uuid"]
+    commit_function_uuid = json_data["commit_function_uuid"]
 
     # optional parameters
     function_uuid = json_data.get("function_uuid", uuid.UUID(int=0))
@@ -134,6 +64,9 @@ def register():
     # check if function already exists
 
     f = Function.query.filter(Function.id == function_uuid).first()
+    p_func = Function.query.filter(Function.id == pull_function_uuid).first()
+    c_func = Function.query.filter(Function.id == commit_function_uuid).first()
+
     all_args = deepcopy(flow_kwargs)
     all_args["input_data"] = input_data
     arg_hash = hashlib.md5(
@@ -148,6 +81,11 @@ def register():
         fl = Flow.query.filter(
             (Flow.function_id == f.id) & (Flow.arg_hash == arg_hash)
         ).first()
+
+    if p_func is None:
+        p_func = Function(uuid=pull_function_uuid)
+    if c_func is None:
+        c_func = Function(uuid=commit_function_uuid)
 
     if fl is None:  # flow does not already exist, so we can go ahead and register it
         contributed_to = []
@@ -202,6 +140,8 @@ def register():
 
         fl = Flow(
             function_id=f.id,
+            pull_function_id=p_func.id,
+            commit_function_id=c_func.id,
             derived_from=derived_from,
             description=description,
             function_args=flow_kwargs,
@@ -212,88 +152,7 @@ def register():
             email=email,
             arg_hash=arg_hash,
         )
-        # if rule is not None and rule == TriggerEnum.INGESTION:
-        #     fl.timer_job_id = None
-        #     job_id = fl._start_ingestion_flow()
-        #     out = job_id
-        #     fl.timer_job_id = job_id
-        # elif rule is not None:
-        #     out = fl._run_flow()
 
-        # else:
-        #     out = fl._run_flow()
         return json.dumps(fl.toJSON())
     else:
         return jsonify({"code": 501, "message": "Flow already exists"}), 404
-
-
-# @flow_routes.route("/timer/<function_uuid>", methods=["POST"])
-# @authenticated
-# def register_flow(function_uuid):
-#     json_data = request.json
-
-#     derived_from: list[Data] = []
-#     function_args = json.dumps(json_data)
-#     sources = json_data.get("data", None)
-#     description = json_data["description"]
-#     trigger: int | None = json_data.get("policy")
-#     timer_delay: int | None = json_data.get("timer_delay")
-#     endpoint: str = json_data["endpoint"]
-
-#     p: Flow | None = None
-
-#     # currently just gets last version
-#     if sources is not None:
-#         for k in sources:
-#             derived_from.append(Data.query.filter(Data.id == k).first())
-
-#     # TODO: add function relationship to provenance
-#     f = Function.query.filter(Function.id == function_uuid).first()
-
-#     if f is None:
-#         f = Function(uuid=function_uuid)
-#     else:
-#         p = Flow.query.filter(
-#             Flow.function_id == f.id and Flow.function_args == function_args
-#         ).first()
-
-#     if p is None:
-#         contributed_to = []
-#         if "name" in json_data and "url" in json_data:
-#             o = Data(
-#                 name=json_data["name"],
-#                 url=json_data["url"],
-#                 collection_uuid=json_data["collection_uuid"],
-#                 collection_url=json_data["collection_url"],
-#                 description=json_data["description"],
-#             )
-#             o.add_new_version(
-#                 new_file=json_data["output_fn"],
-#                 checksum=json_data["checksum"],
-#                 format=json_data["format"],
-#                 size=json_data["size"],
-#             )
-#             contributed_to.append(o)
-
-#         p = Flow(
-#             function_id=f.id,
-#             derived_from=derived_from,
-#             description=description,
-#             function_args=function_args,
-#             policy=trigger,
-#             timer=timer_delay,
-#             contributed_to=contributed_to,
-#             endpoint=endpoint,
-#             email=json_data.get("email", None),
-#         )
-
-#     if trigger is not None and trigger == 0:
-#         job_id = p._start_timer_flow()
-#         p.timer_job_id = job_id
-#     elif trigger is not None:
-#         p._run_flow()
-
-#     db.session.add(p)
-#     db.session.commit()
-
-#     return jsonify(p.toJSON()), 200

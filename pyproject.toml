@@ -15,7 +15,10 @@ dependencies = [
     "flask-migrate",
     "jsonschema",
     "psycopg2",
-    "globus_compute_sdk"
+    "globus_compute_sdk",
+    "dill",
+    "globus_sdk",
+    "globus-cli"
 ]
 
 [project.optional-dependencies]

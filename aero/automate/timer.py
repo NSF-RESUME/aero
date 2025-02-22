@@ -30,6 +30,8 @@ def set_timer(
     email: str,
     flow_type: FlowEnum,
     user_function: str,
+    pull_function_uuid: str,
+    commit_function_uuid: str,
     function_args: str,
     user_endpoint: str,
     **kwargs,
@@ -55,8 +57,8 @@ def set_timer(
     if flow_id != 2:
         run_input = {
             "osprey-worker-endpoint": str(user_endpoint),
-            "download-function": Config.GLOBUS_FLOW_DOWNLOAD_FUNCTION,
-            "database-commit-function": Config.GLOBUS_FLOW_COMMIT_FUNCTION,
+            "download-function": pull_function_uuid,
+            "database-commit-function": commit_function_uuid,
             "user-wrapper-function": user_function,
             "kwargs": json.dumps(kwargs),
             "author-email": email,
@@ -67,9 +69,11 @@ def set_timer(
 
     else:
         run_input = {
-            "user_endpoint": kwargs["endpoint"],
-            "user_function": kwargs["function"],
-            "kwargs": json.dumps(kwargs["tasks"]),
+            "endpoint": user_endpoint,
+            "version_function": pull_function_uuid,
+            "commit_function": commit_function_uuid,
+            "function": user_function,
+            "tasks": json.dumps(kwargs),
         }
         run_label = "AERO Demo | User flow"
         name = f"AERO-user-flow-{id}"
