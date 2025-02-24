@@ -47,12 +47,16 @@ class DSaaSSearchClient:
                     "version_id": data_version.id,
                     "version": data_version.version,
                     "checksum": data_version.checksum,
-                    "file_size": str(data_version.data_file.size)
-                    if data_version.data_file is not None
-                    else None,
-                    "created": data_version.created_at.strftime("%Y/%m/%d")
-                    if data_version.created_at is not None
-                    else None,
+                    "file_size": (
+                        str(data_version.data_file.size)
+                        if data_version.data_file is not None
+                        else None
+                    ),
+                    "created": (
+                        data_version.created_at.strftime("%Y/%m/%d")
+                        if data_version.created_at is not None
+                        else None
+                    ),
                     "url": f"{data_version.data.collection_url}/{data_version.data_file.file_name}",
                 },
             },
@@ -111,7 +115,7 @@ class DSaaSSearchClient:
 
 
 if __name__ == "__main__":
-    from aero.app import create_app
+    from aero.main import create_app
 
     app = create_app()
 

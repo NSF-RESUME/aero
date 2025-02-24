@@ -1,10 +1,10 @@
 from flask import g, request
 from functools import wraps
 
-from aero.app.error_handler import UnauthorizedError
-from aero.app.error_handler import ForbiddenError
-from aero.app.utils import get_token
-from aero.app.utils import load_auth_client
+from aero.error_handler import UnauthorizedError
+from aero.error_handler import ForbiddenError
+from aero.utils import get_token
+from aero.utils import load_auth_client
 
 
 def is_token_valid():

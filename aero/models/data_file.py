@@ -1,41 +1,50 @@
-from sqlalchemy import Column
-from sqlalchemy import Numeric
-from sqlalchemy import String
-from sqlalchemy import Uuid
-
+from uuid import UUID
 from uuid import uuid4
 
-from aero.app import db
+from typing import TYPE_CHECKING
+from typing import Optional
+
+from sqlmodel import Field
+from sqlmodel import Session
+from sqlmodel import SQLModel
+from sqlmodel import Relationship
+
+if TYPE_CHECKING:
+    from aero.models.data_version import DataVersion
 
 
-class DataFile(db.Model):
-    id = Column(Uuid, default=uuid4, index=True, primary_key=True)
-    file_name = Column(String)
-    file_type = Column(String)
-    size = Column(Numeric)
-    encoding = Column(String)
-    version_id = Column(Uuid, db.ForeignKey("data_version.id"))
-    version = db.relationship("DataVersion", back_populates="data_file", uselist=False)
+class DataFile(SQLModel, table=True):
+    id: UUID = Field(
+        default_factory=uuid4, primary_key=True, index=True
+    )  # Column(Uuid, default=uuid4, index=True, primary_key=True)
+    file_name: str = Field(nullable=False)  # Column(String)
+    file_type: str | None = Field(default=None)  # Column(String)
+    size: float = Field(nullable=False)  # Column(Numeric)
+    encoding: str = Field(default="utf-8")  # Column(String)
+    version_id: UUID = Field(
+        foreign_key="dataversion.id", primary_key=True
+    )  # Column(Uuid, db.ForeignKey("data_version.id"))
+    version: Optional["DataVersion"] = Relationship(back_populates="data_file")
 
-    def __init__(self, **kwargs):
-        kwargs = self._set_defaults(**kwargs)
-        super().__init__(**kwargs)
-        db.session.add(self)
-        db.session.commit()
 
-    def toJSON(self):
-        return {
-            "file_name": self.file_name,
-            "collection_url": self.version.data.collection_url,
-            "file_type": self.file_type,
-            "file_size": self.size,
-            "encoding": self.encoding,
-        }
+def create_datafile(
+    session: Session,
+    file_name: str,
+    size: float,
+    version_id: uuid4,
+    file_type: str | None = None,
+    encoding: str | None = None,
+) -> DataFile:
+    df = DataFile(
+        file_name=file_name,
+        size=size,
+        version_id=version_id,
+        file_type=file_type,
+        encoding=encoding,
+    )
 
-    def __repr__(self):
-        return f"<DataFile(id={self.id}, file_name={self.file_name}, file_size={self.size}, encoding={self.encoding})>"
+    session.add(df)
+    session.commit()
+    session.refresh(df)
 
-    def _set_defaults(self, **kwargs):
-        if "encoding" not in kwargs:
-            kwargs["encoding"] = "utf-8"
-        return kwargs
+    return df

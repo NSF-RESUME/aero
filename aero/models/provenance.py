@@ -1,64 +1,60 @@
-from sqlalchemy import Column
-from sqlalchemy import Uuid
+from typing import TYPE_CHECKING
+from typing import Optional
+from uuid import UUID
 from uuid import uuid4
+from sqlmodel import Field
+from sqlmodel import Relationship
+from sqlmodel import Session
+from sqlmodel import SQLModel
 
-from aero.app import db
-from aero.models.data_version import DataVersion
-
-provenance_derivation = db.Table(
-    "provenance_derivation",
-    Column("prov_id", Uuid, db.ForeignKey("provenance.id")),
-    Column("derived_version_id", Uuid, db.ForeignKey("data_version.id")),
-)
-
-provenance_contribution = db.Table(
-    "provenance_contribution",
-    Column("prov_id", Uuid, db.ForeignKey("provenance.id")),
-    Column("produced_version_id", Uuid, db.ForeignKey("data_version.id")),
-)
+# from  import db
+if TYPE_CHECKING:
+    from aero.models.data_version import DataVersion
 
 
-class Provenance(db.Model):
-    id = Column(Uuid, default=uuid4, index=True, primary_key=True)
-    flow_id = Column(Uuid)
-    derived_from = db.relationship(
-        "DataVersion",
-        secondary=provenance_derivation,
-        backref="provenance_contribution",
-        uselist=True,
+class ProvenanceDerivation(SQLModel, table=True):
+    prov_id: Optional[UUID] = Field(
+        default=None, foreign_key="provenance.id", primary_key=True
     )
-    contributed_to = db.relationship(
-        "DataVersion",
-        secondary=provenance_contribution,
-        backref="provenance_source",
-        lazy=True,
+    derived_version_id: Optional[UUID] = Field(
+        default=None, foreign_key="dataversion.id", primary_key=True
     )
 
-    def __init__(
-        self,
-        flow_id: uuid4,
-        derived_from: list[DataVersion],
-        contributed_to: list[DataVersion],
-    ):
-        super().__init__(
-            flow_id=flow_id, derived_from=derived_from, contributed_to=contributed_to
-        )
 
-        db.session.add(self)
-        db.session.commit()
+class ProvenanceContribution(SQLModel, table=True):
+    prov_id: Optional[UUID] = Field(
+        default=None, foreign_key="provenance.id", primary_key=True
+    )
+    produced_version_id: Optional[UUID] = Field(
+        default=None, foreign_key="dataversion.id", primary_key=True
+    )
 
-    def __repr__(self):
-        return (
-            f"<Provenance(id={self.id}, "
-            f"flow_id={self.flow_id}, "
-            f"contributed_to={', '.join(c for c in self.contributed_to)}, "
-            f"derived_from={', '.join(d for d in self.derived_from)})>"
-        )
 
-    def toJSON(self):
-        return {
-            "id": self.id,
-            "flow_id": self.flow_id,
-            "contributed_to": [c.toJSON() for c in self.contributed_to],
-            "derived_from": [d.toJSON() for d in self.derived_from],
-        }
+class Provenance(SQLModel, table=True):
+    id: UUID = Field(default_factory=uuid4, index=True, primary_key=True)
+    flow_id: UUID = Field(foreign_key="flow.id")
+    derived_from: list["DataVersion"] = Relationship(
+        link_model=ProvenanceDerivation,
+        back_populates="provenance_contribution",
+    )
+    contributed_to: list["DataVersion"] = Relationship(
+        link_model=ProvenanceContribution,
+        back_populates="provenance_source",
+    )
+
+
+def create_provenance(
+    session: Session,
+    flow_id: uuid4,
+    derived_from: list["DataVersion"] = [],
+    contributed_to: list["DataVersion"] = [],
+) -> Provenance:
+    p = Provenance(
+        flow_id=flow_id, derived_from=derived_from, contributed_to=contributed_to
+    )
+
+    session.add(p)
+    session.commit()
+    session.refresh(p)
+
+    return p

@@ -1,32 +1,26 @@
-from aero.app import db
-from sqlalchemy import Column
-from sqlalchemy import Integer
-from sqlalchemy import String
-from sqlalchemy import Uuid
+from uuid import UUID
+from typing import TYPE_CHECKING
+from typing import Optional
 
-# NOTE: Does not auto-increment id, need to add migration
-DataTagTable = db.Table(
-    "data_tag",
-    Column("id", Integer, primary_key=True),
-    Column("data_id", Uuid, db.ForeignKey("data.id")),
-    Column("tag_id", Integer, db.ForeignKey("tag.id")),
-)
+from sqlmodel import Field
+from sqlmodel import Relationship
+from sqlmodel import SQLModel
+
+if TYPE_CHECKING:
+    from aero.models.data import Data
 
 
-class Tag(db.Model):
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    data = db.relationship(
-        "Data", secondary=DataTagTable, back_populates="tags", uselist=True
+class DataTagTable(SQLModel, table=True):
+    # id: int | None = Field(default=None, primary_key=True)
+    data_id: Optional[UUID] = Field(
+        default=None, foreign_key="data.id", primary_key=True
     )
+    tag_id: Optional[int] = Field(default=None, foreign_key="tag.id", primary_key=True)
 
-    def __init__(self, name, data=None):
-        super().__init__(name=name, data=data)
-        db.session.add(self)
-        db.session.commit()
 
-    def toJSON(self):
-        return {"id": self.id, "name": self.name}
-
-    def __repr__(self):
-        return f"<Tag(id={self.id}, name='{self.name}')>"
+class Tag(SQLModel, table=True):
+    id: int | None = Field(
+        default=None, primary_key=True
+    )  # Column(Integer, primary_key=True)
+    name: str  # = Field(nullable=False, index=True)  # Column(String)
+    data: list["Data"] = Relationship(link_model=DataTagTable, back_populates="tags")

@@ -2,25 +2,26 @@ import pytest
 
 from unittest import mock
 
-# dsc_mock = mock.patch("osprey.server.lib.globus_search.DSaaSSearchClient")
-# st_mock = mock.patch("osprey.server.jobs.timer.set_timer", return_value=1111)
-# rf_mock = mock.patch("osprey.server.jobs.user_flow.run_flow")
+# # dsc_mock = mock.patch("osprey.server.lib.globus_search.DSaaSSearchClient")
+# # st_mock = mock.patch("osprey.server.jobs.timer.set_timer", return_value=1111)
+# # rf_mock = mock.patch("osprey.server.jobs.user_flow.run_flow")
 
-from aero.app import create_app, db
-
-
-@pytest.fixture(scope="session")
-def app():
-    app = create_app()
-    app.config.update({"TESTING": True})
-    with app.app_context():
-        db.drop_all()
-        db.create_all()
-        yield app
-        db.session.remove()
-        db.drop_all()
+# from aero.main import create_app
 
 
+# @pytest.fixture(scope="session")
+# def app():
+#     app = create_app()
+#     app.config.update({"TESTING": True})
+#     with app.app_context():
+#         db.drop_all()
+#         db.create_all()
+#         yield app
+#         db.session.remove()
+#         db.drop_all()
+
+
+# @pytest.fixture()
 @pytest.fixture(scope="session", autouse=True)
 def _mock_globus():
     with (
@@ -31,6 +32,5 @@ def _mock_globus():
         yield
 
 
-@pytest.fixture()
-def client(app):
-    return app.test_client()
+# def client(app):
+#     return app.test_client()

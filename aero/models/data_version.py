@@ -1,71 +1,55 @@
-import datetime
-
+from datetime import datetime
+from uuid import UUID
 from uuid import uuid4
+from typing import TYPE_CHECKING
+from typing import Optional
 
-from sqlalchemy import Column
-from sqlalchemy import DateTime
-from sqlalchemy import Integer
-from sqlalchemy import String
-from sqlalchemy import Uuid
-from aero.app import db
+from sqlmodel import Field
+from sqlmodel import Relationship
+from sqlmodel import Session
+from sqlmodel import SQLModel
+
+from aero.models.data_file import DataFile
+from aero.models.provenance import ProvenanceContribution
+from aero.models.provenance import ProvenanceDerivation
+
+if TYPE_CHECKING:
+    from aero.models.data import Data
+    from aero.models.provenance import Provenance
 
 
-class DataVersion(db.Model):
-    id = Column(Uuid, default=uuid4, index=True, primary_key=True)
-    version = Column(Integer)
-    checksum = Column(String)
-    created_at = Column(DateTime)
-    data_id = Column(Uuid, db.ForeignKey("data.id"))
-    data = db.relationship("Data", back_populates="versions", uselist=False)
-    # proxy = db.relationship("Proxy", back_populates="source_version", uselist=False)
-    data_file = db.relationship("DataFile", back_populates="version", uselist=False)
-    # provenance    = db.relationship("Provenance", back_populates='source_version', uselist=False)
-    # contributed_to= db.relationship("Provenance", secondary=provenance_derivation, back_populates='outputs')
+class DataVersion(SQLModel, table=True):
+    id: UUID = Field(default_factory=uuid4, index=True, primary_key=True)
+    version: int | None = Field(default=None, index=True)
+    checksum: str | None = Field(default=None)
+    created_at: datetime = Field(default_factory=datetime.now)
+    data_id: Optional[UUID] = Field(
+        default=None, foreign_key="data.id", primary_key=True
+    )  # Column(Uuid, db.ForeignKey("data.id"))
+    data: Optional["Data"] = Relationship(back_populates="versions")
+    data_file: Optional["DataFile"] = Relationship(back_populates="version")
+    provenance_contribution: Optional["Provenance"] = Relationship(
+        link_model=ProvenanceContribution, back_populates="contributed_to"
+    )
+    provenance_source: Optional["Provenance"] = Relationship(
+        link_model=ProvenanceDerivation, back_populates="derived_from"
+    )
 
-    # TODO: Make sure to have created_at as current time if it is not passed as an argument
-    # NOTE: Also create a proxy automatically ig?
 
-    # def __init__(self, *args, **kwargs):
-    #     1. Set current_time if None
-    #     2. super()
+def create_dataversion(
+    session: Session,
+    version: int,
+    checksum: str,
+    data_id: UUID,
+) -> DataVersion:
+    v = DataVersion(
+        version=version,
+        checksum=checksum,
+        data_id=data_id,
+    )
 
-    def __init__(self, **kwargs):
-        kwargs = self._set_defaults(**kwargs)
-        super().__init__(**kwargs)
-        db.session.add(self)
-        db.session.commit()
+    session.add(v)
+    session.commit()
+    session.refresh(v)
 
-    def __repr__(self):
-        return "<DataVersion(id={}, version={}, data_id={}, checksum={}, data_file={})>".format(
-            self.id, self.version, self.data_id, self.checksum, self.data_file
-        )
-
-    def _set_defaults(self, **kwargs):
-        if "created_at" not in kwargs or kwargs["created_at"] is None:
-            kwargs["created_at"] = datetime.datetime.now()
-        return kwargs
-
-    def toJSON(self):
-        return {
-            "id": self.id,
-            "data": self.data.toJSON(),
-            "version": self.version,
-            "created_at": str(self.created_at),
-            "checksum": self.checksum,
-            "data_file": (
-                self.data_file.toJSON() if self.data_file is not None else None
-            ),
-        }
-
-    # def create_proxy(self, replace=False):
-    #     if self.proxy is not None and not replace:
-    #         return self.proxy
-
-    #     # TODO: Need to create representation
-    #     proxy = Proxy(source_version=self)
-    #     try:
-    #         db.session.add(proxy)
-    #         db.session.commit()
-    #     except SQLAlchemyError:
-    #         raise
-    #     return proxy
+    return v

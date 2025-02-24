@@ -1,21 +1,27 @@
+from uuid import UUID
 from uuid import uuid4
 from datetime import datetime
 
-from sqlalchemy import Column
-from sqlalchemy import String
-from sqlalchemy import Uuid
+from typing import TYPE_CHECKING
+from typing import Optional
 
-from aero.app import db
-from aero.app.utils import get_search_client
+from sqlmodel import Field
+from sqlmodel import Relationship
+from sqlmodel import Session
+from sqlmodel import SQLModel
+from sqlmodel import select
 
-from aero.models.flows import Flow
-from aero.models.data_file import DataFile
+from aero.utils import get_search_client
 from aero.models.tag import DataTagTable
-from aero.models.tag import Tag
-from aero.models.data_version import DataVersion
+
+if TYPE_CHECKING:
+    from aero.models.flows import Flow
+    from aero.models.data_file import DataFile
+    from aero.models.tag import Tag
+    from aero.models.data_version import DataVersion
 
 
-class Data(db.Model):
+class Data(SQLModel, table=True):
     """All file-related metadata.
 
     This class contains metadata information on where data is
@@ -23,76 +29,23 @@ class Data(db.Model):
     our
     """
 
-    id = Column(Uuid, default=uuid4, index=True, primary_key=True)
-    name = Column(String)
-    url = Column(String)
-    collection_uuid = Column(String)
-    collection_url = Column(String)
-    description = Column(String)
+    id: UUID = Field(
+        default_factory=uuid4, index=True, primary_key=True
+    )  # Column(Uuid, default=uuid4, index=True, primary_key=True)
+    name: str  # = Field(nullable=False)  # Column(String)
+    url: str | None = Field(default=None)  # Column(String)
+    collection_uuid: UUID | None = Field(default=None)  # Column(String)
+    collection_url: str | None = Field(default=None)  # Column(String)
+    description: str | None = Field(default=None)  # Column(String)
     # Ensure to delete timer_job_id when either `verifier` or `modifier` is altered
-    versions = db.relationship(
-        "DataVersion",
+    versions: list["DataVersion"] = Relationship(
         back_populates="data",
-        order_by="DataVersion.version",
-        lazy=False,
     )
-    tags = db.relationship("Tag", secondary=DataTagTable, back_populates="data")
-    # outputs       = db.relationship("Output", back_populates="source")
-
-    # TODO: Validate duplicate source links and everything else
-    def __init__(
-        self,
-        name: str,
-        collection_uuid: str,
-        collection_url: str,  # maybe remove in favour of just querying globus
-        description: str,
-        url: str | None = None,
-        tags: list[Tag] = [],
-    ):
-        self.name = name
-        self.url = url
-        self.collection_uuid = collection_uuid
-        self.collection_url = collection_url
-        self.description = description
-        self.tags = tags
-
-        # create
-        super().__init__(
-            name=self.name,
-            url=url,
-            collection_uuid=self.collection_uuid,
-            collection_url=self.collection_url,
-            description=self.description,
-            tags=self.tags,
-        )
-
-        db.session.add(self)
-        db.session.commit()
-
-    def __repr__(self):
-        return (
-            f"<Data(id={str(self.id)}, "
-            f"name={self.name}, "
-            f"url={self.url}, "
-            f"collection_uuid={self.collection_uuid}, "
-            f"collection_url={self.collection_url}, "
-            f"description={self.description})>"
-        )
-
-    # TODO: Should send hash_id instead of id
-    def toJSON(self):
-        return {
-            "id": str(self.id),
-            "name": self.name,
-            "url": self.url,
-            "collection_uuid": self.collection_uuid,
-            "collection_url": self.collection_url,
-            "description": self.description,
-            "available_versions": len(self.versions),
-        }
+    tags: list["Tag"] = Relationship(link_model=DataTagTable, back_populates="data")
 
     def add_new_version(
         self,
+        session: Session,
         new_file: str,
         format: str,
         checksum: str,
@@ -135,30 +88,52 @@ class Data(db.Model):
             version_id=new_version.id,
         )
 
-        db.session.add(new_version)
-        db.session.commit()
+        session.add(new_version)
+        session.commit()
+        session.refresh(new_version)
 
         return get_search_client().add_entry(data_version=new_version)
 
-    def rerun_flow(self) -> int:
+    def rerun_flow(self, session: Session) -> int:
         # TODO: Fix implementation
-        provenances = Flow.query.filter(Flow.derived_from.any(Data.id == self.id))
+        statement = select(Flow).where(
+            any([d.id == self.id for d in Flow.derived_from])
+        )
+        provenances = session.exec(statement).all()
 
         policies = []
         for prov in provenances:
-            policies.append(prov._run_flow())
+            policies.append(prov._run_flow(session=session))
         return policies
 
-    def last_version(self) -> int | DataVersion:
+    def last_version(self) -> Optional["DataVersion"]:
         try:
             l_version = self.versions[len(self.versions) - 1]
             return l_version
         except IndexError:
-            return 0
+            return None
 
-    # TODO: remove ?
-    # def timer_readable(self):
-    #     if not (self.timer):
-    #         return None
 
-    #     return str(datetime.timedelta(seconds=self.timer))
+def create_data(
+    session: Session,
+    name: str,
+    url: str | None = None,
+    collection_uuid: str | None = None,
+    collection_url: str | None = None,
+    description: str | None = None,
+    tags: list["Tag"] = [],
+) -> Data:
+    d = Data(
+        name=name,
+        url=url,
+        collection_uuid=collection_uuid,
+        collection_url=collection_url,
+        description=description,
+        tags=tags,
+    )
+
+    session.add(d)
+    session.commit()
+    session.refresh(d)
+
+    return d

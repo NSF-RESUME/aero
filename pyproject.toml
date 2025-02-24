@@ -18,7 +18,9 @@ dependencies = [
     "globus_compute_sdk",
     "dill",
     "globus_sdk",
-    "globus-cli"
+    "globus-cli",
+    "fastapi[standard]",
+    "sqlmodel"
 ]
 
 [project.optional-dependencies]

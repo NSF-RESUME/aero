@@ -1,23 +1,28 @@
-from sqlalchemy import Column
-from sqlalchemy import Uuid
+from uuid import UUID
+from uuid import uuid4
+from typing import TYPE_CHECKING
 
-from aero.app import db
+from sqlmodel import Field
+from sqlmodel import Relationship
+from sqlmodel import Session
+from sqlmodel import SQLModel
+
+if TYPE_CHECKING:
+    from aero.models.flows import Flow
 
 
-class Function(db.Model):
-    id = Column(Uuid, primary_key=True)
-    flows = db.relationship("Flow", backref="function")
+class Function(SQLModel, table=True):
+    id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
+    flows: list["Flow"] = Relationship(back_populates="function")
 
-    def __init__(self, uuid: str):
-        super().__init__(id=uuid)
 
-        db.session.add(self)
-        db.session.commit()
+def create_function(
+    session: Session, uuid: uuid4, flows: list["Flow"] = []
+) -> Function:
+    f = Function(id=uuid, flows=flows)
 
-    def __repr__(self):
-        return f"<Function(id={self.id})>"
+    session.add(f)
+    session.commit()
+    session.refresh(f)
 
-    def toJSON(self):
-        return {
-            "id": self.id,
-        }
+    return f
