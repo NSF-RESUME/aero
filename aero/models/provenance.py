@@ -8,7 +8,7 @@ from sqlmodel import Session
 from sqlmodel import SQLModel
 
 # from  import db
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: nocover
     from aero.models.data_version import DataVersion
 
 

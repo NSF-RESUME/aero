@@ -5,9 +5,10 @@ from unittest import mock
 
 from aero.models.data import create_data
 from aero.models.data_file import create_datafile
+from aero.models.data_version import create_dataversion
 from aero.models.flows import create_flow
 from aero.models.function import create_function
-from aero.models.data_version import create_dataversion
+from aero.models.provenance import create_provenance
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -87,3 +88,9 @@ def flow_fixture(session, data):
     )
 
     return flow
+
+
+@pytest.fixture(name="provenance")
+def provenance_fixture(session, flow, version):
+    prov = create_provenance(session=session, flow_id=flow.id, contributed_to=[version])
+    return prov
