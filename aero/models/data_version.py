@@ -13,7 +13,7 @@ from aero.models.data_file import DataFile
 from aero.models.provenance import ProvenanceContribution
 from aero.models.provenance import ProvenanceDerivation
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: nocover
     from aero.models.data import Data
     from aero.models.provenance import Provenance
 
