@@ -1,6 +1,21 @@
 import pytest
 
-from unittest import mock
+
+from sqlmodel import Session
+from sqlmodel import create_engine
+from sqlmodel import SQLModel
+from sqlmodel.pool import StaticPool
+
+
+@pytest.fixture(name="session")
+def session_fixture():
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
+    SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        yield session
+
 
 # # dsc_mock = mock.patch("osprey.server.lib.globus_search.DSaaSSearchClient")
 # # st_mock = mock.patch("osprey.server.jobs.timer.set_timer", return_value=1111)
@@ -21,15 +36,15 @@ from unittest import mock
 #         db.drop_all()
 
 
-# @pytest.fixture()
-@pytest.fixture(scope="session", autouse=True)
-def _mock_globus():
-    with (
-        mock.patch("aero.automate.timer.set_timer", return_value=1111) as _,
-        mock.patch("aero.automate.policy.run_flow") as _,
-        mock.patch("aero.globus.search.DSaaSSearchClient", autospec=True) as _,
-    ):
-        yield
+# # @pytest.fixture()
+# @pytest.fixture(scope="session", autouse=True)
+# def _mock_globus():
+#     with (
+#         mock.patch("aero.automate.timer.set_timer", return_value=1111) as _,
+#         mock.patch("aero.automate.policy.run_flow") as _,
+#         mock.patch("aero.globus.search.DSaaSSearchClient", autospec=True) as _,
+#     ):
+#         yield
 
 
 # def client(app):

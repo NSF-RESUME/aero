@@ -40,7 +40,7 @@ class DSaaSSearchClient:
                 "content": {
                     "name": data_version.data.name,
                     "description": data_version.data.description,
-                    "created_by": data_version.data.output_data[0].toJSON(),
+                    "created_by": data_version.data.toJSON(),
                     "tags": [t.toJSON() for t in data_version.data.tags],
                     "source": data_version.data.url,
                     "data_id": data_version.data.id,

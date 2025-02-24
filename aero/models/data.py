@@ -20,7 +20,7 @@ from aero.models.data_file import DataFile
 from aero.models.flows import Flow
 
 if TYPE_CHECKING:
-    from aero.models.tag import Tag
+    from aero.models.tag import Tag  # pragma: nocover
 
 
 class Data(SQLModel, table=True):

@@ -19,10 +19,10 @@ from aero.automate.timer import set_timer
 from aero.globus.error import FLOW_TIMER_ERROR
 from aero.globus.error import ServiceError
 from aero.globus.utils import FlowEnum
+from aero.models.function import Function
 
 if TYPE_CHECKING:
     from aero.models.data import Data
-    from aero.models.function import Function
 
 
 class TriggerEnum(IntEnum):
