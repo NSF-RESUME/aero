@@ -7,7 +7,7 @@ from sqlmodel import Relationship
 from sqlmodel import Session
 from sqlmodel import SQLModel
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: nocover
     from aero.models.flows import Flow
 
 

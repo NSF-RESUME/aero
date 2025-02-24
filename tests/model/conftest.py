@@ -4,6 +4,7 @@ from uuid import uuid4
 from unittest import mock
 
 from aero.models.data import create_data
+from aero.models.data_file import create_datafile
 from aero.models.flows import create_flow
 from aero.models.function import create_function
 from aero.models.data_version import create_dataversion
@@ -48,6 +49,25 @@ def version_fixture(session, data):
     )
 
     return v
+
+
+@pytest.fixture(name="file")
+def file_fixture(session, version):
+    file_name = "file.name"
+    size = 1
+    f = create_datafile(
+        session=session, file_name=file_name, size=size, version_id=version.id
+    )
+
+    return f
+
+
+@pytest.fixture(name="function")
+def function_fixture(session, flow):
+    uuid = uuid4()
+    func = create_function(session=session, uuid=uuid, flows=[flow])
+
+    return func
 
 
 @pytest.fixture(name="flow")

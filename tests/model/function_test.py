@@ -1,29 +1,16 @@
 from uuid import uuid4
-import aero.models as models
 
-F_UUID = uuid4()
-
-
-def test_create(app):
-    f: models.function.Function = models.function.Function(uuid=F_UUID)
-
-    assert f.id == F_UUID
+from aero.models.function import create_function
 
 
-def test_json(app):
-    f: models.function.Function = models.function.Function.query.filter_by(
-        id=F_UUID
-    ).first()
-    f_json = f.toJSON()
+def test_create(session, flow):
+    uuid = uuid4()
+    func = create_function(session=session, uuid=uuid)
+    assert func.flows == []
+    assert func.id == uuid
 
-    assert list(f_json.keys()) == ["id"]
-    assert f_json["id"] == f.id
-
-
-def test_str_repr(app):
-    f: models.function.Function = models.function.Function.query.filter_by(
-        id=F_UUID
-    ).first()
-    f_str = str(f)
-
-    assert f_str == f"<Function(id={f.id})>"
+    uuid = uuid4()
+    func = create_function(session=session, uuid=uuid, flows=[flow])
+    assert func.id == uuid
+    assert len(func.flows) == 1
+    assert func.flows[0] == flow
