@@ -22,6 +22,7 @@ from aero.models.data_version import create_dataversion
 from aero.models.data_file import create_datafile
 from aero.models.flows import create_flow
 from aero.models.function import create_function
+from aero.models.provenance import create_provenance
 
 
 class MockedAuthClient(BaseModel):
@@ -108,6 +109,17 @@ def flow_fixture(session: Session, data, noversion_data):
     )
 
     return flow
+
+
+@pytest.fixture(name="prov")
+def prov_fixture(session: Session, data, noversion_data, flow):
+    prov = create_provenance(
+        session=session,
+        flow_id=flow.id,
+        derived_from=[data.last_version()],
+    )
+
+    return prov
 
 
 @pytest.fixture(scope="session", autouse=True)

@@ -1,4 +1,5 @@
 from uuid import UUID
+from datetime import datetime
 
 from fastapi import APIRouter
 from fastapi import Depends
@@ -51,7 +52,7 @@ def add_record(pr: ProvRecord, session: Session = Depends(get_session)):
         input_versions = [
             session.exec(
                 select(DataVersion).where(
-                    DataVersion.data_id == i["id"],
+                    DataVersion.data_id == UUID(i["id"]),
                     DataVersion.version == i["version"],
                 )
             ).first()
@@ -60,18 +61,19 @@ def add_record(pr: ProvRecord, session: Session = Depends(get_session)):
         # create new versions for output data
         output_versions = []
         for o in pr.output_data.values():
-            d = session.exec(select(Data).where(Data.id == o.id)).first()
+            d = session.exec(select(Data).where(Data.id == UUID(o["id"]))).first()
             d.add_new_version(
+                session=session,
                 new_file=o["file_bn"],
                 format=o["file_format"],
                 checksum=o["checksum"],
                 size=o["size"],
-                created_at=o["created_at"],
+                created_at=datetime.fromisoformat(o["created_at"]),
                 encoding=o.get("encoding", "utf-8"),
             )
 
             # TODO: maybe fix
-            d.rerun_flow()
+            d.rerun_flow(session=session)
             output_versions.append(d.last_version())
 
         p = Provenance(

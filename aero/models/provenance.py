@@ -35,11 +35,11 @@ class Provenance(SQLModel, table=True):
     flow_id: UUID = Field(foreign_key="flow.id")
     derived_from: list["DataVersion"] = Relationship(
         link_model=ProvenanceDerivation,
-        back_populates="provenance_contribution",
+        back_populates="provenance_source",
     )
     contributed_to: list["DataVersion"] = Relationship(
         link_model=ProvenanceContribution,
-        back_populates="provenance_source",
+        back_populates="provenance_contribution",
     )
 
 

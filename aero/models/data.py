@@ -14,11 +14,13 @@ from sqlmodel import select
 from aero.utils import get_search_client
 from aero.models.tag import DataTagTable
 
+from aero.models.data_version import DataVersion
+from aero.models.data_file import DataFile
+
+from aero.models.flows import Flow
+
 if TYPE_CHECKING:
-    from aero.models.flows import Flow
-    from aero.models.data_file import DataFile
     from aero.models.tag import Tag
-    from aero.models.data_version import DataVersion
 
 
 class Data(SQLModel, table=True):
@@ -59,7 +61,7 @@ class Data(SQLModel, table=True):
             new_file (str): File path to the temporarily stored data.
             format (str): The extension of the file.
         """
-        if self.last_version() == 0:
+        if self.last_version() is None:
             version_number = 1
         else:
             version_number = self.last_version().version + 1
@@ -96,9 +98,7 @@ class Data(SQLModel, table=True):
 
     def rerun_flow(self, session: Session) -> int:
         # TODO: Fix implementation
-        statement = select(Flow).where(
-            any([d.id == self.id for d in Flow.derived_from])
-        )
+        statement = select(Flow).where(Flow.derived_from.any(id=self.id))
         provenances = session.exec(statement).all()
 
         policies = []
