@@ -43,6 +43,9 @@ def set_timer(
     """
     flow_id = FLOW_IDS[flow_type]
 
+    if email is None:
+        email = ""
+
     # Generate scopes
     timer_scope = TimerScopes.make_mutable("timer")
     sfc = SpecificFlowClient(flow_id=flow_id)
@@ -53,7 +56,7 @@ def set_timer(
     authorizer = get_authorizer(scopes=timer_scope)
     timer_client = TimerClient(authorizer=authorizer, app_name=Config.APP_NAME)
 
-    kwargs = json.loads(function_args)["kwargs"]
+    kwargs = function_args["kwargs"]
     if flow_id != 2:
         run_input = {
             "osprey-worker-endpoint": str(user_endpoint),

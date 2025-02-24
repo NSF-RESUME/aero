@@ -1,8 +1,10 @@
 import pytest
 
 from uuid import uuid4
-from unittest import mock
 
+import aero.automate.policy
+import aero.automate.timer
+import aero.globus.search
 from aero.models.data import create_data
 from aero.models.data_file import create_datafile
 from aero.models.data_version import create_dataversion
@@ -11,14 +13,25 @@ from aero.models.function import create_function
 from aero.models.provenance import create_provenance
 
 
-@pytest.fixture(scope="session", autouse=True)
-def _mock_globus():
-    with (
-        mock.patch("aero.automate.timer.set_timer", return_value=1111) as _,
-        mock.patch("aero.automate.policy.run_flow") as _,
-        mock.patch("aero.globus.search.DSaaSSearchClient", autospec=True) as _,
-    ):
-        yield
+@pytest.fixture(name="globus_mock", autouse=True)
+def _mock_globus(monkeypatch):
+    def mock_run_flow(*args, **kwargs):
+        pass
+
+    def mock_set_timer(*args, **kwargs):
+        return uuid4()
+
+    class MockSearchClient:
+        def __init__(self, idx):
+            self.index = idx
+
+        def add_entry(self, data_version):
+            return "entry has been added"
+
+    monkeypatch.setattr("aero.models.flows.run_flow", mock_run_flow)
+    monkeypatch.setattr("aero.models.flows.set_timer", mock_set_timer)
+    monkeypatch.setattr(aero.globus.search, "AEROSearchClient", MockSearchClient)
+    yield
 
 
 @pytest.fixture(name="data")

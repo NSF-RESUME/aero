@@ -21,7 +21,7 @@ from aero.globus.error import ServiceError
 from aero.globus.utils import FlowEnum
 from aero.models.function import Function
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: nocover
     from aero.models.data import Data
 
 
@@ -77,14 +77,13 @@ class Flow(SQLModel, table=True):
         self.timer_job_id = set_timer(
             self.timer,
             self.id,
-            "",
+            self.email,
             FlowEnum.USER_FLOW,
             user_function=self.function_id,
             pull_function_uuid=self.pull_function_id,
             commit_function_uuid=self.commit_function_id,
             function_args=self.function_args,
             user_endpoint=self.user_endpoint,
-            email=self.email,
         )
         session.add(self)
         session.commit()
@@ -95,7 +94,9 @@ class Flow(SQLModel, table=True):
     # TODO: remove all the execution-related parts from data and put in here
     def _start_ingestion_flow(self, session: Session, flush=False):
         if not flush and self.timer_job_id is not None:
-            raise ServiceError(FLOW_TIMER_ERROR, "source already has a flow timer")
+            raise ServiceError(
+                FLOW_TIMER_ERROR, "Flow already has a flow timer assigned"
+            )
 
         self.timer_job_id = set_timer(
             self.timer,
@@ -112,6 +113,8 @@ class Flow(SQLModel, table=True):
         session.add(self)
         session.commit()
         session.refresh(self)
+
+        return self.timer_job_id
 
     def _run_flow(self, session: Session) -> int:
         # try:
@@ -145,8 +148,10 @@ class Flow(SQLModel, table=True):
 
         elif self.policy == TriggerEnum.ALL_INPUT:  # ALL
             if self.last_executed is None or all(
-                s.last_version().created_at > self.last_executed
-                for s in self.derived_from
+                [
+                    s.last_version().created_at > self.last_executed
+                    for s in self.derived_from
+                ]
             ):
                 run_flow(
                     endpoint_uuid=self.user_endpoint,
@@ -161,6 +166,8 @@ class Flow(SQLModel, table=True):
                 session.add(self)
                 session.commit()
                 session.refresh(self)
+            else:
+                pass
 
         return self.policy
 

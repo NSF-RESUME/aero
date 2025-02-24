@@ -9,7 +9,7 @@ from aero.globus.auth import get_authorizer
 GCS_PATH = "https://g-c952d0.1305de.36fe.data.globus.org/source"
 
 
-class DSaaSSearchClient:
+class AEROSearchClient:
     index: str
     client: SearchClient
 
@@ -120,7 +120,7 @@ if __name__ == "__main__":
     app = create_app()
 
     with app.app_context():
-        sc = DSaaSSearchClient()
+        sc = AEROSearchClient()
 #         sc.populate_source_idx()
 # print(sc.index)
 # print(sc.get_index(index_id=idx)) #.search(idx, )

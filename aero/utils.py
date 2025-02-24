@@ -16,4 +16,4 @@ def get_token(header):
 
 
 def get_search_client():
-    return gs.DSaaSSearchClient(Config.SEARCH_INDEX)
+    return gs.AEROSearchClient(Config.SEARCH_INDEX)
