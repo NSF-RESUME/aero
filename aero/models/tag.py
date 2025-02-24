@@ -5,8 +5,9 @@ from typing import Optional
 from sqlmodel import Field
 from sqlmodel import Relationship
 from sqlmodel import SQLModel
+from sqlmodel import Session
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: nocover
     from aero.models.data import Data
 
 
@@ -24,3 +25,13 @@ class Tag(SQLModel, table=True):
     )  # Column(Integer, primary_key=True)
     name: str  # = Field(nullable=False, index=True)  # Column(String)
     data: list["Data"] = Relationship(link_model=DataTagTable, back_populates="tags")
+
+
+def create_tag(session: Session, name: str) -> Tag:
+    tag = Tag(name=name)
+
+    session.add(tag)
+    session.commit()
+    session.refresh(tag)
+
+    return tag
