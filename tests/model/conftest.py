@@ -6,6 +6,7 @@ from unittest import mock
 from aero.models.data import create_data
 from aero.models.flows import create_flow
 from aero.models.function import create_function
+from aero.models.data_version import create_dataversion
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -36,6 +37,17 @@ def data_fixture(session):
     )
 
     return data
+
+
+@pytest.fixture(name="version")
+def version_fixture(session, data):
+    version = 1
+    checksum = "chksm"
+    v = create_dataversion(
+        session=session, version=version, checksum=checksum, data_id=data.id
+    )
+
+    return v
 
 
 @pytest.fixture(name="flow")

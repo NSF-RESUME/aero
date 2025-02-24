@@ -9,7 +9,7 @@ from sqlmodel import Session
 from sqlmodel import SQLModel
 from sqlmodel import Relationship
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: nocover
     from aero.models.data_version import DataVersion
 
 
