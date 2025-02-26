@@ -7,12 +7,13 @@ from sqlmodel import Relationship
 from sqlmodel import SQLModel
 from sqlmodel import Session
 
+
 if TYPE_CHECKING:  # pragma: nocover
     from aero.models.data import Data
 
 
 class DataTagTable(SQLModel, table=True):
-    # id: int | None = Field(default=None, primary_key=True)
+    __tablename__ = "datatagtable"
     data_id: Optional[UUID] = Field(
         default=None, foreign_key="data.id", primary_key=True
     )
@@ -20,6 +21,7 @@ class DataTagTable(SQLModel, table=True):
 
 
 class Tag(SQLModel, table=True):
+    __tablename__ = "tag"
     id: int | None = Field(
         default=None, primary_key=True
     )  # Column(Integer, primary_key=True)

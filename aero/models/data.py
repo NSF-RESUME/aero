@@ -11,13 +11,14 @@ from sqlmodel import Session
 from sqlmodel import SQLModel
 from sqlmodel import select
 
-from aero.utils import get_search_client
 from aero.models.tag import DataTagTable
 
 from aero.models.data_version import DataVersion
 from aero.models.data_file import DataFile
 
 from aero.models.flows import Flow
+
+from aero import GLOBUS_CLIENT
 
 if TYPE_CHECKING:
     from aero.models.tag import Tag  # pragma: nocover
@@ -30,6 +31,8 @@ class Data(SQLModel, table=True):
     stored within the user-provided Globus Connect Server.
     our
     """
+
+    __tablename__ = "data"
 
     id: UUID = Field(
         default_factory=uuid4, index=True, primary_key=True
@@ -94,7 +97,7 @@ class Data(SQLModel, table=True):
         session.commit()
         session.refresh(new_version)
 
-        return get_search_client().add_entry(data_version=new_version)
+        return GLOBUS_CLIENT.add_search_entry(entry=new_version._conf_search_entry())
 
     def rerun_flow(self, session: Session) -> int:
         # TODO: Fix implementation

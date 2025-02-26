@@ -1,10 +1,61 @@
 import pytest
 
+from dataclasses import dataclass
 
 from sqlmodel import Session
 from sqlmodel import create_engine
 from sqlmodel import SQLModel
 from sqlmodel.pool import StaticPool
+
+from globus_sdk import AuthClient
+from globus_sdk import SearchClient
+from globus_sdk import SearchAPIError
+from globus_sdk import SpecificFlowClient
+
+
+@pytest.fixture(name="globus_mock", autouse=True)
+def _mock_globus(monkeypatch):
+    def add_search_entry(self, entry):
+        return "entry has been added"
+
+    def create_search_index(*args, **kwargs):
+        return {"id": "index"}
+
+    def search_ingest(index, *args, **kwargs):
+        @dataclass
+        class Response:
+            text: str
+
+        if index is None:
+            raise SearchAPIError()
+        return Response("ingest complete")
+
+    def get_auth_identity(usernames):
+        return {"identities": [{"id": "myid"}]}
+
+    class MockSpecificFlowClient:
+        def run_flow(*args, **kwargs):
+            @dataclass
+            class Response:
+                http_status = 201
+
+            return Response()
+
+    monkeypatch.setattr(
+        SearchClient,
+        "create_index",
+        create_search_index,
+    )
+    monkeypatch.setattr(SearchClient, "ingest", search_ingest)
+    monkeypatch.setattr(AuthClient, "get_identities", get_auth_identity)
+    monkeypatch.setattr(
+        SpecificFlowClient,
+        "run_flow",
+        MockSpecificFlowClient.run_flow,
+    )
+
+    # monkeypatch.setattr("aero.globus.client.TimerJob")
+    yield
 
 
 @pytest.fixture(name="session")

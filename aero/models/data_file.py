@@ -9,11 +9,13 @@ from sqlmodel import Session
 from sqlmodel import SQLModel
 from sqlmodel import Relationship
 
+
 if TYPE_CHECKING:  # pragma: nocover
     from aero.models.data_version import DataVersion
 
 
 class DataFile(SQLModel, table=True):
+    __tablename__ = "datafile"
     id: UUID = Field(
         default_factory=uuid4, primary_key=True, index=True
     )  # Column(Uuid, default=uuid4, index=True, primary_key=True)

@@ -1,5 +1,4 @@
-from unittest import mock
+# import sys
+# import tests.mock_globus
 
-mock.patch("aero.lib.globus_search.DSaaSSearchClient")
-mock.patch("aero.jobs.timer.set_timer", return_value=1111)
-mock.patch("aero.jobs.user_flow.run_flow")
+# sys.modules["aero.globus.globus"] = tests.mock_globus

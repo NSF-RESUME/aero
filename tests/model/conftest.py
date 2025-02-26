@@ -1,48 +1,29 @@
 import pytest
 
+# import aero
+# import aero.globus
+# import aero.models.tag
+
 from uuid import uuid4
 
-import aero.automate.policy
-import aero.automate.timer
-import aero.globus.search
-from aero.models.data import create_data
-from aero.models.data_file import create_datafile
-from aero.models.data_version import create_dataversion
-from aero.models.flows import create_flow
-from aero.models.function import create_function
-from aero.models.provenance import create_provenance
-
-
-@pytest.fixture(name="globus_mock", autouse=True)
-def _mock_globus(monkeypatch):
-    def mock_run_flow(*args, **kwargs):
-        pass
-
-    def mock_set_timer(*args, **kwargs):
-        return uuid4()
-
-    class MockSearchClient:
-        def __init__(self, idx):
-            self.index = idx
-
-        def add_entry(self, data_version):
-            return "entry has been added"
-
-    monkeypatch.setattr("aero.models.flows.run_flow", mock_run_flow)
-    monkeypatch.setattr("aero.models.flows.set_timer", mock_set_timer)
-    monkeypatch.setattr(aero.globus.search, "AEROSearchClient", MockSearchClient)
-    yield
+import aero.models
+import aero.models.data
+import aero.models.data_version
+import aero.models.data_file
+import aero.models.function
+import aero.models.flows
+import aero.models.provenance
 
 
 @pytest.fixture(name="data")
-def data_fixture(session):
+def data_fixture(globus_mock, session):
     name = "test"
     url = "test.com"
     collection_uuid = uuid4()
     collection_url = "https://1234"
     description = "testdescription"
 
-    data = create_data(
+    data = aero.models.data.create_data(
         session=session,
         name=name,
         url=url,
@@ -55,10 +36,10 @@ def data_fixture(session):
 
 
 @pytest.fixture(name="version")
-def version_fixture(session, data):
+def version_fixture(globus_mock, session, data):
     version = 1
     checksum = "chksm"
-    v = create_dataversion(
+    v = aero.models.data_version.create_dataversion(
         session=session, version=version, checksum=checksum, data_id=data.id
     )
 
@@ -66,10 +47,10 @@ def version_fixture(session, data):
 
 
 @pytest.fixture(name="file")
-def file_fixture(session, version):
+def file_fixture(globus_mock, session, version):
     file_name = "file.name"
     size = 1
-    f = create_datafile(
+    f = aero.models.data_file.create_datafile(
         session=session, file_name=file_name, size=size, version_id=version.id
     )
 
@@ -77,20 +58,22 @@ def file_fixture(session, version):
 
 
 @pytest.fixture(name="function")
-def function_fixture(session, flow):
+def function_fixture(globus_mock, session, flow):
     uuid = uuid4()
-    func = create_function(session=session, uuid=uuid, flows=[flow])
+    func = aero.models.function.create_function(
+        session=session, uuid=uuid, flows=[flow]
+    )
 
     return func
 
 
 @pytest.fixture(name="flow")
-def flow_fixture(session, data):
-    func = create_function(session=session, uuid=uuid4())
-    p_func = create_function(session=session, uuid=uuid4())
-    c_func = create_function(session=session, uuid=uuid4())
+def flow_fixture(globus_mock, session, data):
+    func = aero.models.function.create_function(session=session, uuid=uuid4())
+    p_func = aero.models.function.create_function(session=session, uuid=uuid4())
+    c_func = aero.models.function.create_function(session=session, uuid=uuid4())
 
-    flow = create_flow(
+    flow = aero.models.flows.create_flow(
         session=session,
         derived_from=[data],
         contributed_to=[],
@@ -104,6 +87,8 @@ def flow_fixture(session, data):
 
 
 @pytest.fixture(name="provenance")
-def provenance_fixture(session, flow, version):
-    prov = create_provenance(session=session, flow_id=flow.id, contributed_to=[version])
+def provenance_fixture(globus_mock, session, flow, version):
+    prov = aero.models.provenance.create_provenance(
+        session=session, flow_id=flow.id, contributed_to=[version]
+    )
     return prov

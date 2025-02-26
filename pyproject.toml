@@ -51,11 +51,10 @@ branch = true
 [tool.coverage.report]
 omit = [
     "tests/*",
-    "aero/app/decorators.py",
-    "aero/globus/*",
+    "aero/database.py",
+    #"aero/app/decorators.py",
+    #"aero/globus/*",
     "aero/app/utils.py",
-    "aero/automate/timer.py",
-    "aero/automate/policy.py"
 ]
 fail_under = 100
 exclude_also = [

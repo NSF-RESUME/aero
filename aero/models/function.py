@@ -7,11 +7,13 @@ from sqlmodel import Relationship
 from sqlmodel import Session
 from sqlmodel import SQLModel
 
+
 if TYPE_CHECKING:  # pragma: nocover
     from aero.models.flows import Flow
 
 
 class Function(SQLModel, table=True):
+    __tablename__ = "function"
     id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
     flows: list["Flow"] = Relationship(back_populates="function")
 

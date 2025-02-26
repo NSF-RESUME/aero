@@ -4,19 +4,20 @@ from uuid import uuid4
 
 from sqlmodel import Session
 
-from aero.models.data import create_data
-from aero.models.data_version import DataVersion
-from aero.models.flows import TriggerEnum
+import aero.models
+import aero.models.data_version
 
 
 def test_create_data(session: Session):
+    import aero.models.data
+
     name = "test"
     url = "test.com"
     collection_uuid = uuid4()
     collection_url = "https://1234"
     description = "testdescription"
 
-    s = create_data(
+    s = aero.models.data.create_data(
         session=session,
         name=name,
         url=url,
@@ -67,7 +68,7 @@ def test_add_new_version(session: Session, data):
 
 def test_rerun_flow(session, data, flow):
     policy = data.rerun_flow(session=session)
-    assert policy == [TriggerEnum.NONE]
+    assert policy == [aero.models.flows.TriggerEnum.NONE]
 
 
 def test_last_version(session, data):
@@ -82,4 +83,4 @@ def test_last_version(session, data):
     )
 
     assert data.last_version() is not None
-    assert isinstance(data.last_version(), DataVersion)
+    assert isinstance(data.last_version(), aero.models.data_version.DataVersion)

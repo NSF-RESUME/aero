@@ -1,3 +1,4 @@
-from unittest import mock
+import sys
+import tests.mock_globus
 
-mock.patch("aero.decorators.is_token_valid")
+sys.modules["aero.globus.globus"] = tests.mock_globus

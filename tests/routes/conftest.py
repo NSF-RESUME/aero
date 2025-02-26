@@ -11,15 +11,10 @@ from typing import Any
 
 from sqlmodel import Session
 
-from aero.automate.policy import run_flow
+import aero
+import aero.main
+import aero.models
 from aero.database import get_session
-from aero.main import app
-from aero.models.data import create_data
-from aero.models.data_version import create_dataversion
-from aero.models.data_file import create_datafile
-from aero.models.flows import create_flow
-from aero.models.function import create_function
-from aero.models.provenance import create_provenance
 
 
 class MockedAuthClient(BaseModel):
@@ -37,17 +32,18 @@ def client_fixture(session: Session):
     def run_flow_override(*args, **kwargs):
         pass
 
-    app.dependency_overrides[get_session] = get_session_override
-    app.dependency_overrides[run_flow] = run_flow
+    aero.main.app.dependency_overrides[get_session] = get_session_override
+    aero.main.app.dependency_overrides["run_flow"] = run_flow_override
+    aero.main.app.router.lifespan_context = aero.main.lifespan
 
-    client = TestClient(app)
+    client = TestClient(aero.main.app)
     yield client
-    app.dependency_overrides.clear()
+    aero.main.app.dependency_overrides.clear()
 
 
 @pytest.fixture(name="data")
 def data_fixture(session: Session):
-    data = create_data(
+    data = aero.models.data.create_data(
         session=session,
         name="Test data",
         url="https://test.com",
@@ -56,11 +52,11 @@ def data_fixture(session: Session):
         description="",
     )
 
-    version = create_dataversion(
+    version = aero.models.data_version.create_dataversion(
         session=session, version=1, checksum="123", data_id=data.id
     )
 
-    _ = create_datafile(
+    _ = aero.models.data_file.create_datafile(
         session=session, file_name="testfile", size=2, version_id=version.id
     )
     return data
@@ -68,7 +64,7 @@ def data_fixture(session: Session):
 
 @pytest.fixture(name="noversion_data")
 def noversion_data_fixture(session: Session):
-    data = create_data(
+    data = aero.models.data.create_data(
         session=session,
         name="Test data",
         url="https://test.com",
@@ -82,10 +78,10 @@ def noversion_data_fixture(session: Session):
 
 @pytest.fixture(name="flow")
 def flow_fixture(session: Session, data, noversion_data):
-    func = create_function(session=session, uuid=uuid4())
-    p_func = create_function(session=session, uuid=uuid4())
-    c_func = create_function(session=session, uuid=uuid4())
-    flow = create_flow(
+    func = aero.models.function.create_function(session=session, uuid=uuid4())
+    p_func = aero.models.function.create_function(session=session, uuid=uuid4())
+    c_func = aero.models.function.create_function(session=session, uuid=uuid4())
+    flow = aero.models.flows.create_flow(
         session=session,
         derived_from=[data],
         contributed_to=[noversion_data],
@@ -100,7 +96,7 @@ def flow_fixture(session: Session, data, noversion_data):
 
 @pytest.fixture(name="prov")
 def prov_fixture(session: Session, data, noversion_data, flow):
-    prov = create_provenance(
+    prov = aero.models.provenance.create_provenance(
         session=session,
         flow_id=flow.id,
         derived_from=[data.last_version()],
@@ -111,16 +107,5 @@ def prov_fixture(session: Session, data, noversion_data, flow):
 
 @pytest.fixture(scope="session", autouse=True)
 def _mock_auth():
-    with mock.patch("aero.decorators.is_token_valid", return_value=True) as _:
-        yield
-
-
-@pytest.fixture(scope="session", autouse=True)
-def _mock_globus():
-    with (
-        mock.patch("aero.automate.timer.set_timer", return_value=1111) as _,
-        mock.patch("aero.automate.policy.run_flow") as _,
-        mock.patch("globus_sdk.AuthClient") as _,
-        mock.patch("aero.globus.search.DSaaSSearchClient", autospec=True) as _,
-    ):
+    with mock.patch("aero.auth.is_token_valid", return_value=True) as _:
         yield

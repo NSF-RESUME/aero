@@ -1,13 +1,13 @@
 import datetime
 
-
-from aero.models.data_version import create_dataversion
+import aero.models
+import aero.models.data_version
 
 
 def test_create_version(session, data):
     version = 1
     checksum = "chksm"
-    v = create_dataversion(
+    v = aero.models.data_version.create_dataversion(
         session=session, version=version, checksum=checksum, data_id=data.id
     )
 

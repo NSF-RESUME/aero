@@ -9,9 +9,10 @@ from sqlmodel import select
 from sqlmodel import Session
 
 from aero.database import get_session
-from aero.utils import get_search_client
 from aero.models.data import Data
 from aero.models.data_version import DataVersion
+
+from aero import GLOBUS_CLIENT
 
 router = APIRouter(
     prefix="/data",
@@ -37,7 +38,7 @@ def all_data(
 @router.get("/search")
 # @authenticated
 def search(query: str) -> dict:
-    sc = get_search_client()
+    sc = GLOBUS_CLIENT.search_client
 
     try:
         result = sc.client.search(sc.index, query, advanced=True)

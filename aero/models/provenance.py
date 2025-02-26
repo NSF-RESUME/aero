@@ -7,12 +7,13 @@ from sqlmodel import Relationship
 from sqlmodel import Session
 from sqlmodel import SQLModel
 
-# from  import db
+
 if TYPE_CHECKING:  # pragma: nocover
     from aero.models.data_version import DataVersion
 
 
 class ProvenanceDerivation(SQLModel, table=True):
+    __tablename__ = "provenancederivation"
     prov_id: Optional[UUID] = Field(
         default=None, foreign_key="provenance.id", primary_key=True
     )
@@ -22,6 +23,7 @@ class ProvenanceDerivation(SQLModel, table=True):
 
 
 class ProvenanceContribution(SQLModel, table=True):
+    __tablename__ = "provenancecontribution"
     prov_id: Optional[UUID] = Field(
         default=None, foreign_key="provenance.id", primary_key=True
     )
@@ -31,6 +33,7 @@ class ProvenanceContribution(SQLModel, table=True):
 
 
 class Provenance(SQLModel, table=True):
+    __tablename__ = "provenance"
     id: UUID = Field(default_factory=uuid4, index=True, primary_key=True)
     flow_id: UUID = Field(foreign_key="flow.id")
     derived_from: list["DataVersion"] = Relationship(
