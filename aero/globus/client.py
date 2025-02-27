@@ -136,7 +136,7 @@ class GlobusClient:
             email = ""
 
         kwargs = function_args["kwargs"]
-        if flow_id == FlowEnum.VERIFY_AND_MODIFY:
+        if flow_type == FlowEnum.VERIFY_AND_MODIFY:
             run_input = {
                 "osprey-worker-endpoint": str(user_endpoint),
                 "download-function": pull_function_uuid,

@@ -27,6 +27,8 @@ services:
       # For timer email
       - DSAAS_EMAIL_PASSWORD=${DSAAS_EMAIL_PASSWORD}
 
+    command: "uvicorn aero.main:app --host 0.0.0.0 --port 80"
+
     volumes:
       - ./aero:/app/aero
       - ./data:/app/aero/data
@@ -35,11 +37,11 @@ services:
 
   postgres-database:
     restart: always
-    image: postgres:15.3
+    image: postgres:17.4
     environment:
-      - POSTGRES_USER=${DATABASE_USER}
-      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
-      - POSTGRES_DB=osprey_development
+      - PGUSER=${DATABASE_USER}
+      - PGPASSWORD=${DATABASE_PASSWORD}
+      - PGDB=osprey_development
     ports:
       - "5432:5432"
     volumes:

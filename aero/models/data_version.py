@@ -20,7 +20,7 @@ if TYPE_CHECKING:  # pragma: nocover
 
 class DataVersion(SQLModel, table=True):
     __tablename__ = "dataversion"
-    id: UUID = Field(default_factory=uuid4, index=True, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, index=True, primary_key=True, unique=True)
     version: int | None = Field(default=None, index=True)
     checksum: str | None = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.now)
@@ -45,7 +45,7 @@ class DataVersion(SQLModel, table=True):
                 "content": {
                     "name": self.data.name,
                     "description": self.data.description,
-                    "created_by": self.data,
+                    "created_by": dict(self.data),
                     "tags": [t for t in self.data.tags],
                     "source": self.data.url,
                     "data_id": self.data.id,

@@ -9,25 +9,24 @@ docker volume create osprey-postgres-data
 
 echo "\n\nRunning migrations"
 docker compose up postgres-database -d
-
 sleep 5 # sleep required otherwise attempts to create db before postgres server is started
 
-# docker compose exec -it postgres-database bash -c "psql -U ${DATABASE_USER} -c \"CREATE DATABASE osprey_development;\"; exit;"
-docker compose run -it --rm web flask db upgrade
-docker compose down
+docker compose exec -it -e PGPASSWORD=${DATABASE_PASSWORD} postgres-database psql -U ${DATABASE_USER} -d ${DATABASE_NAME}
+# docker compose run -it --rm web flask db upgrade
+# docker compose down
 
 # echo "\nThe Globus Flow Functions UUIDs are : "
 # docker compose run -it --rm web python /app/aero/worker/lib/globus_flow_helper.py
 # source aero/set_flow_uuids.sh
 
-echo "\nThe Globus Search index is":
-search_idx=`docker compose run -it --rm web python /app/aero/globus/search.py | head -n 1 | awk '{print $NF}' | tr -d '\r'`
+# echo "\nThe Globus Search index is":
+# search_idx=`docker compose run -it --rm web python /app/aero/globus/search.py | head -n 1 | awk '{print $NF}' | tr -d '\r'`
 
-echo "${search_idx}"
+# echo "${search_idx}"
 
-echo "\n\nSetting up Globus Flow Worker"
-docker compose run -it --rm web python /app/aero/automate/timer.py
-docker compose run -it --rm web python /app/aero/globus/compute.py
+# echo "\n\nSetting up Globus Flow Worker"
+# docker compose run -it --rm web python /app/aero/automate/timer.py
+# docker compose run -it --rm web python /app/aero/globus/compute.py
 
 # if [[ $(uname -a) == *"Darwin"* ]]
 # then

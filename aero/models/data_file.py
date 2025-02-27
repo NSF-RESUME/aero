@@ -17,14 +17,14 @@ if TYPE_CHECKING:  # pragma: nocover
 class DataFile(SQLModel, table=True):
     __tablename__ = "datafile"
     id: UUID = Field(
-        default_factory=uuid4, primary_key=True, index=True
+        default_factory=uuid4, primary_key=True, index=True, unique=True
     )  # Column(Uuid, default=uuid4, index=True, primary_key=True)
     file_name: str = Field(nullable=False)  # Column(String)
     file_type: str | None = Field(default=None)  # Column(String)
     size: float = Field(nullable=False)  # Column(Numeric)
     encoding: str = Field(default="utf-8")  # Column(String)
     version_id: UUID = Field(
-        foreign_key="dataversion.id", primary_key=True
+        foreign_key="dataversion.id"
     )  # Column(Uuid, db.ForeignKey("data_version.id"))
     version: Optional["DataVersion"] = Relationship(back_populates="data_file")
 

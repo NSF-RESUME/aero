@@ -21,6 +21,6 @@ for fidx in "${flow_ids[@]}"; do docker compose run -it --rm web globus flows ru
 # for tidx in "${timer_ids[@]}"; do globus timer delete $tidx; done
 
 docker compose down
-# docker rm -f $(docker ps -a -q)
+#docker rm -f $(docker ps -a -q)
 docker volume rm $(docker volume ls -q)
-docker rmi dsaas-web postgres:15.3
+docker rmi dsaas-web postgres:17.4

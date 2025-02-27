@@ -225,8 +225,8 @@ def create_flow(
 
     session.add(f)
     session.commit()
+    session.refresh(f)
 
     f._run_flow(session=session)
-    session.refresh(f)
 
     return f

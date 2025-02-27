@@ -1,6 +1,7 @@
 from uuid import UUID
 from datetime import datetime
 
+
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import HTTPException
@@ -27,8 +28,10 @@ router = APIRouter(
 
 
 class ProvRecord(BaseModel):
-    input_data: dict
-    output_data: dict
+    input_data: dict[str, str | bool | int | float | list[str | None] | None]
+    output_data: dict[
+        str, dict[str, str | bool | int | float | list[str | None] | None]
+    ]
     flow_id: UUID
 
 
@@ -68,7 +71,7 @@ def add_record(pr: ProvRecord, session: Session = Depends(get_session)):
                 format=o["file_format"],
                 checksum=o["checksum"],
                 size=o["size"],
-                created_at=datetime.fromisoformat(o["created_at"]),
+                created_at=datetime.strptime(o["created_at"], "%c"),
                 encoding=o.get("encoding", "utf-8"),
             )
 

@@ -20,6 +20,8 @@ FLOW_KEYS = sorted(
         "timer_job_id",
         "last_executed",
         "email",
+        "contributed_to",
+        "derived_from",
     ]
 )
 
@@ -89,6 +91,7 @@ def test_register_flow(client, data, noversion_data, flow):
     response = client.post(f"{ROUTE}/register", json=flow_data, headers=headers)
     response_data = response.json()
     assert response.status_code == 200
+    assert "contributed_to" in response_data
 
     response = client.post(f"{ROUTE}/register", json=flow_data, headers=headers)
     response_data = response.json()

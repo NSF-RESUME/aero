@@ -10,16 +10,13 @@ dependencies = [
     "proxystore",
     "requests",
     "pandas",
-    "flask",
-    "flask-sqlalchemy",
-    "flask-migrate",
     "jsonschema",
     "psycopg2",
     "globus_compute_sdk",
     "dill",
     "globus_sdk",
     "globus-cli",
-    "fastapi[standard]",
+    "fastapi[standard]==0.115.8",
     "sqlmodel"
 ]
 

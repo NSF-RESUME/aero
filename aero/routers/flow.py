@@ -3,6 +3,7 @@ import uuid
 import json
 
 from copy import deepcopy
+from datetime import datetime
 
 from fastapi import APIRouter
 from fastapi import Depends
@@ -47,20 +48,41 @@ class FlowIn(BaseModel):
     flow_kwargs: dict | list = Field(default={})
 
 
-@router.get("/", response_model=list[Flow])
+class FlowOut(BaseModel):
+    id: uuid.UUID
+    function_id: Optional[uuid.UUID]
+    function_args: dict | list = Field(default_factory=dict)
+    pull_function_id: uuid.UUID | None = Field(default=None)
+    commit_function_id: uuid.UUID | None = Field(default=None)
+    email: str | None = Field(default=None)
+    description: str | None = Field(default=None)
+    timer: int | None = Field(default=None)
+    timer_job_id: uuid.UUID | None = Field(default=None)
+    policy: int = Field(nullable=False)
+    last_executed: datetime | None = Field(default=None)
+    user_endpoint: uuid.UUID | None = Field(default=None)
+    arg_hash: str | None = Field(default=None)
+    derived_from: list["Data"] = Field(default_factory=list)
+    contributed_to: list["Data"] = Field(default_factory=list)
+
+
+@router.get("/", response_model=list[FlowOut])
 # @authenticated
 def show_flows(
     offset: int = 0,
     limit: int = Query(default=15, le=15),
     session: Session = Depends(get_session),
 ):
-    f = session.exec(
+    flows = session.exec(
         select(Flow).order_by(Flow.id.desc()).offset(offset).limit(limit)
     ).all()
-    return f
+    return [
+        FlowOut(**dict(f), contributed_to=f.contributed_to, derived_from=f.derived_from)
+        for f in flows
+    ]
 
 
-@router.get("/{flow_id}", response_model=Flow)
+@router.get("/{flow_id}", response_model=FlowOut)
 # @authenticated
 def get_flow(flow_id: uuid.UUID, session: Session = Depends(get_session)):
     f = session.exec(select(Flow).where(Flow.id == flow_id)).first()
@@ -69,10 +91,12 @@ def get_flow(flow_id: uuid.UUID, session: Session = Depends(get_session)):
         raise HTTPException(
             status_code=404, detail=f"Flow with id {flow_id} was not found."
         )
-    return f
+    return FlowOut(
+        **dict(f), contributed_to=f.contributed_to, derived_from=f.derived_from
+    )
 
 
-@router.post("/register", response_model=Flow)
+@router.post("/register", response_model=FlowOut)
 # @authenticated
 def register(fi: FlowIn, session: Session = Depends(get_session)):
     fl: Flow | None = None
@@ -99,7 +123,7 @@ def register(fi: FlowIn, session: Session = Depends(get_session)):
 
     # function does not already exist, so record it
     if f is None:
-        f = Function(uuid=fi.function_uuid)
+        f = Function(id=fi.function_uuid)
         session.add(f)
         session.commit()
         session.refresh(f)
@@ -110,12 +134,12 @@ def register(fi: FlowIn, session: Session = Depends(get_session)):
         ).first()
 
     if p_func is None:
-        p_func = Function(uuid=fi.pull_function_uuid)
+        p_func = Function(id=fi.pull_function_uuid)
         session.add(p_func)
         session.commit()
         session.refresh(p_func)
     if c_func is None:
-        c_func = Function(uuid=fi.commit_function_uuid)
+        c_func = Function(id=fi.commit_function_uuid)
         session.add(c_func)
         session.commit()
         session.refresh(c_func)
@@ -191,4 +215,8 @@ def register(fi: FlowIn, session: Session = Depends(get_session)):
     else:
         raise HTTPException(status_code=501, detail="Flow already exists")
 
-    return fl
+    flow_o = FlowOut(
+        **dict(fl), derived_from=fl.derived_from, contributed_to=fl.contributed_to
+    )
+
+    return flow_o

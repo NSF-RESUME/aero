@@ -1,6 +1,8 @@
 import pytest
+import uuid
 
 from dataclasses import dataclass
+from typing import Any
 
 from sqlmodel import Session
 from sqlmodel import create_engine
@@ -11,6 +13,7 @@ from globus_sdk import AuthClient
 from globus_sdk import SearchClient
 from globus_sdk import SearchAPIError
 from globus_sdk import SpecificFlowClient
+from globus_sdk import TimerClient
 
 
 @pytest.fixture(name="globus_mock", autouse=True)
@@ -41,6 +44,22 @@ def _mock_globus(monkeypatch):
 
             return Response()
 
+    def create_job(*args, **kwargs):
+        @dataclass
+        class Response:
+            http_status = 201
+            job_id = str(uuid.uuid4())
+
+            def __getitem__(self, key: int | str) -> Any:
+                if isinstance(key, int):
+                    return list(self.__dict__.values())[key]
+                elif isinstance(key, str):
+                    return getattr(self, key)
+                else:
+                    raise TypeError("Index must be an integer or a string (field name)")
+
+        return Response()
+
     monkeypatch.setattr(
         SearchClient,
         "create_index",
@@ -54,7 +73,7 @@ def _mock_globus(monkeypatch):
         MockSpecificFlowClient.run_flow,
     )
 
-    # monkeypatch.setattr("aero.globus.client.TimerJob")
+    monkeypatch.setattr(TimerClient, "create_job", create_job)
     yield
 
 
