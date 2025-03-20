@@ -4,28 +4,8 @@ services:
       dockerfile: ./Dockerfiles/Dockerfile.server.dev
     ports:
       - "5001:80"
-    environment:
-      - DATABASE_PORT=5432
-      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
-      - DATABASE_USER=${DATABASE_USER}
-      - DATABASE_HOST=dsaas-postgres-database-1 # NOTE: Make sure it is the same as the database-name
-      - DATABASE_NAME=osprey_development
-      - PORTAL_CLIENT_ID=${PORTAL_CLIENT_ID}
-      - PORTAL_CLIENT_SECRET=${PORTAL_CLIENT_SECRET}
-      - GLOBUS_CLI_CLIENT_ID=${PORTAL_CLIENT_ID}
-      - GLOBUS_CLI_CLIENT_SECRET=${PORTAL_CLIENT_SECRET}
-      - GLOBUS_COMPUTE_CLIENT_ID=${PORTAL_CLIENT_ID}
-      - GLOBUS_COMPUTE_CLIENT_SECRET=${PORTAL_CLIENT_SECRET}
-      - FLASK_APP=app/run.py
-
-      # Project owner registers this
-      # - GLOBUS_FLOW_DOWNLOAD_FUNCTION=368937e6-ff7a-4049-b8b7-bc39fdef91b5
-      # - GLOBUS_FLOW_COMMIT_FUNCTION=916613a1-9494-4654-9654-006fb9fe2810
-      # - GLOBUS_FLOW_ANALYSIS_VERSION_FUNCTION=2588cf83-a107-4325-ac4e-9596631577f2
-      # - GLOBUS_FLOW_ANALYSIS_COMMIT_FUNCTION=4bcb5d26-33bd-4beb-8681-1a6f7c0b697b
-      - SEARCH_INDEX=c636e24b-506c-4f62-9f80-b90b936f6cc0
-      # For timer email
-      - DSAAS_EMAIL_PASSWORD=${DSAAS_EMAIL_PASSWORD}
+    env_file:
+      - scripts/setup_env.sh
 
     command: "uvicorn aero.main:app --host 0.0.0.0 --port 80"
 
@@ -33,19 +13,26 @@ services:
       - ./aero:/app/aero
       - ./data:/app/aero/data
     depends_on:
-        - postgres-database
+        - database
 
-  postgres-database:
+  database:
     restart: always
     image: postgres:17.4
+    env_file:
+      - scripts/setup_env.sh
     environment:
-      - PGUSER=${DATABASE_USER}
-      - PGPASSWORD=${DATABASE_PASSWORD}
-      - PGDB=osprey_development
+      - POSTGRES_USER=${DATABASE_USER}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_DB=osprey_development
     ports:
       - "5432:5432"
     volumes:
       - osprey-postgres-data:/var/lib/postgresql/data
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
 volumes:
   osprey-postgres-data:
     external: true

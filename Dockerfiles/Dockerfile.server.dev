@@ -3,4 +3,3 @@ WORKDIR /app
 COPY . .
 RUN pip install -e .
 WORKDIR /app/aero
-# RUN flask db upgrade | TODO: Figure out if you can do it in `CMD`

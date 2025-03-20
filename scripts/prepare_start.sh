@@ -1,48 +1,18 @@
 #!/bin/bash
 
 #set -e
-docker compose build
+sudo docker compose build
 
-echo "\n\nCreating docker volumes\n"
+echo $'\n\nCreating docker volumes\n'
 
-docker volume create osprey-postgres-data
+sudo docker volume create osprey-postgres-data
 
-echo "\n\nRunning migrations"
-docker compose up postgres-database -d
+echo $'\n\nRunning migrations'
+sudo docker compose up database -d
 sleep 5 # sleep required otherwise attempts to create db before postgres server is started
 
-docker compose exec -it -e PGPASSWORD=${DATABASE_PASSWORD} postgres-database psql -U ${DATABASE_USER} -d ${DATABASE_NAME}
-# docker compose run -it --rm web flask db upgrade
-# docker compose down
-
-# echo "\nThe Globus Flow Functions UUIDs are : "
-# docker compose run -it --rm web python /app/aero/worker/lib/globus_flow_helper.py
-# source aero/set_flow_uuids.sh
-
+sudo docker compose exec -it -e POSTGRES_PASSWORD=${DATABASE_PASSWORD} database psql -U ${DATABASE_USER} -d ${DATABASE_NAME} -c "\l"
 # echo "\nThe Globus Search index is":
 # search_idx=`docker compose run -it --rm web python /app/aero/globus/search.py | head -n 1 | awk '{print $NF}' | tr -d '\r'`
 
 # echo "${search_idx}"
-
-# echo "\n\nSetting up Globus Flow Worker"
-# docker compose run -it --rm web python /app/aero/automate/timer.py
-# docker compose run -it --rm web python /app/aero/globus/compute.py
-
-# if [[ $(uname -a) == *"Darwin"* ]]
-# then
-#     sed -i '' "s/GLOBUS_FLOW_DOWNLOAD_FUNCTION=.*/GLOBUS_FLOW_DOWNLOAD_FUNCTION=${FLOW_DOWNLOAD}/g" docker-compose.yml
-#     sed -i '' "s/GLOBUS_FLOW_COMMIT_FUNCTION=.*/GLOBUS_FLOW_COMMIT_FUNCTION=${FLOW_DB_COMMIT}/g" docker-compose.yml
-#     sed -i '' "s/GLOBUS_FLOW_USER_COMMIT_FUNCTION=.*/GLOBUS_FLOW_USER_COMMIT_FUNCTION=${FLOW_USER_COMMIT}/g" docker-compose.yml
-#     sed -i '' "s/GLOBUS_FLOW_ANALYSIS_VERSION_FUNCTION=.*/GLOBUS_FLOW_ANALYSIS_VERSION_FUNCTION=${FLOW_ANALYSIS_VER}/g" docker-compose.yml
-#     sed -i '' "s/GLOBUS_FLOW_ANALYSIS_COMMIT_FUNCTION=.*/GLOBUS_FLOW_ANALYSIS_COMMIT_FUNCTION=${FLOW_ANALYSIS_COMMIT}/g" docker-compose.yml
-#     sed -i '' "s/SEARCH_INDEX=.*/SEARCH_INDEX=${search_idx}/g" docker-compose.yml
-# else
-#     sed -i "s/GLOBUS_FLOW_DOWNLOAD_FUNCTION=.*/GLOBUS_FLOW_DOWNLOAD_FUNCTION=${FLOW_DOWNLOAD}/g" docker-compose.yml
-#     sed -i "s/GLOBUS_FLOW_COMMIT_FUNCTION=.*/GLOBUS_FLOW_COMMIT_FUNCTION=${FLOW_DB_COMMIT}/g" docker-compose.yml
-#     sed -i "s/GLOBUS_FLOW_USER_COMMIT_FUNCTION=.*/GLOBUS_FLOW_USER_COMMIT_FUNCTION=${FLOW_USER_COMMIT}/g" docker-compose.yml
-#     sed -i "s/GLOBUS_FLOW_ANALYSIS_VERSION_FUNCTION=.*/GLOBUS_FLOW_ANALYSIS_VERSION_FUNCTION=${FLOW_ANALYSIS_VER}/g" docker-compose.yml
-#     sed -i "s/GLOBUS_FLOW_ANALYSIS_COMMIT_FUNCTION=.*/GLOBUS_FLOW_ANALYSIS_COMMIT_FUNCTION=${FLOW_ANALYSIS_COMMIT}/g" docker-compose.yml
-#     sed -i "s/SEARCH_INDEX=.*/SEARCH_INDEX=${search_idx}/g" docker-compose.yml
-# fi
-
-# echo "\n\nUpdated docker-compose.yml"
