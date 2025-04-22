@@ -1,3 +1,5 @@
+from datetime import datetime
+from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter
@@ -5,11 +7,15 @@ from fastapi import Depends
 from fastapi import HTTPException
 from fastapi import Query
 
+from pydantic import BaseModel
+from pydantic import Field
+
 from sqlmodel import select
 from sqlmodel import Session
 
 from aero.database import get_session
 from aero.models.data import Data
+from aero.models.data_file import DataFile
 from aero.models.data_version import DataVersion
 
 from aero import GLOBUS_CLIENT
@@ -20,6 +26,16 @@ router = APIRouter(
     dependencies=[],
     responses={404: {"description": "Not found"}},
 )
+
+
+class VersionOut(BaseModel):
+    id: UUID = Field()
+    version: int | None = Field(default=None)
+    checksum: str | None = Field(default=None)
+    created_at: datetime | None = Field(default=None)
+    data_id: UUID | None = Field(default=None)
+    data: Optional["Data"] = Field(default=None)
+    data_file: Optional["DataFile"] = Field(default=None)
 
 
 @router.get("/", response_model=list[Data])
@@ -66,7 +82,7 @@ def list_versions(id: UUID, session: Session = Depends(get_session)):
     return d.versions
 
 
-@router.get("/{id}/latest", response_model=DataVersion)
+@router.get("/{id}/latest", response_model=VersionOut)
 # @authenticated
 def get_latest(id: UUID, session: Session = Depends(get_session)):
     d = session.exec(select(Data).where(Data.id == id)).first()
