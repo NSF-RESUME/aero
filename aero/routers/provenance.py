@@ -28,7 +28,9 @@ router = APIRouter(
 
 
 class ProvRecord(BaseModel):
-    input_data: dict[str, str | bool | int | float | list[str | None] | None]
+    input_data:  dict[
+        str, dict[str, str | bool | int | float | list[str | None] | None]
+    ]
     output_data: dict[
         str, dict[str, str | bool | int | float | list[str | None] | None]
     ]
