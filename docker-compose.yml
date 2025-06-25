@@ -2,28 +2,48 @@ services:
   web:
     build:
       dockerfile: ./Dockerfiles/Dockerfile.server.dev
-    ports:
-      - "5001:80"
+
+    # ports:
+    #  - "8000:80"
+
     env_file:
       - scripts/setup_env.sh
 
-    command: "uvicorn aero.main:app --host 0.0.0.0 --port 80"
+    # expose:
+    #  - 8081
+
+    command: "uvicorn aero.main:app --host 0.0.0.0  --port 8081"
+    # --host 0.0.0.0  --port 8081 --proxy-headers --forwarded-allow-ips *"
+    # --ssl-keyfile=/keys/cels.anl.gov-key.pem --ssl-certfile=/certs/cels-incommon.anl.gov-bundle.pem"
+    # --proxy-headers --uds /var/sockets/uvicorn.sock"
 
     volumes:
       - ./aero:/app/aero
       - ./data:/app/aero/data
+      # - /etc/pki/tls/private:/keys
+      # - /etc/pki/tls/certs:/certs
     depends_on:
-        - database
+      - database
+
+  nginx:
+    image: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+
+    volumes:
+      - /etc/pki/tls/private:/keys
+      - /etc/pki/tls/certs:/certs
+      - ./nginx/aero-app.conf:/etc/nginx/conf.d/aero-app.conf
+
+    depends_on:
+       - web
 
   database:
     restart: always
     image: postgres:17.4
     env_file:
       - scripts/setup_env.sh
-    environment:
-      - POSTGRES_USER=${DATABASE_USER}
-      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
-      - POSTGRES_DB=osprey_development
     ports:
       - "5432:5432"
     volumes:
