@@ -158,7 +158,7 @@ class GlobusClient:
                 "function": user_function,
                 "tasks": json.dumps(kwargs),
             }
-            run_label = "AERO Demo | User flow"
+
             name = f"AERO-user-flow-{id}"
 
         flow_timer = FlowTimer(
@@ -168,7 +168,7 @@ class GlobusClient:
                 interval_seconds=interval_in_sec,
                 start=datetime.datetime.now(),
             ),
-            body={"body": run_input, "label": run_label},
+            body={"body": run_input},
         )
 
         response = self.timer_client.create_timer(flow_timer)
