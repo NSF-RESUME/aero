@@ -168,7 +168,7 @@ class GlobusClient:
                 interval_seconds=interval_in_sec,
                 start=datetime.datetime.now(),
             ),
-            body={"body": run_input, "label": run_label},
+            body={"body": run_input},
         )
 
         response = self.timer_client.create_timer(flow_timer)

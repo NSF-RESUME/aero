@@ -89,3 +89,7 @@ flask_sqlalchemy is the library of choice for handling migrations for tables. Do
 
 1. You can add editable configs in docker-compose.yml to the respective application
 2. Non-editable configs for the worker/server can be added to osprey/<-service-name->/config.py
+
+### Starting
+
+sudo docker compose --env-file .fhwa_env up -d

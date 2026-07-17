@@ -1,6 +1,8 @@
 #!/bin/bash
 
 #set -e
+
+source scripts/setup_env.sh
 sudo docker compose build
 
 echo $'\n\nCreating docker volumes\n'
