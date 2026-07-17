@@ -14,7 +14,7 @@ dependencies = [
     "psycopg2",
     "globus_compute_sdk",
     "dill",
-    "globus_sdk",
+    "globus_sdk>=4,<5",
     "globus-cli",
     "fastapi[standard]==0.115.8",
     "sqlmodel"

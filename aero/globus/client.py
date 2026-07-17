@@ -7,13 +7,13 @@ from uuid import UUID
 
 from globus_sdk import AuthClient
 from globus_sdk import ClientApp
+from globus_sdk import FlowTimer
+from globus_sdk import RecurringTimerSchedule
 from globus_sdk import SearchClient
 from globus_sdk import SpecificFlowClient
-from globus_sdk import TimerClient
-from globus_sdk import TimerJob
-from globus_sdk.scopes import TimerScopes
+from globus_sdk import TimersClient
+from globus_sdk.scopes import TimersScopes
 from globus_sdk.services.search.errors import SearchAPIError
-from globus_sdk.utils import slash_join
 
 from aero.config import Config
 
@@ -26,7 +26,7 @@ JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | 
 class GlobusClient:
     app: ClientApp
     auth_client: AuthClient
-    timer_client: TimerClient
+    timer_client: TimersClient
     search_client: SearchClient
     search_index: str
 
@@ -44,7 +44,7 @@ class GlobusClient:
             )
 
         self.auth_client = AuthClient(app=self.app)
-        self.timer_client = TimerClient(app=self.app, app_scopes=self._timer_scopes())
+        self.timer_client = TimersClient(app=self.app, app_scopes=self._timer_scopes())
         self.search_client = SearchClient(app=self.app)
         self.search_client.add_app_scope(self.search_client.scopes.all)
         self.search_index = search_index
@@ -59,11 +59,12 @@ class GlobusClient:
             print(f"Created new search index: {self.search_index}")
 
     def _timer_scopes(self):
-        timer_scope = TimerScopes.make_mutable("timer")
-        for sfc in self.specific_flow_clients.values():
-            timer_scope.add_dependency(sfc.scopes.user)
+        flow_user_scopes = [
+            sfc.scopes.user for sfc in self.specific_flow_clients.values()
+        ]
+        timer_scope = TimersScopes.timer.with_dependencies(flow_user_scopes)
 
-        return timer_scope
+        return [timer_scope]
 
     def add_search_entry(self, entry: dict) -> str:
         try:
@@ -160,25 +161,19 @@ class GlobusClient:
             run_label = "AERO Demo | User flow"
             name = f"AERO-user-flow-{id}"
 
-        url = slash_join(
-            self.specific_flow_clients[flow_id].base_url,
-            f"/flows/{flow_id}/run",
-        )
-
-        # TODO: TimerJob is now considered legacy.
-        # run_as, run_monitor, run_manage all currently unsupported
-        job = TimerJob(
-            callback_url=url,
-            callback_body={"body": run_input, "label": run_label},
-            start=datetime.datetime.now(),
-            interval=datetime.timedelta(seconds=interval_in_sec),
+        flow_timer = FlowTimer(
+            flow_id=flow_id,
             name=name,
-            scope=self.specific_flow_clients[flow_id].scopes.user,
+            schedule=RecurringTimerSchedule(
+                interval_seconds=interval_in_sec,
+                start=datetime.datetime.now(),
+            ),
+            body={"body": run_input, "label": run_label},
         )
 
-        response = self.timer_client.create_job(job)
+        response = self.timer_client.create_timer(flow_timer)
         assert response.http_status == 201
-        job_id = UUID(response["job_id"])
+        job_id = UUID(response["timer"]["job_id"])
         return job_id
 
     def delete_job(self, job_id: str):
