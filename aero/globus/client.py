@@ -158,7 +158,7 @@ class GlobusClient:
                 "function": user_function,
                 "tasks": json.dumps(kwargs),
             }
-            run_label = "AERO Demo | User flow"
+
             name = f"AERO-user-flow-{id}"
 
         flow_timer = FlowTimer(

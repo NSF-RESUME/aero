@@ -26,6 +26,11 @@ services:
       # - /etc/pki/tls/certs:/certs
     depends_on:
       - database
+    networks:
+      default: {}
+      aero-shared:
+        aliases:
+          - ${WEB_ALIAS:-web}
 
     networks:
       default: {}
