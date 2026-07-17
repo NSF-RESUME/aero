@@ -12,7 +12,7 @@ services:
     # expose:
     #  - 8081
 
-    command: "uvicorn aero.main:app --host 0.0.0.0  --port 8081"
+    command: "uvicorn aero.main:app --host 0.0.0.0  --port 8081 ${ROOT_PATH_ARG:-}"
     # --host 0.0.0.0  --port 8081 --proxy-headers --forwarded-allow-ips *"
     # --ssl-keyfile=/keys/cels.anl.gov-key.pem --ssl-certfile=/certs/cels-incommon.anl.gov-bundle.pem"
     # --proxy-headers --uds /var/sockets/uvicorn.sock"
@@ -24,6 +24,11 @@ services:
       # - /etc/pki/tls/certs:/certs
     depends_on:
       - database
+    networks:
+      default: {}
+      aero-shared:
+        aliases:
+          - ${WEB_ALIAS:-web}
 
   nginx:
     image: nginx
@@ -38,6 +43,9 @@ services:
 
     depends_on:
        - web
+    networks:
+      - default
+      - aero-shared
 
   database:
     restart: always
@@ -45,14 +53,21 @@ services:
     env_file:
       - scripts/setup_env.sh
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
-      - osprey-postgres-data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
   adminer:
     image: adminer
     restart: always
     ports:
-      - 8080:8080
+      - "${ADMINER_PORT:-8080}:8080"
+
 volumes:
-  osprey-postgres-data:
+  pgdata:
     external: true
+    name: ${PG_VOLUME:-osprey-postgres-data}
+
+networks:
+  aero-shared:
+    external: true
+    name: aero-shared
