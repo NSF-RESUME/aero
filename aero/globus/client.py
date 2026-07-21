@@ -147,7 +147,7 @@ class GlobusClient:
                 "author-email": email,
                 "_private_password": os.environ.get("DSAAS_EMAIL_PASSWORD"),
             }
-            run_label = f"AERO Demo | Ingestion flow {str(id)[:8]}"
+
             name = f"AERO-ingestion-{str(id)[:8]}"
 
         else:

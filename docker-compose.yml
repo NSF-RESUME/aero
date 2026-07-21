@@ -27,12 +27,6 @@ services:
     depends_on:
       - database
 
-    networks:
-      default: {}
-      aero-shared:
-        aliases:
-          - ${WEB_ALIAS:-web}
-
   nginx:
     image: nginx
     ports:
@@ -65,6 +59,11 @@ services:
     restart: always
     ports:
       - "${ADMINER_PORT:-8080}:8080"
+    networks:
+      default: {}
+      aero-shared:
+        aliases:
+          - ${ADMINER_ALIAS:-adminer}
 
 volumes:
   pgdata:
