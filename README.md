@@ -92,4 +92,4 @@ flask_sqlalchemy is the library of choice for handling migrations for tables. Do
 
 ### Starting
 
-sudo docker compose --env-file .fhwa_env up -d
+sudo docker compose --env-file .fhwa_env up web database adminer
