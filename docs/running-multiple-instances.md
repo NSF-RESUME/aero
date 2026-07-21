@@ -37,10 +37,11 @@ network/volume exist):
 | `WEB_ALIAS` | the `web` container's alias on `aero-shared` | `web` |
 | `DB_PORT` | host port for Postgres | `5432` |
 | `ADMINER_PORT` | host port for Adminer | `8080` |
+| `ADMINER_ALIAS` | the `adminer` container's alias on `aero-shared` | `adminer` |
 | `PG_VOLUME` | external Postgres data volume name | `osprey-postgres-data` |
 
-`web` and `nginx` are attached to an external `aero-shared` network so the single front
-door can resolve every instance's `web`.
+`web`, `adminer`, and `nginx` are attached to an external `aero-shared` network so the
+single front door can resolve every instance's `web` and `adminer`.
 
 ## Setup
 
@@ -58,6 +59,7 @@ docker volume  create osprey-postgres-data-2
 ```
 ROOT_PATH_ARG=--root-path /aero1
 WEB_ALIAS=aero1-web
+ADMINER_ALIAS=aero1-adminer
 DB_PORT=5432
 ADMINER_PORT=8080
 PG_VOLUME=osprey-postgres-data
@@ -67,6 +69,7 @@ PG_VOLUME=osprey-postgres-data
 ```
 ROOT_PATH_ARG=--root-path /aero2
 WEB_ALIAS=aero2-web
+ADMINER_ALIAS=aero2-adminer
 DB_PORT=5433
 ADMINER_PORT=8081
 PG_VOLUME=osprey-postgres-data-2
@@ -82,15 +85,16 @@ docker compose -p aero1 --env-file .env.instance1 up -d
 docker compose -p aero2 --env-file .env.instance2 up -d web database adminer
 ```
 
-Add more instances by copying an env file (new `WEB_ALIAS`, `DB_PORT`, `ADMINER_PORT`,
-`PG_VOLUME`) and adding a matching `location /aeroN/` block to `aero-app.conf`.
+Add more instances by copying an env file (new `WEB_ALIAS`, `ADMINER_ALIAS`, `DB_PORT`,
+`ADMINER_PORT`, `PG_VOLUME`) and adding matching `location /aeroN/` and
+`location /aeroN/adminer/` blocks to `aero-app.conf`.
 
 ## Reaching each instance
 
-- `http://aero.cels.anl.gov/aero1/docs`
-- `http://aero.cels.anl.gov/aero2/docs`
+- `http://aero.cels.anl.gov/aero1/docs`   (and `/aero1/adminer/` for its DB)
+- `http://aero.cels.anl.gov/aero2/docs`   (and `/aero2/adminer/` for its DB)
 
-(Use `https://` once TLS is enabled — see below.)
+(Use `https://` once TLS is enabled — see below. Always include adminer's trailing slash.)
 
 ## nginx routing detail
 
