@@ -27,6 +27,12 @@ services:
     depends_on:
       - database
 
+    networks:
+      default: {}
+      aero-shared:
+        aliases:
+          - ${WEB_ALIAS:-web}
+
   nginx:
     image: nginx
     ports:
