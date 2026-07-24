@@ -29,6 +29,7 @@ class TriggerEnum(IntEnum):
     TIMER = 1
     ANY_INPUT = 2
     ALL_INPUT = 3
+    INGESTION_EVENT = 4  # ingestion flow run on external notification, no timer
 
 
 class FlowDerivation(SQLModel, table=True):
@@ -110,6 +111,27 @@ class Flow(SQLModel, table=True):
 
         return self.timer_job_id
 
+    def _run_ingestion_flow(self, session: Session) -> None:
+        """Run the ingestion flow once, immediately (event-driven; no timer).
+
+        Invoked by the ``POST /data/{id}/notify`` webhook when the upstream
+        source (e.g. an S3 object) reports a change. The flow re-pulls the
+        source and its commit function records a new version.
+        """
+        GLOBUS_CLIENT.run_ingestion_flow(
+            self.id,
+            self.email,
+            user_function=self.function_id,
+            pull_function_uuid=self.pull_function_id,
+            commit_function_uuid=self.commit_function_id,
+            function_args=self.function_args,
+            user_endpoint=self.user_endpoint,
+        )
+        self.last_executed = datetime.now()
+        session.add(self)
+        session.commit()
+        session.refresh(self)
+
     def _run_flow(self, session: Session) -> int:
         # try:
         function_args = self.function_args
@@ -118,6 +140,10 @@ class Flow(SQLModel, table=True):
 
         if self.policy == TriggerEnum.INGESTION:
             self._start_ingestion_flow(session=session)
+        elif self.policy == TriggerEnum.INGESTION_EVENT:
+            # Event-driven ingestion: no timer and no run at registration. The
+            # flow runs when POST /data/{id}/notify calls _run_ingestion_flow().
+            return self.policy
         elif self.policy == TriggerEnum.TIMER:
             self._start_timer_flow(session=session)
             self.last_executed = datetime.now()

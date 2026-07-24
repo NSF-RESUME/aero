@@ -4,6 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter
 from fastapi import Depends
+from fastapi import Header
 from fastapi import HTTPException
 from fastapi import Query
 
@@ -13,10 +14,13 @@ from pydantic import Field
 from sqlmodel import select
 from sqlmodel import Session
 
+from aero.config import Config
 from aero.database import get_session
 from aero.models.data import Data
 from aero.models.data_file import DataFile
 from aero.models.data_version import DataVersion
+from aero.models.flows import Flow
+from aero.models.flows import TriggerEnum
 
 from aero import GLOBUS_CLIENT
 
@@ -96,3 +100,52 @@ def get_latest(id: UUID, session: Session = Depends(get_session)):
             status_code=404, detail="No versions exist for this data ID."
         )
     return version
+
+
+class NotifyIn(BaseModel):
+    """Optional S3 event fields, accepted for traceability. Not required for the
+    pull itself — the ingestion flow's download function re-fetches the source
+    url, and the version metadata comes from the pulled file."""
+
+    key: str | None = Field(default=None)
+    etag: str | None = Field(default=None)
+    size: int | None = Field(default=None)
+
+
+@router.post("/{id}/notify")
+# @authenticated
+def notify_update(
+    id: UUID,
+    payload: NotifyIn | None = None,
+    x_aero_token: str | None = Header(default=None),
+    session: Session = Depends(get_session),
+):
+    """Webhook: an upstream source (e.g. an S3 object) changed.
+
+    Runs the event-driven (INGESTION_EVENT) ingestion flow that produces this
+    Data. The flow re-pulls the source and its commit function records a new
+    version, which in turn triggers any dependent analysis flows.
+    """
+    if Config.WEBHOOK_SECRET is not None and x_aero_token != Config.WEBHOOK_SECRET:
+        raise HTTPException(
+            status_code=401, detail="Invalid or missing webhook token."
+        )
+
+    d = session.exec(select(Data).where(Data.id == id)).first()
+    if d is None:
+        raise HTTPException(status_code=404, detail=f"Data with id {id} not found.")
+
+    flow = session.exec(
+        select(Flow).where(
+            Flow.contributed_to.any(id=id),
+            Flow.policy == TriggerEnum.INGESTION_EVENT,
+        )
+    ).first()
+    if flow is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No event-driven ingestion flow produces data {id}.",
+        )
+
+    flow._run_ingestion_flow(session=session)
+    return {"status": "ingestion triggered", "flow_id": flow.id, "data_id": id}

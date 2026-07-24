@@ -176,6 +176,46 @@ class GlobusClient:
         job_id = UUID(response["timer"]["job_id"])
         return job_id
 
+    def run_ingestion_flow(
+        self,
+        id,
+        email: str | None,
+        user_function: str,
+        pull_function_uuid: str,
+        commit_function_uuid: str,
+        function_args,
+        user_endpoint: str,
+        **kwargs,
+    ) -> None:
+        """Run the ingestion (VERIFY_AND_MODIFY) flow once, immediately.
+
+        Uses the same run input as the timer-based ingestion path in
+        ``set_timer``, but submits it directly to the flow instead of scheduling
+        it on a Globus Timer. Used for event-driven (INGESTION_EVENT) sources.
+        """
+        flow_id = FLOW_IDS[FlowEnum.VERIFY_AND_MODIFY]
+
+        if email is None:
+            email = ""
+
+        kwargs = function_args["kwargs"]
+        run_input = {
+            "osprey-worker-endpoint": str(user_endpoint),
+            "download-function": pull_function_uuid,
+            "database-commit-function": commit_function_uuid,
+            "user-wrapper-function": user_function,
+            "kwargs": json.dumps(kwargs),
+            "author-email": email,
+            "_private_password": os.environ.get("DSAAS_EMAIL_PASSWORD"),
+        }
+
+        response = self.specific_flow_clients[flow_id].run_flow(
+            body=run_input,
+            label=f"AERO Demo | Ingestion flow {str(id)[:8]}",
+            run_managers=[],
+        )
+        assert response.http_status == 201
+
     def delete_job(self, job_id: str):
         response = self.timer_client.delete_job(job_id=job_id)
         assert response.http_status == 200, response.http_reason

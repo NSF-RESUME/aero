@@ -1,6 +1,8 @@
 # Plan: Event-driven S3 ingestion (ingestion flow that runs on notification, not a timer)
 
-> Status: **planned, not yet implemented.** Design agreed; implementation deferred.
+> Status: **implemented** (2026-07-24) on the aero `hurricane` branch (server) and
+> aero-client `fhwa` branch (client) — pending live end-to-end verification against a
+> configured server/endpoint, and the AWS-side event wiring (out of scope, see below).
 > File links are relative to this file's location (`docs/`).
 
 ## Context
