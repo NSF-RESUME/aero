@@ -29,3 +29,9 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SEARCH_INDEX = os.getenv("SEARCH_INDEX")
     WEBHOOK_SECRET = os.getenv("AERO_WEBHOOK_SECRET")
+    REQUIRE_AUTH = os.getenv("AERO_REQUIRE_AUTH", "false").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    AUTH_SCOPE = os.getenv("AERO_AUTH_SCOPE")  # overrides the derived action_all scope

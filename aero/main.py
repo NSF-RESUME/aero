@@ -23,5 +23,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(data.router)
+app.include_router(data.webhook_router)
 app.include_router(flow.router)
 app.include_router(provenance.router)

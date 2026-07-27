@@ -18,6 +18,7 @@ from sqlmodel import Session
 
 from typing import Optional
 
+from aero.auth import require_globus_auth
 from aero.database import get_session
 
 from aero.models.flows import create_flow
@@ -28,7 +29,7 @@ from aero.models.data import Data
 router = APIRouter(
     prefix="/flow",
     tags=["flow"],
-    dependencies=[],
+    dependencies=[Depends(require_globus_auth)],
     responses={404: {"description": "Not found"}},
 )
 

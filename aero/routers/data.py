@@ -14,6 +14,7 @@ from pydantic import Field
 from sqlmodel import select
 from sqlmodel import Session
 
+from aero.auth import require_globus_auth
 from aero.config import Config
 from aero.database import get_session
 from aero.models.data import Data
@@ -27,7 +28,16 @@ from aero import GLOBUS_CLIENT
 router = APIRouter(
     prefix="/data",
     tags=["data"],
-    dependencies=[],
+    dependencies=[Depends(require_globus_auth)],
+    responses={404: {"description": "Not found"}},
+)
+
+# Webhook routes use the shared-secret (X-Aero-Token) scheme instead of a Globus
+# user token — the caller is an automated S3 event pipeline, not a Globus user —
+# so they live on a separate router without the Globus auth dependency.
+webhook_router = APIRouter(
+    prefix="/data",
+    tags=["webhook"],
     responses={404: {"description": "Not found"}},
 )
 
@@ -112,8 +122,7 @@ class NotifyIn(BaseModel):
     size: int | None = Field(default=None)
 
 
-@router.post("/{id}/notify")
-# @authenticated
+@webhook_router.post("/{id}/notify")
 def notify_update(
     id: UUID,
     payload: NotifyIn | None = None,
