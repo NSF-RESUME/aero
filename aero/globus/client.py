@@ -1,3 +1,4 @@
+import copy
 import datetime
 import json
 import os
@@ -185,6 +186,7 @@ class GlobusClient:
         commit_function_uuid: str,
         function_args,
         user_endpoint: str,
+        source_url: str | None = None,
         **kwargs,
     ) -> None:
         """Run the ingestion (VERIFY_AND_MODIFY) flow once, immediately.
@@ -192,13 +194,19 @@ class GlobusClient:
         Uses the same run input as the timer-based ingestion path in
         ``set_timer``, but submits it directly to the flow instead of scheduling
         it on a Globus Timer. Used for event-driven (INGESTION_EVENT) sources.
+
+        ``source_url``, when given, overrides the source url for this run only
+        (e.g. a MinIO presigned URL). It is injected into a deep copy of the run
+        kwargs so it is never persisted onto the stored ``Flow.function_args``.
         """
         flow_id = FLOW_IDS[FlowEnum.VERIFY_AND_MODIFY]
 
         if email is None:
             email = ""
 
-        kwargs = function_args["kwargs"]
+        kwargs = copy.deepcopy(function_args["kwargs"])
+        if source_url:
+            kwargs.setdefault("aero", {})["source_url"] = source_url
         run_input = {
             "osprey-worker-endpoint": str(user_endpoint),
             "download-function": pull_function_uuid,
