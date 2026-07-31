@@ -111,12 +111,17 @@ class Flow(SQLModel, table=True):
 
         return self.timer_job_id
 
-    def _run_ingestion_flow(self, session: Session) -> None:
+    def _run_ingestion_flow(
+        self, session: Session, source_url: str | None = None
+    ) -> None:
         """Run the ingestion flow once, immediately (event-driven; no timer).
 
         Invoked by the ``POST /data/{id}/notify`` webhook when the upstream
         source (e.g. an S3 object) reports a change. The flow re-pulls the
         source and its commit function records a new version.
+
+        ``source_url`` overrides the registered source url for this run only
+        (e.g. a MinIO presigned URL from the notify); it is never persisted.
         """
         GLOBUS_CLIENT.run_ingestion_flow(
             self.id,
@@ -126,6 +131,7 @@ class Flow(SQLModel, table=True):
             commit_function_uuid=self.commit_function_id,
             function_args=self.function_args,
             user_endpoint=self.user_endpoint,
+            source_url=source_url,
         )
         self.last_executed = datetime.now()
         session.add(self)

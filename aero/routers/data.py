@@ -117,6 +117,7 @@ class NotifyIn(BaseModel):
     pull itself — the ingestion flow's download function re-fetches the source
     url, and the version metadata comes from the pulled file."""
 
+    url: str | None = Field(default=None)  # per-run source url (e.g. MinIO presigned)
     key: str | None = Field(default=None)
     etag: str | None = Field(default=None)
     size: int | None = Field(default=None)
@@ -156,5 +157,6 @@ def notify_update(
             detail=f"No event-driven ingestion flow produces data {id}.",
         )
 
-    flow._run_ingestion_flow(session=session)
+    source_url = payload.url if payload else None
+    flow._run_ingestion_flow(session=session, source_url=source_url)
     return {"status": "ingestion triggered", "flow_id": flow.id, "data_id": id}
