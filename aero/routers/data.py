@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional
+from urllib.parse import urlparse
 from uuid import UUID
 
 from fastapi import APIRouter
@@ -123,6 +124,84 @@ class NotifyIn(BaseModel):
     size: int | None = Field(default=None)
 
 
+class NotifyByObjectIn(BaseModel):
+    """Notify keyed by object identity instead of Data UUID.
+
+    ``file_id`` is the object's *stable* identity — a full object URL or a bare
+    ``bucket/key`` — used to resolve the Data record. ``url`` is the transient
+    per-run source (e.g. a MinIO presigned GET) used only for this run's pull."""
+
+    file_id: str = Field()  # object identity: full URL or bare "bucket/key"
+    url: str | None = Field(default=None)  # per-run source url (e.g. presigned)
+    key: str | None = Field(default=None)
+    etag: str | None = Field(default=None)
+    size: int | None = Field(default=None)
+
+
+def _normalize_object_key(value: str) -> str:
+    """Reduce an object URL (or bare ``bucket/key``) to a stable ``bucket/key``.
+
+    Drops scheme, host, port, and query string so that a presigned URL, a plain
+    object URL, and a bare ``bucket/key`` for the same object all compare equal:
+
+        http://localhost:9000/traffic/report.xml.gz?X-Amz-Signature=... ->
+        http://127.0.0.1:9000/traffic/report.xml.gz                     ->
+        traffic/report.xml.gz                                           ->
+            "traffic/report.xml.gz"
+    """
+    parsed = urlparse(value)
+    # A scheme (http/https/s3/...) means host+path form; else treat as bucket/key.
+    path = parsed.path if parsed.scheme else value
+    return path.strip("/")
+
+
+def _normalize_full_url(value: str) -> str:
+    """Reduce a URL to ``host:port/path`` for disambiguating same-key sources.
+
+    Keeps the netloc (host+port) that ``_normalize_object_key`` discards, so two
+    sources sharing a ``bucket/key`` on different hosts can be told apart. Scheme
+    and query are still dropped, so an ``http`` vs ``https`` or presigned-vs-plain
+    URL for the same object still compares equal. A bare ``bucket/key`` (no host)
+    normalizes to just the key, which won't match a host-qualified registered url.
+    """
+    parsed = urlparse(value)
+    if parsed.scheme:
+        return f"{parsed.netloc}{parsed.path}".strip("/")
+    return value.strip("/")
+
+
+def _require_webhook_token(x_aero_token: str | None) -> None:
+    """Guard webhook routes with the shared secret when one is configured."""
+    if Config.WEBHOOK_SECRET is not None and x_aero_token != Config.WEBHOOK_SECRET:
+        raise HTTPException(
+            status_code=401, detail="Invalid or missing webhook token."
+        )
+
+
+def _run_event_ingestion(session: Session, data: Data, source_url: str | None) -> dict:
+    """Trigger the event-driven ingestion flow that produces ``data``.
+
+    Looks up the ``INGESTION_EVENT`` flow contributing to this Data and runs it
+    once (immediately, no timer). ``source_url`` overrides the registered source
+    url for this run only (e.g. a MinIO presigned URL). Raises 404 if no such
+    flow exists.
+    """
+    flow = session.exec(
+        select(Flow).where(
+            Flow.contributed_to.any(id=data.id),
+            Flow.policy == TriggerEnum.INGESTION_EVENT,
+        )
+    ).first()
+    if flow is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No event-driven ingestion flow produces data {data.id}.",
+        )
+
+    flow._run_ingestion_flow(session=session, source_url=source_url)
+    return {"status": "ingestion triggered", "flow_id": flow.id, "data_id": data.id}
+
+
 @webhook_router.post("/{id}/notify")
 def notify_update(
     id: UUID,
@@ -136,27 +215,54 @@ def notify_update(
     Data. The flow re-pulls the source and its commit function records a new
     version, which in turn triggers any dependent analysis flows.
     """
-    if Config.WEBHOOK_SECRET is not None and x_aero_token != Config.WEBHOOK_SECRET:
-        raise HTTPException(
-            status_code=401, detail="Invalid or missing webhook token."
-        )
+    _require_webhook_token(x_aero_token)
 
     d = session.exec(select(Data).where(Data.id == id)).first()
     if d is None:
         raise HTTPException(status_code=404, detail=f"Data with id {id} not found.")
 
-    flow = session.exec(
-        select(Flow).where(
-            Flow.contributed_to.any(id=id),
-            Flow.policy == TriggerEnum.INGESTION_EVENT,
-        )
-    ).first()
-    if flow is None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"No event-driven ingestion flow produces data {id}.",
-        )
-
     source_url = payload.url if payload else None
-    flow._run_ingestion_flow(session=session, source_url=source_url)
-    return {"status": "ingestion triggered", "flow_id": flow.id, "data_id": id}
+    return _run_event_ingestion(session=session, data=d, source_url=source_url)
+
+
+@webhook_router.post("/notify")
+def notify_by_object(
+    payload: NotifyByObjectIn,
+    x_aero_token: str | None = Header(default=None),
+    session: Session = Depends(get_session),
+):
+    """Webhook: notify by object identity (``file_id``) instead of Data UUID.
+
+    Resolves the Data record whose registered ``url`` normalizes to the same
+    ``bucket/key`` as ``file_id``, then runs its event-driven ingestion flow.
+    Lets an S3/MinIO event pipeline trigger ingestion knowing only the object
+    it changed — not AERO's internal UUID.
+    """
+    _require_webhook_token(x_aero_token)
+
+    target = _normalize_object_key(payload.file_id)
+    candidates = session.exec(select(Data).where(Data.url != None)).all()
+    matches = [d for d in candidates if _normalize_object_key(d.url) == target]
+
+    if not matches:
+        raise HTTPException(
+            status_code=404, detail=f"No source matches file_id '{payload.file_id}'."
+        )
+    if len(matches) > 1:
+        # Same bucket/key on multiple sources: break the tie on host+port+path.
+        # If that doesn't resolve to exactly one (bare key, or unknown host), 409.
+        full_target = _normalize_full_url(payload.file_id)
+        refined = [d for d in matches if _normalize_full_url(d.url) == full_target]
+        if len(refined) != 1:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Ambiguous file_id '{payload.file_id}': {len(matches)} sources "
+                    "share this key and it could not be resolved by full URL."
+                ),
+            )
+        matches = refined
+
+    return _run_event_ingestion(
+        session=session, data=matches[0], source_url=payload.url
+    )

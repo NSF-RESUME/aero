@@ -13,7 +13,7 @@ from globus_sdk import AuthClient
 from globus_sdk import SearchClient
 from globus_sdk import SearchAPIError
 from globus_sdk import SpecificFlowClient
-from globus_sdk import TimerClient
+from globus_sdk import TimersClient
 
 
 @pytest.fixture(name="globus_mock", autouse=True)
@@ -73,7 +73,7 @@ def _mock_globus(monkeypatch):
         MockSpecificFlowClient.run_flow,
     )
 
-    monkeypatch.setattr(TimerClient, "create_job", create_job)
+    monkeypatch.setattr(TimersClient, "create_job", create_job)
     yield
 
 
