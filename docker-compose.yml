@@ -42,7 +42,7 @@ services:
     volumes:
       - /etc/pki/tls/private:/keys
       - /etc/pki/tls/certs:/certs
-      - ${AERO_APP_CONF:-./nginx/aero-app.conf}:/etc/nginx/conf.d/aero-app.conf
+      - ${AERO_APP_CONF:-./nginx/aero-app.conf}:/etc/nginx/conf.d/default.conf
 
     depends_on:
       - web
