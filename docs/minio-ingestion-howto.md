@@ -7,6 +7,9 @@ Globus guest collection (raw passthrough); downstream analysis flows read it fro
 Prereqs (see also `minio-presigned-ingestion-plan.md`):
 - The **Globus Compute endpoint** (not the AERO server) must be able to reach the MinIO host —
   it performs the HTTPS GET. Self-signed MinIO cert ⇒ install a CA bundle on the endpoint.
+- The endpoint's `user_environment.yaml` must set `AERO_PROFILE` (and `AERO_CONFIG_FILE` if
+  non-default) to the profile the source was registered against — the jobs resolve `aero_client`
+  config on the *worker*, not the launching client. See aero-client `DEV.md` → Config profiles.
 - A Globus guest collection (`collection_uuid` + `collection_url`) the endpoint can write to.
 - Client configured to talk to your server (profile `server = https://<host>/<prefix>` — e.g.
   `.../osprey-proto`). If `AERO_REQUIRE_AUTH=1` on the server, the client login supplies the
