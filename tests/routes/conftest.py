@@ -107,5 +107,5 @@ def prov_fixture(session: Session, data, noversion_data, flow):
 
 @pytest.fixture(scope="session", autouse=True)
 def _mock_auth():
-    with mock.patch("aero.auth.is_token_valid", return_value=True) as _:
+    with mock.patch("aero.auth._token_is_valid", return_value=True) as _:
         yield
