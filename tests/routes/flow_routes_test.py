@@ -96,3 +96,51 @@ def test_register_flow(client, data, noversion_data, flow):
     response = client.post(f"{ROUTE}/register", json=flow_data, headers=headers)
     response_data = response.json()
     assert response.status_code == 501
+
+
+def test_register_sources_share_function_distinct_outputs(client):
+    """Different sources sharing one staging function must both register.
+
+    Regression: two INGESTION_EVENT sources have the same function and empty
+    input_data/flow_kwargs, differing only in output_data (url/name). The
+    arg_hash used to exclude output_data, so the second registration falsely
+    returned 501 "Flow already exists".
+    """
+    stage_fn = str(uuid4())
+    pull_fn = str(uuid4())
+    commit_fn = str(uuid4())
+    headers = {"Content-Type": "application/json"}
+
+    def source_payload(name, url, collection_uuid):
+        return {
+            "input_data": {},
+            "output_data": {
+                name: {
+                    "url": url,
+                    "collection_uuid": collection_uuid,
+                    "collection_url": "https://g.data.globus.org/",
+                }
+            },
+            "gc_endpoint": str(uuid4()),
+            "function_uuid": stage_fn,
+            "commit_function_uuid": commit_fn,
+            "pull_function_uuid": pull_fn,
+            "description": "",
+            "flow_kwargs": {},
+            "rule": models.flows.TriggerEnum.INGESTION_EVENT,
+        }
+
+    coll = str(uuid4())
+    payload_a = source_payload("src-a", "http://minio:9000/bucket/a.csv", coll)
+
+    r1 = client.post(f"{ROUTE}/register", json=payload_a, headers=headers)
+    assert r1.status_code == 200, r1.json()
+
+    # different source (name + url), SAME staging function -> must succeed
+    payload_b = source_payload("src-b", "http://minio:9000/bucket/b.csv", str(uuid4()))
+    r2 = client.post(f"{ROUTE}/register", json=payload_b, headers=headers)
+    assert r2.status_code == 200, r2.json()
+
+    # an identical source is still deduped
+    r_dup = client.post(f"{ROUTE}/register", json=payload_a, headers=headers)
+    assert r_dup.status_code == 501, r_dup.json()

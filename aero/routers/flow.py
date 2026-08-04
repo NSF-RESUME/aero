@@ -111,12 +111,19 @@ def register(fi: FlowIn, session: Session = Depends(get_session)):
         select(Function).where(Function.id == fi.commit_function_uuid)
     ).first()
 
+    # The dedup hash must include output_data: two sources can share a function
+    # and have identical (often empty) input_data/flow_kwargs yet be distinct
+    # flows differing only by their output (e.g. INGESTION_EVENT sources with
+    # different urls, all using the shared `stage` function). Hashing only
+    # input_data/flow_kwargs would falsely collide them ("Flow already exists").
     all_args = deepcopy(fi.flow_kwargs)
     if isinstance(all_args, list):
         for aargs in all_args:
             aargs["input_data"] = fi.input_data
+            aargs["output_data"] = fi.output_data
     else:
         all_args["input_data"] = fi.input_data
+        all_args["output_data"] = fi.output_data
 
     arg_hash = hashlib.md5(
         json.dumps(all_args, sort_keys=True).encode("utf-8")
