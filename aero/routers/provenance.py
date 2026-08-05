@@ -65,6 +65,17 @@ def add_record(pr: ProvRecord, session: Session = Depends(get_session)):
             for i in pr.input_data.values()
         ]
         # create new versions for output data
+        #
+        # Stamp created_at on the server rather than trusting the worker's
+        # value: the worker sends datetime.now().ctime() in its *local*
+        # timezone (naive, second-truncated), while Flow.last_executed is the
+        # server's datetime.now(). The ANY/ALL rerun gate compares
+        # version.created_at > flow.last_executed as naive datetimes, so a
+        # worker/server timezone gap (e.g. EDT worker vs UTC server) makes
+        # every new version look hours older than last_executed and the flow
+        # never reruns. Using one clock (the server's) for both keeps the
+        # comparison correct regardless of where the worker runs.
+        committed_at = datetime.now()
         output_versions = []
         for o in pr.output_data.values():
             d = session.exec(select(Data).where(Data.id == UUID(o["id"]))).first()
@@ -74,7 +85,7 @@ def add_record(pr: ProvRecord, session: Session = Depends(get_session)):
                 format=o["file_format"],
                 checksum=o["checksum"],
                 size=o["size"],
-                created_at=datetime.strptime(o["created_at"], "%c"),
+                created_at=committed_at,
                 encoding=o.get("encoding", "utf-8"),
             )
 
