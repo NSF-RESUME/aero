@@ -7,6 +7,9 @@ import pytest
 
 from sqlmodel import select
 
+import aero.models.data
+import aero.models.function
+
 from aero.models.data import Data
 
 
@@ -305,3 +308,52 @@ def spy_fixture(monkeypatch):
     monkeypatch.setattr(data_router, "_run_event_ingestion", _wrapped)
     _wrapped.calls = calls
     return _wrapped
+
+
+def test_first_notify_runs_the_analysis(client, session, monkeypatch):
+    """The registration-time skip must not swallow the first real trigger.
+
+    Regression: the skip was keyed on `last_executed is None`, but skipping is
+    exactly what leaves it None — so every later notify matched too and a
+    no-copy analysis could never run at all.
+    """
+    import aero.models.flows as flows_model
+
+    runs = []
+    monkeypatch.setattr(
+        flows_model.GLOBUS_CLIENT, "run_flow", lambda **kw: runs.append(kw)
+    )
+
+    source = _create_typed_source(client)
+
+    # an ANY analysis reading the no-copy source
+    out = aero.models.data.create_data(
+        session=session, name="summary", url=None,
+        collection_url="https://globus.org/test", collection_uuid=uuid4(),
+        description="",
+    )
+    src = session.exec(select(Data).where(Data.id == UUID(source["id"]))).first()
+    flow = flows_model.create_flow(
+        session=session,
+        derived_from=[src],
+        contributed_to=[out],
+        endpoint=uuid4(),
+        function_id=aero.models.function.create_function(session=session, uuid=uuid4()).id,
+        pull_function_id=aero.models.function.create_function(session=session, uuid=uuid4()).id,
+        commit_function_id=aero.models.function.create_function(session=session, uuid=uuid4()).id,
+        policy=flows_model.TriggerEnum.ANY_INPUT,
+        # create_flow wraps this into {"kwargs": ..., "function": ..., "endpoint": ...}
+        function_args={
+            "aero": {"input_data": {"report": {"id": source["id"], "version": None}}}
+        },
+    )
+
+    assert runs == [], "registration must not run a no-copy analysis"
+    assert flow.last_executed is None
+
+    client.post(NOTIFY, json={"file_id": URL_A, "etag": "aaa", "size": 1})
+
+    assert len(runs) == 1, "the first notify must run the analysis"
+    entry = runs[0]["tasks"]["kwargs"]["aero"]["input_data"]["report"]
+    assert runs[0]["trigger_url"] == URL_A
+    assert entry["id"] == source["id"]

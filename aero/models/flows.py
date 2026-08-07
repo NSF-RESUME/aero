@@ -174,6 +174,7 @@ class Flow(SQLModel, table=True):
         trigger_url: str | None = None,
         signed_url: str | None = None,
         source_data_id: UUID | None = None,
+        at_registration: bool = False,
     ) -> int:
         # try:
         function_args = self.function_args
@@ -190,12 +191,14 @@ class Flow(SQLModel, table=True):
             self._start_timer_flow(session=session)
             self.last_executed = datetime.now()
         elif self.policy in (TriggerEnum.ANY_INPUT, TriggerEnum.ALL_INPUT):
-            if self.last_executed is None and any(
-                s.no_copy for s in self.derived_from
-            ):
+            if at_registration and any(s.no_copy for s in self.derived_from):
                 # Registration-time run against a no-copy input: there is no notify
                 # in flight, so no signed url exists and a private object can't be
                 # read. These flows are event-driven — let the first notify run it.
+                #
+                # This has to be an explicit flag, not `last_executed is None`:
+                # skipping the run leaves last_executed None, so inferring it would
+                # match every later notify too and the flow would never run at all.
                 return self.policy
 
             if self._has_new_input(require_all=self.policy == TriggerEnum.ALL_INPUT):
@@ -286,6 +289,6 @@ def create_flow(
     session.commit()
     session.refresh(f)
 
-    f._run_flow(session=session)
+    f._run_flow(session=session, at_registration=True)
 
     return f
