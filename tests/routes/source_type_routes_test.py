@@ -1,0 +1,308 @@
+"""Typed notification sources: many urls -> one type -> one Data UUID."""
+
+from uuid import UUID
+from uuid import uuid4
+
+import pytest
+
+from sqlmodel import select
+
+from aero.models.data import Data
+from aero.models.source_type import SourceType
+
+
+TYPES = "/data/types"
+SOURCE = "/data/source"
+NOTIFY = "/data/notify"
+
+URL_A = "http://127.0.0.1:9000/traffic/a.xml.gz"
+URL_B = "http://127.0.0.1:9000/traffic/b.xml.gz"
+
+
+def _create_typed_source(client, name="traffic", url=URL_A, no_copy=True):
+    resp = client.post(
+        SOURCE,
+        json={"name": name, "url": url, "type": name, "no_copy": no_copy},
+    )
+    assert resp.status_code == 200, resp.text
+    return resp.json()
+
+
+def test_create_typed_no_copy_source(client, session):
+    body = _create_typed_source(client)
+
+    assert body["no_copy"] is True
+    assert body["url"] == URL_A
+
+    d = session.exec(select(Data).where(Data.id == UUID(body["id"]))).first()
+    assert d.source_type is not None
+    assert d.source_type.name == "traffic"
+    assert [u.object_key for u in d.source_type.urls] == ["traffic/a.xml.gz"]
+
+
+def test_second_url_reuses_the_same_data_uuid(client):
+    body = _create_typed_source(client)
+
+    resp = client.post(f"{TYPES}/traffic/urls", json={"url": URL_B})
+    assert resp.status_code == 200, resp.text
+
+    out = resp.json()
+    # The whole point: another url, same Data UUID, so analysis flows registered
+    # against it now fire for this object too.
+    assert out["data_id"] == body["id"]
+    assert sorted(u["object_key"] for u in out["urls"]) == [
+        "traffic/a.xml.gz",
+        "traffic/b.xml.gz",
+    ]
+
+
+def test_duplicate_object_key_across_types_is_rejected(client):
+    _create_typed_source(client, name="traffic", url=URL_A)
+    _create_typed_source(client, name="other", url=URL_B)
+
+    # a.xml.gz already belongs to 'traffic'
+    resp = client.post(f"{TYPES}/other/urls", json={"url": URL_A})
+    assert resp.status_code == 409, resp.text
+    assert "traffic" in resp.json()["detail"]
+
+
+def test_re_registering_the_same_url_is_idempotent(client):
+    _create_typed_source(client)
+    resp = client.post(f"{TYPES}/traffic/urls", json={"url": URL_A})
+    assert resp.status_code == 200, resp.text
+    assert len(resp.json()["urls"]) == 1
+
+
+def test_list_and_get_types(client):
+    _create_typed_source(client)
+
+    resp = client.get(TYPES)
+    assert resp.status_code == 200, resp.text
+    assert [t["name"] for t in resp.json()] == ["traffic"]
+
+    resp = client.get(f"{TYPES}/traffic")
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["no_copy"] is True
+
+    assert client.get(f"{TYPES}/nope").status_code == 404
+
+
+def test_types_route_is_not_shadowed_by_the_uuid_route(client):
+    """/data/types must be declared before /data/{id}, or it 422s as a bad UUID."""
+    assert client.get(TYPES).status_code == 200
+
+
+def test_create_type_twice_conflicts(client):
+    _create_typed_source(client)
+    resp = client.post(
+        SOURCE,
+        json={"name": "traffic", "url": URL_B, "type": "traffic", "no_copy": True},
+    )
+    assert resp.status_code == 409, resp.text
+
+
+# --------------------------------------------------------------------------
+# notify
+# --------------------------------------------------------------------------
+
+
+def test_notify_resolves_presigned_url_to_registered_key(client, session):
+    body = _create_typed_source(client)
+    presigned = f"{URL_A}?X-Amz-Signature=abc&X-Amz-Expires=3600"
+
+    resp = client.post(
+        NOTIFY,
+        json={"file_id": presigned, "url": presigned, "etag": "aaa", "size": 10},
+    )
+
+    assert resp.status_code == 200, resp.text
+    out = resp.json()
+    assert out["status"] == "version created"
+    assert out["data_id"] == body["id"]
+    assert out["source_key"] == "traffic/a.xml.gz"
+
+    d = session.exec(select(Data).where(Data.id == UUID(body["id"]))).first()
+    version = d.last_version()
+    assert version.checksum == "aaa"
+    assert version.source_key == "traffic/a.xml.gz"
+    # no-copy: the version records the object key, nothing was staged to a collection
+    assert version.data_file.file_name == "traffic/a.xml.gz"
+    assert d.collection_url is None
+
+
+def test_notify_unregistered_url_404s(client):
+    _create_typed_source(client)
+
+    resp = client.post(
+        NOTIFY,
+        json={"file_id": "traffic/never-registered.xml.gz", "etag": "zzz"},
+    )
+    assert resp.status_code == 404, resp.text
+
+
+def test_two_urls_feed_one_data(client, session):
+    body = _create_typed_source(client)
+    client.post(f"{TYPES}/traffic/urls", json={"url": URL_B})
+
+    client.post(NOTIFY, json={"file_id": URL_A, "etag": "aaa", "size": 1})
+    client.post(NOTIFY, json={"file_id": URL_B, "etag": "bbb", "size": 2})
+
+    d = session.exec(select(Data).where(Data.id == UUID(body["id"]))).first()
+    assert len(d.versions) == 2
+    assert sorted(v.source_key for v in d.versions) == [
+        "traffic/a.xml.gz",
+        "traffic/b.xml.gz",
+    ]
+
+
+def test_dedup_is_per_url(client, session):
+    """A,B,A with A unchanged makes no third version.
+
+    Comparing against the tail of the version list (the old behavior) would see
+    B's checksum and wrongly treat the repeat of A as a change.
+    """
+    body = _create_typed_source(client)
+    client.post(f"{TYPES}/traffic/urls", json={"url": URL_B})
+
+    client.post(NOTIFY, json={"file_id": URL_A, "etag": "aaa", "size": 1})
+    client.post(NOTIFY, json={"file_id": URL_B, "etag": "bbb", "size": 2})
+    resp = client.post(NOTIFY, json={"file_id": URL_A, "etag": "aaa", "size": 1})
+
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["status"] == "unchanged"
+
+    d = session.exec(select(Data).where(Data.id == UUID(body["id"]))).first()
+    assert len(d.versions) == 2
+
+
+def test_dedup_false_forces_a_version(client, session):
+    body = _create_typed_source(client)
+
+    client.post(NOTIFY, json={"file_id": URL_A, "etag": "aaa", "size": 1})
+    resp = client.post(
+        NOTIFY, json={"file_id": URL_A, "etag": "aaa", "size": 1, "dedup": False}
+    )
+
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["status"] == "version created"
+
+    d = session.exec(select(Data).where(Data.id == UUID(body["id"]))).first()
+    assert len(d.versions) == 2
+
+
+def test_a_real_change_to_the_same_url_versions(client, session):
+    body = _create_typed_source(client)
+
+    client.post(NOTIFY, json={"file_id": URL_A, "etag": "aaa", "size": 1})
+    client.post(NOTIFY, json={"file_id": URL_A, "etag": "ccc", "size": 3})
+
+    d = session.exec(select(Data).where(Data.id == UUID(body["id"]))).first()
+    assert len(d.versions) == 2
+    assert [v.version for v in sorted(d.versions, key=lambda v: v.version)] == [1, 2]
+
+
+def test_no_copy_notify_without_an_etag_is_rejected(client):
+    _create_typed_source(client)
+
+    # unreachable host, so the HEAD fallback can't supply one either
+    resp = client.post(NOTIFY, json={"file_id": URL_A})
+    assert resp.status_code == 400, resp.text
+    assert "etag" in resp.json()["detail"]
+
+
+def test_quoted_etag_is_unwrapped(client, session):
+    """S3 returns ETags wrapped in quotes; dedup must not see \"x\" != x."""
+    body = _create_typed_source(client)
+
+    client.post(NOTIFY, json={"file_id": URL_A, "etag": '"aaa"', "size": 1})
+    resp = client.post(NOTIFY, json={"file_id": URL_A, "etag": "aaa", "size": 1})
+
+    assert resp.json()["status"] == "unchanged"
+    d = session.exec(select(Data).where(Data.id == UUID(body["id"]))).first()
+    assert len(d.versions) == 1
+
+
+def test_notify_by_id_requires_a_registered_url_for_typed_data(client):
+    body = _create_typed_source(client)
+    data_id = body["id"]
+
+    ok = client.post(
+        f"/data/{data_id}/notify", json={"key": "traffic/a.xml.gz", "etag": "aaa"}
+    )
+    assert ok.status_code == 200, ok.text
+
+    bad = client.post(
+        f"/data/{data_id}/notify", json={"key": "traffic/nope.xml.gz", "etag": "x"}
+    )
+    assert bad.status_code == 404, bad.text
+
+    # several urls could have fired; the payload has to say which
+    client.post(f"{TYPES}/traffic/urls", json={"url": URL_B})
+    vague = client.post(f"/data/{data_id}/notify", json={"etag": "x"})
+    assert vague.status_code == 400, vague.text
+
+
+def test_untyped_sources_are_untouched(client, session, spy):
+    """The legacy Data.url scan still resolves sources that have no type."""
+    import aero.models.data
+
+    d = aero.models.data.create_data(
+        session=session,
+        name="legacy",
+        url="http://127.0.0.1:9000/old-bucket/legacy.csv",
+        collection_url="https://globus.org/test",
+        collection_uuid=uuid4(),
+        description="",
+    )
+
+    resp = client.post(NOTIFY, json={"file_id": "old-bucket/legacy.csv"})
+
+    assert resp.status_code == 200, resp.text
+    assert spy.calls[0]["data"].id == d.id
+
+
+def test_typed_data_is_skipped_by_the_legacy_scan(client, session):
+    """A typed source resolves via sourceurl, so it can't also match on Data.url."""
+    body = _create_typed_source(client)
+
+    resp = client.post(NOTIFY, json={"file_id": URL_A, "etag": "aaa", "size": 1})
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["data_id"] == body["id"]
+
+
+# --------------------------------------------------------------------------
+# /latest carries what a no-copy pull needs (§7b)
+# --------------------------------------------------------------------------
+
+
+def test_latest_resolves_trigger_url_for_a_no_copy_version(client):
+    body = _create_typed_source(client)
+    client.post(NOTIFY, json={"file_id": URL_A, "etag": "aaa", "size": 1})
+
+    resp = client.get(f"/data/{body['id']}/latest")
+    assert resp.status_code == 200, resp.text
+
+    out = resp.json()
+    assert out["no_copy"] is True
+    assert out["source_key"] == "traffic/a.xml.gz"
+    # An analysis run that this object did not trigger can still locate it.
+    assert out["trigger_url"] == URL_A
+
+
+@pytest.fixture(name="spy")
+def spy_fixture(monkeypatch):
+    """Stub the copy-path ingestion so untyped tests don't need a real flow."""
+    import aero.routers.data as data_router
+
+    calls = []
+    real = data_router._run_event_ingestion
+
+    def _wrapped(session, data, *args, **kwargs):
+        calls.append({"data": data, "args": args, "kwargs": kwargs})
+        if data.no_copy:
+            return real(session, data, *args, **kwargs)
+        return {"status": "ingestion triggered", "data_id": data.id}
+
+    monkeypatch.setattr(data_router, "_run_event_ingestion", _wrapped)
+    _wrapped.calls = calls
+    return _wrapped

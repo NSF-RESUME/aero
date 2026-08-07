@@ -24,6 +24,9 @@ class DataVersion(SQLModel, table=True):
     version: int | None = Field(default=None, index=True)
     checksum: str | None = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.now)
+    # Normalized object key this version came from. NULL for versions that predate
+    # typed sources, which keeps their dedup on the old tail-comparison path.
+    source_key: str | None = Field(default=None, index=True)
     data_id: Optional[UUID] = Field(
         default=None, foreign_key="data.id", primary_key=True
     )  # Column(Uuid, db.ForeignKey("data.id"))
@@ -60,12 +63,23 @@ class DataVersion(SQLModel, table=True):
                         if self.created_at is not None
                         else None
                     ),
-                    "url": f"{self.data.collection_url}/{self.data_file.file_name}",
+                    "url": self._entry_url(),
                 },
             },
         }
 
         return entry
+
+    def _entry_url(self) -> str | None:
+        """Where the bytes for this version live.
+
+        A no-copy version has no collection and no stored file, so fall back to the
+        object it references. Guarding data_file also fixes an AttributeError for any
+        version created without one (e.g. via ``create_dataversion``).
+        """
+        if self.data.collection_url and self.data_file is not None:
+            return f"{self.data.collection_url}/{self.data_file.file_name}"
+        return self.source_key or self.data.url
 
 
 def create_dataversion(

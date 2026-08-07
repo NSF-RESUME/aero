@@ -25,6 +25,8 @@ from aero.models.flows import create_flow
 from aero.models.flows import Flow
 from aero.models.function import Function
 from aero.models.data import Data
+from aero.models.source_type import SourceType
+from aero.routers.data import create_source_type
 
 router = APIRouter(
     prefix="/flow",
@@ -154,6 +156,7 @@ def register(fi: FlowIn, session: Session = Depends(get_session)):
 
     if fl is None:  # flow does not already exist, so we can go ahead and register it
         contributed_to = []
+        new_types = []
 
         for name, md in fi.output_data.items():
             if "url" in md:
@@ -173,6 +176,25 @@ def register(fi: FlowIn, session: Session = Depends(get_session)):
             md["id"] = str(o.id)
             md["collection_url"] = o.collection_url
             md["collection_uuid"] = str(o.collection_uuid)
+
+            # A copy-mode source can still be typed: the Data is born here, so bind
+            # the type to it once the flow (and with it the Data) is committed. The
+            # key is popped so it never reaches the worker kwargs.
+            type_name = md.pop("type", None)
+            if type_name:
+                existing = session.exec(
+                    select(SourceType).where(SourceType.name == type_name)
+                ).first()
+                if existing is not None:
+                    raise HTTPException(
+                        status_code=409,
+                        detail=(
+                            f"Source type '{type_name}' already exists (data "
+                            f"{existing.data_id}). Add a url to it instead of "
+                            "registering another flow."
+                        ),
+                    )
+                new_types.append((type_name, o, url))
 
         derived_from = []
 
@@ -220,6 +242,12 @@ def register(fi: FlowIn, session: Session = Depends(get_session)):
             email=fi.email,
             arg_hash=arg_hash,
         )
+
+        # After create_flow, the output Data rows are persisted and can be bound to.
+        for type_name, data_obj, url in new_types:
+            create_source_type(
+                session=session, name=type_name, data=data_obj, url=url
+            )
     else:
         raise HTTPException(status_code=501, detail="Flow already exists")
 
