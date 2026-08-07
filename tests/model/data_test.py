@@ -72,7 +72,7 @@ def test_add_new_version_dedups_per_source_key(session: Session, data):
     A, B, then A-unchanged: comparing against the last version would see B's
     checksum and record a spurious third version.
     """
-    common = dict(session=session, format="gz", size=1)
+    common = {"session": session, "format": "gz", "size": 1}
 
     data.add_new_version(
         new_file="traffic/a.gz", checksum="aaa", source_key="traffic/a.gz", **common
@@ -96,7 +96,12 @@ def test_add_new_version_dedups_per_source_key(session: Session, data):
 
 
 def test_add_new_version_dedup_false_always_versions(session: Session, data):
-    common = dict(session=session, format="gz", size=1, source_key="traffic/a.gz")
+    common = {
+        "session": session,
+        "format": "gz",
+        "size": 1,
+        "source_key": "traffic/a.gz",
+    }
 
     data.add_new_version(new_file="traffic/a.gz", checksum="aaa", **common)
     data.add_new_version(new_file="traffic/a.gz", checksum="aaa", dedup=False, **common)

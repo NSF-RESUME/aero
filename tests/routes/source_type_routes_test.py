@@ -8,7 +8,6 @@ import pytest
 from sqlmodel import select
 
 from aero.models.data import Data
-from aero.models.source_type import SourceType
 
 
 TYPES = "/data/types"

@@ -19,7 +19,6 @@ from aero.models.data_file import DataFile
 from aero.models.flows import Flow
 
 from aero.models.source_type import SourceType
-from aero.models.source_type import SourceUrl
 
 from aero import GLOBUS_CLIENT
 
