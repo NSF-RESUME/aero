@@ -144,3 +144,55 @@ def test_register_sources_share_function_distinct_outputs(client):
     # an identical source is still deduped
     r_dup = client.post(f"{ROUTE}/register", json=payload_a, headers=headers)
     assert r_dup.status_code == 501, r_dup.json()
+
+
+def test_register_analysis_against_a_no_copy_source(client, noversion_data):
+    """Registering an ANY analysis whose input is a no-copy source returns 200.
+
+    Regression: the no-copy guard in _run_flow reads self.derived_from, which
+    loads the relationship into the instance __dict__ and then returns early,
+    skipping the refresh that would expire it. dict(fl) at serialization time
+    therefore carried derived_from, colliding with the one passed explicitly:
+    "FlowOut() got multiple values for keyword argument 'derived_from'".
+    """
+    source = client.post(
+        "/data/source",
+        json={
+            "name": "traffic",
+            "url": "http://127.0.0.1:9000/traffic/a.xml.gz",
+            "type": "traffic",
+            "no_copy": True,
+        },
+    ).json()
+    client.post(
+        "/data/notify",
+        json={"file_id": "traffic/a.xml.gz", "etag": "aaa", "size": 1},
+    )
+
+    flow_data = {
+        "input_data": {"lhs_input": {"id": source["id"], "version": None}},
+        "output_data": {
+            "summary": {
+                "id": str(noversion_data.id),
+                "collection_uuid": str(noversion_data.collection_uuid),
+                "collection_url": noversion_data.collection_url,
+            }
+        },
+        "gc_endpoint": str(uuid4()),
+        "function_uuid": str(uuid4()),
+        "description": "summary of a no-copy source",
+        "flow_kwargs": {},
+        "commit_function_uuid": str(uuid4()),
+        "pull_function_uuid": str(uuid4()),
+        "rule": models.flows.TriggerEnum.ANY_INPUT,
+    }
+
+    response = client.post(
+        f"{ROUTE}/register", json=flow_data, headers={"Content-Type": "application/json"}
+    )
+
+    assert response.status_code == 200, response.json()
+    assert sorted(response.json().keys()) == FLOW_KEYS
+    # the registration-time run is skipped for a no-copy input: no signed url
+    # exists outside a notify, so the first notify is the first run
+    assert response.json()["last_executed"] is None

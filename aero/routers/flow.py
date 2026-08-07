@@ -69,6 +69,22 @@ class FlowOut(BaseModel):
     contributed_to: list["Data"] = Field(default_factory=list)
 
 
+def _flow_out(f: Flow) -> FlowOut:
+    """Serialize a Flow with its two relationships.
+
+    ``dict(f)`` yields the instance ``__dict__``, which includes any relationship
+    SQLAlchemy has already loaded — so the two passed explicitly have to be
+    dropped from it, or whether this raises "multiple values for keyword
+    argument" depends on whether something upstream happened to touch them.
+    """
+    columns = {
+        k: v for k, v in dict(f).items() if k not in ("derived_from", "contributed_to")
+    }
+    return FlowOut(
+        **columns, contributed_to=f.contributed_to, derived_from=f.derived_from
+    )
+
+
 @router.get("/", response_model=list[FlowOut])
 # @authenticated
 def show_flows(
@@ -79,10 +95,7 @@ def show_flows(
     flows = session.exec(
         select(Flow).order_by(Flow.id.desc()).offset(offset).limit(limit)
     ).all()
-    return [
-        FlowOut(**dict(f), contributed_to=f.contributed_to, derived_from=f.derived_from)
-        for f in flows
-    ]
+    return [_flow_out(f) for f in flows]
 
 
 @router.get("/{flow_id}", response_model=FlowOut)
@@ -94,9 +107,7 @@ def get_flow(flow_id: uuid.UUID, session: Session = Depends(get_session)):
         raise HTTPException(
             status_code=404, detail=f"Flow with id {flow_id} was not found."
         )
-    return FlowOut(
-        **dict(f), contributed_to=f.contributed_to, derived_from=f.derived_from
-    )
+    return _flow_out(f)
 
 
 @router.post("/register", response_model=FlowOut)
@@ -251,8 +262,16 @@ def register(fi: FlowIn, session: Session = Depends(get_session)):
     else:
         raise HTTPException(status_code=501, detail="Flow already exists")
 
+    # dict(fl) yields the instance __dict__, which includes any relationship
+    # SQLAlchemy has already loaded -- so drop the two passed explicitly rather
+    # than depending on whether something upstream happened to touch them.
+    columns = {
+        k: v
+        for k, v in dict(fl).items()
+        if k not in ("derived_from", "contributed_to")
+    }
     flow_o = FlowOut(
-        **dict(fl), derived_from=fl.derived_from, contributed_to=fl.contributed_to
+        **columns, derived_from=fl.derived_from, contributed_to=fl.contributed_to
     )
 
     return flow_o
