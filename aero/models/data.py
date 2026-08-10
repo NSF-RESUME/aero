@@ -120,7 +120,7 @@ class Data(SQLModel, table=True):
         session: Session,
         trigger_url: str | None = None,
         signed_url: str | None = None,
-    ) -> int:
+    ) -> list[int]:  # one policy per dependent flow, not a single int
         # TODO: Fix implementation
         statement = select(Flow).where(Flow.derived_from.any(id=self.id))
         provenances = session.exec(statement).all()

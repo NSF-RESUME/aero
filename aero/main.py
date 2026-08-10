@@ -1,3 +1,6 @@
+import logging
+import os
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
@@ -7,6 +10,16 @@ from aero.routers import flow
 from aero.routers import provenance
 
 from aero.database import create_db_and_tables
+
+# uvicorn configures only its own loggers ("uvicorn", "uvicorn.error",
+# "uvicorn.access") and leaves the root logger without a handler, so anything the
+# app logs below WARNING is silently dropped. Give root a handler so
+# `logging.getLogger(__name__)` in any module reaches the container's output.
+# Its log config sets disable_existing_loggers=False, so this survives.
+logging.basicConfig(
+    level=os.getenv("LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s %(levelname)-8s %(name)s: %(message)s",
+)
 
 
 @asynccontextmanager

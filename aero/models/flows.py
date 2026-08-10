@@ -1,3 +1,5 @@
+import logging
+
 from datetime import datetime
 from enum import IntEnum
 from uuid import UUID
@@ -17,6 +19,9 @@ from aero.models.error import FLOW_TIMER_ERROR
 from aero.models.error import ServiceError
 from aero.globus.utils import FlowEnum
 from aero.models.function import Function
+
+
+logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:  # pragma: nocover
@@ -191,6 +196,15 @@ class Flow(SQLModel, table=True):
             self._start_timer_flow(session=session)
             self.last_executed = datetime.now()
         elif self.policy in (TriggerEnum.ANY_INPUT, TriggerEnum.ALL_INPUT):
+            logger.debug(
+                "flow %s: policy=%s last_executed=%s at_registration=%s inputs=%s",
+                self.id,
+                self.policy,
+                self.last_executed,
+                at_registration,
+                [str(s.id) for s in self.derived_from],
+            )
+
             if at_registration and any(s.no_copy for s in self.derived_from):
                 # Registration-time run against a no-copy input: there is no notify
                 # in flight, so no signed url exists and a private object can't be
@@ -199,9 +213,15 @@ class Flow(SQLModel, table=True):
                 # This has to be an explicit flag, not `last_executed is None`:
                 # skipping the run leaves last_executed None, so inferring it would
                 # match every later notify too and the flow would never run at all.
+                logger.info(
+                    "flow %s: skipping the registration-time run, a no-copy input "
+                    "has no signed url outside a notify",
+                    self.id,
+                )
                 return self.policy
 
             if self._has_new_input(require_all=self.policy == TriggerEnum.ALL_INPUT):
+                logger.info("flow %s: inputs are new, submitting run", self.id)
                 GLOBUS_CLIENT.run_flow(
                     endpoint_uuid=self.user_endpoint,
                     function_uuid=self.function_id,
@@ -214,6 +234,19 @@ class Flow(SQLModel, table=True):
                     source_data_id=source_data_id,
                 )
                 self.last_executed = datetime.now()
+            else:
+                # The usual cause of "the analysis didn't run": every input's
+                # newest version predates last_executed.
+                logger.info(
+                    "flow %s: no input newer than last_executed=%s, not running "
+                    "(input latest versions: %s)",
+                    self.id,
+                    self.last_executed,
+                    {
+                        str(s.id): (v.created_at if (v := s.last_version()) else None)
+                        for s in self.derived_from
+                    },
+                )
 
         else:
             return self.policy

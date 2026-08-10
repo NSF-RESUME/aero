@@ -11,6 +11,14 @@ services:
     env_file:
       - ${SETUP_ENV_SH}
 
+    environment:
+      # Without this Python block-buffers stdout when it isn't a tty, so log lines
+      # only appear once the buffer fills -- i.e. long after the request.
+      PYTHONUNBUFFERED: "1"
+      # Root log level for the app's own loggers (see aero/main.py). DEBUG to trace
+      # request handling.
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
     # expose:
     #  - 8081
 
