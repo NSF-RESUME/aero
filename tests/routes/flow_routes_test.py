@@ -196,3 +196,31 @@ def test_register_analysis_against_a_no_copy_source(client, noversion_data):
     # the registration-time run is skipped for a no-copy input: no signed url
     # exists outside a notify, so the first notify is the first run
     assert response.json()["last_executed"] is None
+
+
+def test_register_analysis_without_output_data(client, data):
+    """An analysis may declare no outputs at all.
+
+    It consumes tracked inputs and stores its results itself -- back to the
+    object store it read from, say -- so AERO creates no output Data and nothing
+    can be registered downstream of it.
+    """
+    flow_data = {
+        "input_data": {"in1": {"id": str(data.id), "version": 1}},
+        "output_data": {},
+        "gc_endpoint": str(uuid4()),
+        "function_uuid": str(uuid4()),
+        "pull_function_uuid": str(uuid4()),
+        "commit_function_uuid": str(uuid4()),
+        "flow_kwargs": {},
+        "rule": models.flows.TriggerEnum.ANY_INPUT,
+        "description": "writes its own output",
+    }
+
+    response = client.post(
+        f"{ROUTE}/register", json=flow_data, headers={"Content-Type": "application/json"}
+    )
+
+    assert response.status_code == 200, response.json()
+    assert response.json()["contributed_to"] == []
+    assert [d["id"] for d in response.json()["derived_from"]] == [str(data.id)]
