@@ -1,6 +1,8 @@
 import logging
+import re
 
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
@@ -16,6 +18,8 @@ from fastapi import Query
 
 from pydantic import BaseModel
 from pydantic import Field
+
+from sqlalchemy import or_
 
 from sqlmodel import select
 from sqlmodel import Session
@@ -138,7 +142,7 @@ def _register_source_url(session: Session, st: SourceType, url: str) -> SourceUr
     The key is unique across all types: it is what a notify resolves on, so two
     types owning the same object would make resolution ambiguous by construction.
     """
-    object_key = _normalize_object_key(url)
+    object_key = _normalize_registered_key(url)
     clash = session.exec(
         select(SourceUrl).where(SourceUrl.object_key == object_key)
     ).first()
@@ -226,6 +230,16 @@ def create_source(payload: SourceIn, session: Session = Depends(get_session)):
     no Globus function and no ingestion flow — the notify webhook records versions
     directly from the event metadata.
     """
+    if payload.type is None and _is_pattern(payload.url):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"'{payload.url}' is a glob pattern. Patterns are matching rules "
+                "for a type's objects, so they need a 'type'; an untyped source "
+                "resolves by its own url and nothing would ever match this."
+            ),
+        )
+
     d = create_data(
         session=session,
         name=payload.name,
@@ -339,6 +353,27 @@ def _normalize_object_key(value: str) -> str:
     return path.strip("/")
 
 
+def _normalize_registered_key(value: str) -> str:
+    """Normalize a url being *registered*, which may be a glob pattern.
+
+    Patterns can't go through ``_normalize_object_key``: ``urlparse`` treats ``?``
+    as the start of a query string, so ``bucket/report-?.csv`` would be truncated
+    to ``bucket/report-``. Here ``?`` is a glob, so strip the scheme and host by
+    hand and keep the rest.
+
+    Notify identities are always concrete objects and keep using
+    ``_normalize_object_key``, which must go on discarding presigned query strings.
+    """
+    if not _is_pattern(value):
+        return _normalize_object_key(value)
+
+    if "://" in value:
+        after_scheme = value.split("://", 1)[1]
+        # everything past the host, or nothing if the url is just a host
+        value = after_scheme.split("/", 1)[1] if "/" in after_scheme else ""
+    return value.strip("/")
+
+
 def _normalize_full_url(value: str) -> str:
     """Reduce a URL to ``host:port/path`` for disambiguating same-key sources.
 
@@ -354,6 +389,126 @@ def _normalize_full_url(value: str) -> str:
     return value.strip("/")
 
 
+_GLOB_CHARS = "*?["
+
+
+def _is_pattern(key: str) -> bool:
+    """Whether a registered key is a glob rather than one specific object."""
+    return any(c in key for c in _GLOB_CHARS)
+
+
+@lru_cache(maxsize=256)
+def _pattern_regex(pattern: str) -> re.Pattern:
+    """Compile a glob pattern to an anchored regex, with canonical semantics.
+
+    ``*`` matches within one path segment, ``**`` spans segments, ``?`` is a
+    single character, and ``[...]`` is a character class. Python 3.11 has no
+    stdlib equivalent — ``glob.translate`` and ``PurePath.full_match`` are 3.13+,
+    and ``fnmatch``'s ``*`` crosses ``/``.
+
+        **/test-data/**       every object under a test-data/ dir at any depth
+        test-bucket/**/*.csv  every .csv at any depth in test-bucket
+        test-bucket/*/*.csv   .csv files exactly one level deep
+    """
+    out: list[str] = []
+    i, n = 0, len(pattern)
+
+    while i < n:
+        c = pattern[i]
+        if c == "*":
+            if pattern[i : i + 2] == "**":
+                i += 2
+                if pattern[i : i + 1] == "/":
+                    # "**/" spans zero or more whole segments, so that
+                    # a/**/b.csv matches both a/b.csv and a/x/y/b.csv.
+                    out.append("(?:[^/]+/)*")
+                    i += 1
+                else:
+                    out.append(".*")
+            else:
+                out.append("[^/]*")
+                i += 1
+        elif c == "?":
+            out.append("[^/]")
+            i += 1
+        elif c == "[":
+            close = pattern.find("]", i)
+            if close == -1:  # unterminated: a literal bracket
+                out.append(re.escape(c))
+                i += 1
+            else:
+                out.append("[" + pattern[i + 1 : close].replace("\\", "\\\\") + "]")
+                i = close + 1
+        else:
+            out.append(re.escape(c))
+            i += 1
+
+    return re.compile(r"\A" + "".join(out) + r"\Z")
+
+
+def _pattern_specificity(pattern: str) -> tuple[int, int, str]:
+    """Sort key ranking patterns by how narrowly they match.
+
+    The literal prefix before the first glob character dominates, so
+    ``test-bucket/logs/**`` outranks ``**/*.csv`` for an object under
+    ``test-bucket/logs/``. Length and then the string itself break ties, so the
+    winner never depends on row order.
+    """
+    first_glob = re.search(r"[*?\[]", pattern)
+    literal = len(pattern) if first_glob is None else first_glob.start()
+    return (literal, len(pattern), pattern)
+
+
+def _concrete_object_url(registered_url: str, object_key: str) -> str:
+    """The fetchable URL of one object, given the entry that matched it.
+
+    A pattern's registered url (``http://minio:9000/bucket/**/*.csv``) is not
+    fetchable, so rebuild the real one from its scheme and host plus the concrete
+    key. An entry with no scheme has no host to contribute; return the key.
+    """
+    parsed = urlparse(registered_url)
+    if parsed.scheme:
+        return f"{parsed.scheme}://{parsed.netloc}/{object_key}"
+    return object_key
+
+
+def _match_source_url(
+    urls: list[SourceUrl], object_key: str
+) -> SourceUrl | None:
+    """Pick the entry that claims ``object_key``: exact first, else most specific.
+
+    Raises 409 only when two patterns are equally specific, which cannot be
+    resolved without guessing.
+    """
+    for su in urls:
+        if su.object_key == object_key:
+            return su
+
+    matches = [
+        su
+        for su in urls
+        if _is_pattern(su.object_key)
+        and _pattern_regex(su.object_key).match(object_key)
+    ]
+    if not matches:
+        return None
+
+    matches.sort(key=lambda su: _pattern_specificity(su.object_key), reverse=True)
+    if len(matches) > 1:
+        best, runner_up = matches[0], matches[1]
+        if _pattern_specificity(best.object_key)[:2] == _pattern_specificity(
+            runner_up.object_key
+        )[:2]:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"'{object_key}' is matched equally well by patterns "
+                    f"'{best.object_key}' and '{runner_up.object_key}'."
+                ),
+            )
+    return matches[0]
+
+
 def _require_webhook_token(x_aero_token: str | None) -> None:
     """Guard webhook routes with the shared secret when one is configured."""
     if Config.WEBHOOK_SECRET is not None and x_aero_token != Config.WEBHOOK_SECRET:
@@ -365,10 +520,12 @@ def _require_webhook_token(x_aero_token: str | None) -> None:
 def _resolve_trigger_url(
     session: Session, data: Data, object_key: str | None
 ) -> str | None:
-    """The stable registered url for an object key, falling back to ``Data.url``.
+    """The fetchable url of one object, or None if it cannot be determined.
 
     Lets any run locate a no-copy source's bytes, not only the run its notify
     triggered — the signature is what can't be reconstructed, the url always can.
+    A pattern is never returned: it is a matching rule, and handing it back would
+    send the analysis worker off to download a literal ``**``.
     """
     if object_key:
         su = session.exec(
@@ -376,16 +533,29 @@ def _resolve_trigger_url(
         ).first()
         if su is not None:
             return su.url
+
+        if data.source_type is not None:
+            match = _match_source_url(list(data.source_type.urls), object_key)
+            if match is not None:
+                return _concrete_object_url(match.url, object_key)
+
+    if data.url and _is_pattern(data.url):
+        return None
     return data.url
 
 
 def _resolve_notify_target(session: Session, file_id: str) -> tuple[Data, str, str]:
     """Resolve an object identity to ``(Data, object_key, trigger_url)``.
 
-    Registered ``SourceUrl`` keys win and are an indexed exact lookup — the key is
-    normalized once at registration rather than once per row per notify. Untyped
-    sources fall back to the original ``Data.url`` scan, which skips typed Data so
-    the two can't double-match.
+    Registered ``SourceUrl`` entries win. An exact key is an indexed lookup — the
+    key is normalized once at registration rather than once per row per notify —
+    and only if that misses are the (few) pattern entries scanned. Untyped sources
+    fall back to the original ``Data.url`` scan, which skips typed Data so the two
+    can't double-match.
+
+    The object key returned is always the **concrete** one, never the pattern that
+    matched it: it becomes ``DataVersion.source_key``, so a pattern standing in for
+    it would collapse every object it matches into a single dedup bucket.
     """
     target = _normalize_object_key(file_id)
 
@@ -394,6 +564,15 @@ def _resolve_notify_target(session: Session, file_id: str) -> tuple[Data, str, s
     ).first()
     if su is not None:
         return su.type.data, su.object_key, su.url
+
+    patterns = session.exec(
+        select(SourceUrl).where(
+            or_(*(SourceUrl.object_key.contains(c) for c in _GLOB_CHARS))
+        )
+    ).all()
+    su = _match_source_url(list(patterns), target)
+    if su is not None:
+        return su.type.data, target, _concrete_object_url(su.url, target)
 
     candidates = session.exec(select(Data).where(Data.url != None)).all()
     matches = [
@@ -582,16 +761,19 @@ def notify_update(
                 ),
             )
         target = _normalize_object_key(identity)
-        match = next((u for u in d.source_type.urls if u.object_key == target), None)
+        match = _match_source_url(list(d.source_type.urls), target)
         if match is None:
             raise HTTPException(
                 status_code=404,
                 detail=(
-                    f"'{identity}' is not a registered url of type "
+                    f"'{identity}' matches no registered url or pattern of type "
                     f"'{d.source_type.name}'."
                 ),
             )
-        object_key, trigger_url = match.object_key, match.url
+        # The concrete key, not the pattern that matched it -- it becomes the
+        # version's source_key and drives per-object dedup.
+        object_key = target
+        trigger_url = _concrete_object_url(match.url, target)
     else:
         object_key = _normalize_object_key(identity or d.url or str(id))
         trigger_url = d.url

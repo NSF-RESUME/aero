@@ -33,9 +33,19 @@ GCS as a new version (today's presigned passthrough, unchanged) or be **no-copy*
 version is recorded server-side from the notify metadata and no bytes move.
 
 Two further decisions:
-- **Unregistered URLs 404.** No auto-registration, no globs. But URL matching uses the *same*
-  normalization scheme as `notify_by_object` today (`_normalize_object_key`, with the
+- **A URL that matches nothing 404s.** No auto-registration. URL matching uses the *same*
+  normalization scheme as `notify_by_object` (`_normalize_object_key`, with the
   `_normalize_full_url` tie-break), so a presigned URL still matches its registered key.
+
+  > **Superseded 2026-08-10.** This originally read "no globs" — every object had to be registered
+  > individually. A type's entries may now be **glob patterns**, so an object nobody registered can
+  > still resolve. Semantics are canonical: `*` within a path segment, `**` across segments, `?` one
+  > character. An entry containing `*`, `?` or `[` is a pattern; everything else stays an exact
+  > indexed lookup. Exact beats pattern, and among patterns the longest literal prefix wins, so a
+  > broad rule plus narrow overrides is expressible; an exact tie is a 409. The **concrete** object
+  > key is what reaches `DataVersion.source_key`, so per-object dedup is unaffected by how it was
+  > matched. A pattern is a matching rule and never a fetchable URL: the trigger URL is rebuilt from
+  > the pattern's host plus the concrete key.
 - **Dedup is per-URL**, keyed by that same normalized key — re-notifying an unchanged object never
   makes a version, even if sibling URLs changed in between. A payload flag forces a version anyway.
 
