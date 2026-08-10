@@ -1,8 +1,9 @@
 # Typed notification sources: many URLs → one type → one Data UUID
 
-> Status: **implemented, live test pending.** On `feature/typed-notify-sources` in aero and
-> aero-client (off `develop`, unpushed) and on `main` in aero-testing. Offline tests pass in both
-> repos; the "Live" checklist below has not been run. Supersedes the earlier "No-copy ingestion
+> Status: **implemented and live-tested** (2026-08-10) against MinIO, a real Globus Compute
+> endpoint and the relay: a typed no-copy source records versions per url and the derived analysis
+> flow runs on the object that triggered the notify. Merged to `develop` in aero and aero-client;
+> the relay and configs are on `main` in aero-testing. Supersedes the earlier "No-copy ingestion
 > source + URL-based analysis input" design, which was never implemented — this keeps its no-copy
 > idea and adds the type as the unit of identity. Paths are repo-relative: `aero/...` is this repo,
 > `aero-client/...` and `aero-testing/...` are sibling repos.
