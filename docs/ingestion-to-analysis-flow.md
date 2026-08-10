@@ -22,6 +22,22 @@ So an analysis flow declares "I depend on Data X" by listing X in its `input_dat
 the ingestion flow declares "I produce Data X" via its `output_data`. They're linked
 through the shared `Data` record — no direct flow-to-flow reference.
 
+**`output_data` is optional for an analysis.** Omit it and the analysis stores its own
+results wherever it likes — back into the object store it read from, say — with the put
+belonging to the analysis code rather than to AERO. Its function returns `None` instead of
+an `AeroOutput`, no `Data` is created, and no version is recorded. AERO still writes a
+provenance record capturing which input versions the run consumed.
+
+The cost is precisely the edge above: with no `Data` to contribute to, there is nothing for
+another flow to depend on, so **nothing can be registered downstream of it**. Declare
+`output_data` if anything else needs to react to the result.
+
+One sharp edge while output-less: the registration dedup hash covers `output_data`
+([flow.py](../aero/routers/flow.py) — the comment there explains why it had to). Two
+*different* output-less analyses sharing a function, inputs and kwargs therefore hash the
+same, and the second gets `501 Flow already exists`. Differing kwargs or a differing
+function avoid it.
+
 The trigger behavior is stored per-flow as `policy`
 ([models/flows.py:26](../aero/models/flows.py#L26) `TriggerEnum`):
 
