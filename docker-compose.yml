@@ -18,6 +18,9 @@ services:
       # Root log level for the app's own loggers (see aero/main.py). DEBUG to trace
       # request handling.
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # false to run without Globus Search: indexing needs an index plus the ingest
+      # role on it, and nothing but GET /data/search reads it.
+      AERO_SEARCH_ENABLED: ${AERO_SEARCH_ENABLED:-true}
 
     # expose:
     #  - 8081

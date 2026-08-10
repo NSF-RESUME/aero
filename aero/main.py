@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from aero import GLOBUS_CLIENT
+from aero.config import Config
 from aero.routers import data
 from aero.routers import flow
 from aero.routers import provenance
@@ -26,8 +27,14 @@ logging.basicConfig(
 async def lifespan(app: FastAPI):
     create_db_and_tables()
 
-    if GLOBUS_CLIENT.search_index is None:
-        GLOBUS_CLIENT._create_search_idx()
+    if Config.SEARCH_ENABLED:
+        if GLOBUS_CLIENT.search_index is None:
+            GLOBUS_CLIENT._create_search_idx()
+    else:
+        logging.getLogger(__name__).warning(
+            "Globus Search is disabled (AERO_SEARCH_ENABLED); versions will not be "
+            "indexed and GET /data/search will not return them."
+        )
 
     yield
 

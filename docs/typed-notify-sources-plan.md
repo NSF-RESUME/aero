@@ -1,10 +1,11 @@
 # Typed notification sources: many URLs → one type → one Data UUID
 
-> Status: **planned — no code written.** Design agreed 2026-08-06; open for review comments before
-> implementation starts. Supersedes the earlier "No-copy ingestion source + URL-based analysis
-> input" design, which was never implemented — this keeps its no-copy idea and adds the type as the
-> unit of identity. Paths are repo-relative: `aero/...` is this repo, `aero-client/...` and
-> `aero-testing/...` are sibling repos.
+> Status: **implemented, live test pending.** On `feature/typed-notify-sources` in aero and
+> aero-client (off `develop`, unpushed) and on `main` in aero-testing. Offline tests pass in both
+> repos; the "Live" checklist below has not been run. Supersedes the earlier "No-copy ingestion
+> source + URL-based analysis input" design, which was never implemented — this keeps its no-copy
+> idea and adds the type as the unit of identity. Paths are repo-relative: `aero/...` is this repo,
+> `aero-client/...` and `aero-testing/...` are sibling repos.
 
 ## Context
 

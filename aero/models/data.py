@@ -66,7 +66,7 @@ class Data(SQLModel, table=True):
         encoding: str = "utf-8",
         source_key: str | None = None,
         dedup: bool = True,
-    ) -> str:
+    ) -> Optional["DataVersion"]:
         """Commit data to the database.
 
         Args:
@@ -78,6 +78,13 @@ class Data(SQLModel, table=True):
                 by several URLs dedups per URL. Left None the behavior is unchanged.
             dedup (bool): When False, always create a version even if the checksum
                 matches. Driven by the notify payload's ``dedup`` flag.
+
+        Returns:
+            The new DataVersion, or **None** if the checksum was unchanged and no
+            version was created. Callers must branch on this rather than on the
+            return type: the search-ingest result used to be returned here, and it
+            is a dict on failure, so "is it a dict" silently conflated a Globus
+            Search error with a dedup hit.
         """
         last = self.last_version()
         version_number = 1 if last is None else last.version + 1
@@ -91,7 +98,7 @@ class Data(SQLModel, table=True):
         old_checksum = previous.checksum if previous is not None else None
 
         if dedup and old_checksum == checksum:
-            return {"code": 201, "message": "Version already exists"}
+            return None
 
         new_version = DataVersion(
             version=version_number,
@@ -113,7 +120,12 @@ class Data(SQLModel, table=True):
         session.commit()
         session.refresh(new_version)
 
-        return GLOBUS_CLIENT.add_search_entry(entry=new_version._conf_search_entry())
+        # Best-effort: indexing is not what the caller asked for, and a Search
+        # outage or a missing role must not stop provenance or the dependent
+        # flows that hang off this version.
+        GLOBUS_CLIENT.add_search_entry(entry=new_version._conf_search_entry())
+
+        return new_version
 
     def rerun_flow(
         self,

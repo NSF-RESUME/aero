@@ -1,6 +1,7 @@
 import copy
 import datetime
 import json
+import logging
 import os
 from functools import lru_cache
 from typing import TypeAlias
@@ -22,6 +23,8 @@ from aero.globus.utils import FlowEnum
 from aero.globus.utils import FLOW_IDS
 
 JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
+
+logger = logging.getLogger(__name__)
 
 
 class GlobusClient:
@@ -67,12 +70,34 @@ class GlobusClient:
 
         return [timer_scope]
 
-    def add_search_entry(self, entry: dict) -> str:
+    def add_search_entry(self, entry: dict) -> str | None:
+        """Index a version in Globus Search. Best-effort — never raises.
+
+        Returns the ingest response text, or None if indexing was skipped or
+        failed. Failures are *logged*: this used to return the error payload,
+        which callers could not distinguish from a successful result.
+        """
+        if not Config.SEARCH_ENABLED:
+            logger.debug("Globus Search disabled, not indexing")
+            return None
+
         try:
             response = self.search_client.ingest(self.search_index, entry)
             return response.text
         except SearchAPIError as e:
-            return e.raw_json
+            logger.warning(
+                "Globus Search ingest failed (%s), continuing without indexing: %s",
+                e.http_status,
+                e.message,
+            )
+            return None
+        except Exception as e:  # auth failures etc. -- still must not break ingest
+            logger.warning(
+                "Globus Search ingest failed (%s), continuing without indexing: %s",
+                type(e).__name__,
+                e,
+            )
+            return None
 
     @lru_cache
     def get_user_uuid(self, usernames: str):

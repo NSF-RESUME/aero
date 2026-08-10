@@ -357,3 +357,51 @@ def test_first_notify_runs_the_analysis(client, session, monkeypatch):
     entry = runs[0]["tasks"]["kwargs"]["aero"]["input_data"]["report"]
     assert runs[0]["trigger_url"] == URL_A
     assert entry["id"] == source["id"]
+
+
+def test_search_failure_does_not_suppress_the_analysis(client, session, monkeypatch):
+    """A denied Search ingest must not be mistaken for "nothing changed".
+
+    Regression (found live): add_search_entry returns the Globus error payload on
+    failure -- a dict, exactly what add_new_version used to return for a dedup
+    hit. The notify branched on the type, reported "unchanged", and never called
+    rerun_flow. Versions accumulated while the analysis never ran.
+    """
+    import aero.models.data as data_model
+    import aero.models.flows as flows_model
+
+    monkeypatch.setattr(
+        data_model.GLOBUS_CLIENT,
+        "add_search_entry",
+        lambda entry: {
+            "status": 403,
+            "code": "Forbidden.Generic",
+            "message": "ingest request denied by service",
+        },
+    )
+    runs = []
+    monkeypatch.setattr(
+        flows_model.GLOBUS_CLIENT, "run_flow", lambda **kw: runs.append(kw)
+    )
+
+    source = _create_typed_source(client)
+    out = aero.models.data.create_data(
+        session=session, name="summary", url=None,
+        collection_url="https://globus.org/test", collection_uuid=uuid4(), description="",
+    )
+    mk = lambda: aero.models.function.create_function(session=session, uuid=uuid4()).id
+    src = session.exec(select(Data).where(Data.id == UUID(source["id"]))).first()
+    flows_model.create_flow(
+        session=session, derived_from=[src], contributed_to=[out], endpoint=uuid4(),
+        function_id=mk(), pull_function_id=mk(), commit_function_id=mk(),
+        policy=flows_model.TriggerEnum.ANY_INPUT,
+        function_args={
+            "aero": {"input_data": {"report": {"id": source["id"], "version": None}}}
+        },
+    )
+
+    resp = client.post(NOTIFY, json={"file_id": URL_A, "etag": "aaa", "size": 1})
+
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["status"] == "version created", resp.json()
+    assert len(runs) == 1, "the analysis must still run when indexing fails"

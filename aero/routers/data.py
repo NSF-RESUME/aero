@@ -480,9 +480,7 @@ def _run_event_ingestion(
         )
         suffix = Path(object_key).suffix.lstrip(".")
 
-        # returns dict if checksum matches existing checksum or str returned by
-        # GLOBUS_CLIENT.add_search_entry(entry=new_version._conf_search_entry())
-        result = data.add_new_version(
+        version = data.add_new_version(
             session=session,
             new_file=object_key,
             format=suffix,
@@ -493,7 +491,7 @@ def _run_event_ingestion(
             dedup=dedup,
         )
 
-        if isinstance(result, dict):  # dedup hit: same object, same etag
+        if version is None:  # dedup hit: same object, same etag
             logger.info(
                 "notify %s: unchanged (etag %s), no rerun", object_key, checksum
             )
@@ -520,12 +518,11 @@ def _run_event_ingestion(
             len(policies),
             policies,
         )
-        version = data.last_version()
         return {
             "status": "version created",
             "data_id": data.id,
             "source_key": object_key,
-            "version": version.version if version is not None else None,
+            "version": version.version,
         }
 
     # Run the copy data path

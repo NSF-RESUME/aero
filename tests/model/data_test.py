@@ -84,7 +84,7 @@ def test_add_new_version_dedups_per_source_key(session: Session, data):
         new_file="traffic/a.gz", checksum="aaa", source_key="traffic/a.gz", **common
     )
 
-    assert isinstance(result, dict)  # "Version already exists"
+    assert result is None  # dedup hit -- no version created
     assert len(data.versions) == 2
 
     # a genuine change to A does version, and numbering stays global per Data
@@ -147,3 +147,47 @@ def test_last_version_picks_highest_version_not_last_loaded(session, data):
 
     assert [v.version for v in data.versions] == [1, 3, 2]
     assert data.last_version().version == 3
+
+
+def test_a_failed_search_ingest_still_creates_a_version(session: Session, data, monkeypatch):
+    """A Globus Search failure must not look like a dedup hit.
+
+    Regression: add_new_version used to return add_search_entry's result, and
+    that returned the *error payload* (a dict) when ingest was denied — the same
+    shape it returned for "version already exists". Callers branching on the type
+    read a Search 403 as "unchanged" and skipped triggering dependent flows.
+    """
+    import aero.models.data as data_model
+
+    def denied(entry):
+        return {"status": 403, "code": "Forbidden.Generic",
+                "message": "ingest request denied by service"}
+
+    monkeypatch.setattr(data_model.GLOBUS_CLIENT, "add_search_entry", denied)
+
+    version = data.add_new_version(
+        session=session, new_file="f.gz", format="gz", checksum="aaa", size=1
+    )
+
+    assert version is not None, "a search failure must not suppress the version"
+    assert version.checksum == "aaa"
+    assert len(data.versions) == 1
+
+
+def test_search_can_be_disabled(session: Session, data, monkeypatch):
+    """AERO_SEARCH_ENABLED=false skips indexing without affecting versioning."""
+    from aero import GLOBUS_CLIENT
+    from aero.config import Config
+
+    monkeypatch.setattr(Config, "SEARCH_ENABLED", False)
+    called = []
+    monkeypatch.setattr(
+        GLOBUS_CLIENT.search_client, "ingest", lambda *a, **k: called.append(a)
+    )
+
+    version = data.add_new_version(
+        session=session, new_file="f.gz", format="gz", checksum="aaa", size=1
+    )
+
+    assert version is not None
+    assert called == [], "ingest must not be attempted when search is disabled"
