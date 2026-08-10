@@ -114,6 +114,7 @@ All configuration is environment variables, read in `aero/config.py`.
 | `GET /data/`, `/data/{id}`, `/data/{id}/versions`, `/data/{id}/latest` | Sources and their version history |
 | `GET /data/search` | Globus Search query |
 | `GET /data/types`, `/data/types/{name}`, `POST /data/types/{name}/urls` | Notification types and the URLs grouped under them |
+| `GET /data/{id}/flows`, `DELETE /data/{id}/flows` | What produces and consumes a source; delete those flows (and their provenance) so they can be re-registered |
 | `POST /data/source` | Create a source with no flow attached |
 | `POST /data/{id}/notify`, `POST /data/notify` | Change webhooks (shared-secret auth, not Globus) |
 | `GET /flow/`, `/flow/{id}`, `POST /flow/register` | Register and inspect flows |
