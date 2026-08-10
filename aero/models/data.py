@@ -75,16 +75,14 @@ class Data(SQLModel, table=True):
             source_key (str | None): Normalized object key this version came from.
                 When set, change detection compares against the last version with the
                 *same* key rather than the tail of the version list — so one Data fed
-                by several URLs dedups per URL. Left None the behavior is unchanged.
+                by several URLs dedups per URL. When None, compares against the tail.
             dedup (bool): When False, always create a version even if the checksum
                 matches. Driven by the notify payload's ``dedup`` flag.
 
         Returns:
             The new DataVersion, or **None** if the checksum was unchanged and no
-            version was created. Callers must branch on this rather than on the
-            return type: the search-ingest result used to be returned here, and it
-            is a dict on failure, so "is it a dict" silently conflated a Globus
-            Search error with a dedup hit.
+            version was created. Indexing the version in Globus Search is
+            best-effort and does not affect this result.
         """
         last = self.last_version()
         version_number = 1 if last is None else last.version + 1

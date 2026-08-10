@@ -74,8 +74,8 @@ class GlobusClient:
         """Index a version in Globus Search. Best-effort — never raises.
 
         Returns the ingest response text, or None if indexing was skipped or
-        failed. Failures are *logged*: this used to return the error payload,
-        which callers could not distinguish from a successful result.
+        failed. Failures are logged rather than returned, so a caller cannot
+        mistake an error payload for a result.
         """
         if not Config.SEARCH_ENABLED:
             logger.debug("Globus Search disabled, not indexing")

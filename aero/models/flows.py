@@ -155,9 +155,9 @@ class Flow(SQLModel, table=True):
     def _has_new_input(self, require_all: bool) -> bool:
         """Whether the inputs have moved on since this flow last ran.
 
-        A Data with no versions yet has nothing new by definition — reading
-        ``.created_at`` off it used to raise AttributeError, which is exactly what
-        registering an analysis against a freshly created source does.
+        An input with no versions yet counts as not new, rather than being
+        dereferenced for a ``created_at`` it does not have — which is the state
+        of a source that has been registered but never notified.
         """
         if self.last_executed is None:
             return True
