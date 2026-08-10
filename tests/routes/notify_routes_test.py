@@ -78,8 +78,28 @@ class _Spy:
     def __init__(self):
         self.calls = []
 
-    def __call__(self, session, data, source_url):
-        self.calls.append({"data": data, "source_url": source_url})
+    def __call__(
+        self,
+        session,
+        data,
+        trigger_url,
+        signed_url,
+        object_key,
+        etag=None,
+        size=None,
+        dedup=True,
+    ):
+        self.calls.append(
+            {
+                "data": data,
+                "trigger_url": trigger_url,
+                "signed_url": signed_url,
+                "object_key": object_key,
+                "etag": etag,
+                "size": size,
+                "dedup": dedup,
+            }
+        )
         return {
             "status": "ingestion triggered",
             "flow_id": uuid4(),
@@ -117,8 +137,11 @@ def test_notify_by_object_single_match(client, session, spy):
     assert resp.status_code == 200, resp.text
     assert len(spy.calls) == 1
     assert spy.calls[0]["data"].id == d.id
-    # the transient presigned url is passed through as source_url
-    assert spy.calls[0]["source_url"] == presigned
+    # the transient presigned url is passed through as the signed url, while the
+    # stable registered url is the trigger url
+    assert spy.calls[0]["signed_url"] == presigned
+    assert spy.calls[0]["trigger_url"] == d.url
+    assert spy.calls[0]["object_key"] == "test-bucket/lhs_results.csv"
 
 
 def test_notify_by_object_matches_via_full_url_file_id(client, session, spy):
@@ -132,8 +155,9 @@ def test_notify_by_object_matches_via_full_url_file_id(client, session, spy):
 
     assert resp.status_code == 200, resp.text
     assert spy.calls[0]["data"].id == d.id
-    # no url in body -> fall back to the registered Data.url
-    assert spy.calls[0]["source_url"] is None
+    # no url in body -> no signed url; the registered Data.url is still the trigger
+    assert spy.calls[0]["signed_url"] is None
+    assert spy.calls[0]["trigger_url"] == d.url
 
 
 def test_notify_by_object_no_match(client, session, spy):

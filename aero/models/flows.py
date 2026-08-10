@@ -1,3 +1,5 @@
+import logging
+
 from datetime import datetime
 from enum import IntEnum
 from uuid import UUID
@@ -17,6 +19,9 @@ from aero.models.error import FLOW_TIMER_ERROR
 from aero.models.error import ServiceError
 from aero.globus.utils import FlowEnum
 from aero.models.function import Function
+
+
+logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:  # pragma: nocover
@@ -112,7 +117,11 @@ class Flow(SQLModel, table=True):
         return self.timer_job_id
 
     def _run_ingestion_flow(
-        self, session: Session, source_url: str | None = None
+        self,
+        session: Session,
+        source_url: str | None = None,
+        source_key: str | None = None,
+        dedup: bool = True,
     ) -> None:
         """Run the ingestion flow once, immediately (event-driven; no timer).
 
@@ -122,6 +131,9 @@ class Flow(SQLModel, table=True):
 
         ``source_url`` overrides the registered source url for this run only
         (e.g. a MinIO presigned URL from the notify); it is never persisted.
+        ``source_key`` and ``dedup`` ride along the same way, reaching
+        ``add_new_version`` via the worker's ``/prov/new`` post so that a typed
+        source dedups per url on the copy path too.
         """
         GLOBUS_CLIENT.run_ingestion_flow(
             self.id,
@@ -132,13 +144,43 @@ class Flow(SQLModel, table=True):
             function_args=self.function_args,
             user_endpoint=self.user_endpoint,
             source_url=source_url,
+            source_key=source_key,
+            dedup=dedup,
         )
         self.last_executed = datetime.now()
         session.add(self)
         session.commit()
         session.refresh(self)
 
-    def _run_flow(self, session: Session) -> int:
+    def _has_new_input(self, require_all: bool) -> bool:
+        """Whether the inputs have moved on since this flow last ran.
+
+        An input with no versions yet counts as not new, rather than being
+        dereferenced for a ``created_at`` it does not have — which is the state
+        of a source that has been registered but never notified.
+        """
+        if self.last_executed is None:
+            return True
+
+        fresh = []
+        for s in self.derived_from:
+            version = s.last_version()
+            fresh.append(
+                version is not None
+                and version.created_at is not None
+                and version.created_at > self.last_executed
+            )
+
+        return all(fresh) if require_all else any(fresh)
+
+    def _run_flow(
+        self,
+        session: Session,
+        trigger_url: str | None = None,
+        signed_url: str | None = None,
+        source_data_id: UUID | None = None,
+        at_registration: bool = False,
+    ) -> int:
         # try:
         function_args = self.function_args
         # except json.JSONDecodeError as e:
@@ -153,28 +195,33 @@ class Flow(SQLModel, table=True):
         elif self.policy == TriggerEnum.TIMER:
             self._start_timer_flow(session=session)
             self.last_executed = datetime.now()
-        elif self.policy == TriggerEnum.ANY_INPUT:  # ANY
-            if self.last_executed is None or any(
-                s.last_version().created_at > self.last_executed
-                for s in self.derived_from
-            ):
-                GLOBUS_CLIENT.run_flow(
-                    endpoint_uuid=self.user_endpoint,
-                    function_uuid=self.function_id,
-                    pull_function_uuid=self.pull_function_id,
-                    commit_function_uuid=self.commit_function_id,
-                    tasks=function_args,
-                    email=self.email,
-                )
-                self.last_executed = datetime.now()
+        elif self.policy in (TriggerEnum.ANY_INPUT, TriggerEnum.ALL_INPUT):
+            logger.debug(
+                "flow %s: policy=%s last_executed=%s at_registration=%s inputs=%s",
+                self.id,
+                self.policy,
+                self.last_executed,
+                at_registration,
+                [str(s.id) for s in self.derived_from],
+            )
 
-        elif self.policy == TriggerEnum.ALL_INPUT:  # ALL
-            if self.last_executed is None or all(
-                [
-                    s.last_version().created_at > self.last_executed
-                    for s in self.derived_from
-                ]
-            ):
+            if at_registration and any(s.no_copy for s in self.derived_from):
+                # Registration-time run against a no-copy input: there is no notify
+                # in flight, so no signed url exists and a private object can't be
+                # read. These flows are event-driven — let the first notify run it.
+                #
+                # This has to be an explicit flag, not `last_executed is None`:
+                # skipping the run leaves last_executed None, so inferring it would
+                # match every later notify too and the flow would never run at all.
+                logger.info(
+                    "flow %s: skipping the registration-time run, a no-copy input "
+                    "has no signed url outside a notify",
+                    self.id,
+                )
+                return self.policy
+
+            if self._has_new_input(require_all=self.policy == TriggerEnum.ALL_INPUT):
+                logger.info("flow %s: inputs are new, submitting run", self.id)
                 GLOBUS_CLIENT.run_flow(
                     endpoint_uuid=self.user_endpoint,
                     function_uuid=self.function_id,
@@ -182,8 +229,24 @@ class Flow(SQLModel, table=True):
                     commit_function_uuid=self.commit_function_id,
                     tasks=function_args,
                     email=self.email,
+                    trigger_url=trigger_url,
+                    signed_url=signed_url,
+                    source_data_id=source_data_id,
                 )
                 self.last_executed = datetime.now()
+            else:
+                # The usual cause of "the analysis didn't run": every input's
+                # newest version predates last_executed.
+                logger.info(
+                    "flow %s: no input newer than last_executed=%s, not running "
+                    "(input latest versions: %s)",
+                    self.id,
+                    self.last_executed,
+                    {
+                        str(s.id): (v.created_at if (v := s.last_version()) else None)
+                        for s in self.derived_from
+                    },
+                )
 
         else:
             return self.policy
@@ -259,6 +322,6 @@ def create_flow(
     session.commit()
     session.refresh(f)
 
-    f._run_flow(session=session)
+    f._run_flow(session=session, at_registration=True)
 
     return f

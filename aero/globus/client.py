@@ -1,6 +1,7 @@
 import copy
 import datetime
 import json
+import logging
 import os
 from functools import lru_cache
 from typing import TypeAlias
@@ -22,6 +23,8 @@ from aero.globus.utils import FlowEnum
 from aero.globus.utils import FLOW_IDS
 
 JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
+
+logger = logging.getLogger(__name__)
 
 
 class GlobusClient:
@@ -67,12 +70,34 @@ class GlobusClient:
 
         return [timer_scope]
 
-    def add_search_entry(self, entry: dict) -> str:
+    def add_search_entry(self, entry: dict) -> str | None:
+        """Index a version in Globus Search. Best-effort — never raises.
+
+        Returns the ingest response text, or None if indexing was skipped or
+        failed. Failures are logged rather than returned, so a caller cannot
+        mistake an error payload for a result.
+        """
+        if not Config.SEARCH_ENABLED:
+            logger.debug("Globus Search disabled, not indexing")
+            return None
+
         try:
             response = self.search_client.ingest(self.search_index, entry)
             return response.text
         except SearchAPIError as e:
-            return e.raw_json
+            logger.warning(
+                "Globus Search ingest failed (%s), continuing without indexing: %s",
+                e.http_status,
+                e.message,
+            )
+            return None
+        except Exception as e:  # auth failures etc. -- still must not break ingest
+            logger.warning(
+                "Globus Search ingest failed (%s), continuing without indexing: %s",
+                type(e).__name__,
+                e,
+            )
+            return None
 
     @lru_cache
     def get_user_uuid(self, usernames: str):
@@ -88,13 +113,35 @@ class GlobusClient:
         commit_function_uuid: str,
         tasks: JSON,
         email: str | None,
+        trigger_url: str | None = None,
+        signed_url: str | None = None,
+        source_data_id=None,
     ):
+        """Run a user (analysis) flow.
+
+        ``trigger_url``/``signed_url``, when given, are injected onto the one
+        ``input_data`` entry matching ``source_data_id`` — the no-copy source whose
+        change triggered this run. They go into a deep copy of the tasks so the
+        transient signed url is never written back to ``Flow.function_args``.
+        """
         flow_id = FLOW_IDS[FlowEnum.USER_FLOW]
 
         monitors = []
 
         if isinstance(tasks, dict):
             tasks = [tasks]
+
+        if trigger_url and source_data_id is not None:
+            tasks = copy.deepcopy(tasks)
+            for task in tasks:
+                input_data = task.get("kwargs", {}).get("aero", {}).get(
+                    "input_data", {}
+                )
+                for entry in input_data.values():
+                    if entry.get("id") == str(source_data_id):
+                        entry["trigger_url"] = trigger_url
+                        if signed_url:
+                            entry["signed_url"] = signed_url
 
         if email is not None:
             user_uuid = self.get_user_uuid(usernames=email)
@@ -187,6 +234,8 @@ class GlobusClient:
         function_args,
         user_endpoint: str,
         source_url: str | None = None,
+        source_key: str | None = None,
+        dedup: bool = True,
         **kwargs,
     ) -> None:
         """Run the ingestion (VERIFY_AND_MODIFY) flow once, immediately.
@@ -196,8 +245,10 @@ class GlobusClient:
         it on a Globus Timer. Used for event-driven (INGESTION_EVENT) sources.
 
         ``source_url``, when given, overrides the source url for this run only
-        (e.g. a MinIO presigned URL). It is injected into a deep copy of the run
-        kwargs so it is never persisted onto the stored ``Flow.function_args``.
+        (e.g. a MinIO presigned URL). ``source_key`` and ``dedup`` travel the same
+        way and come back to the server on the worker's ``/prov/new`` post, where
+        they drive per-url change detection. All three are injected into a deep
+        copy of the run kwargs so none is persisted onto ``Flow.function_args``.
         """
         flow_id = FLOW_IDS[FlowEnum.VERIFY_AND_MODIFY]
 
@@ -207,6 +258,10 @@ class GlobusClient:
         kwargs = copy.deepcopy(function_args["kwargs"])
         if source_url:
             kwargs.setdefault("aero", {})["source_url"] = source_url
+        if source_key:
+            kwargs.setdefault("aero", {})["source_key"] = source_key
+        if not dedup:
+            kwargs.setdefault("aero", {})["dedup"] = False
         run_input = {
             "osprey-worker-endpoint": str(user_endpoint),
             "download-function": pull_function_uuid,

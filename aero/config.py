@@ -28,6 +28,14 @@ class Config(object):
     PORTAL_CLIENT_SECRET = os.getenv("PORTAL_CLIENT_SECRET")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SEARCH_INDEX = os.getenv("SEARCH_INDEX")
+    # Indexing versions in Globus Search needs an index plus the ingest role on it.
+    # Turn it off to run ingestion and analysis without those; nothing else in the
+    # system reads the index except GET /data/search.
+    SEARCH_ENABLED = os.getenv("AERO_SEARCH_ENABLED", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
     WEBHOOK_SECRET = os.getenv("AERO_WEBHOOK_SECRET")
     REQUIRE_AUTH = os.getenv("AERO_REQUIRE_AUTH", "false").lower() in (
         "1",

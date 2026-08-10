@@ -87,6 +87,11 @@ def add_record(pr: ProvRecord, session: Session = Depends(get_session)):
                 size=o["size"],
                 created_at=committed_at,
                 encoding=o.get("encoding", "utf-8"),
+                # Set by the notify for a typed source: which object this pull came
+                # from, so change detection is per-url rather than per-Data. Absent
+                # for untyped sources, which keeps the original tail comparison.
+                source_key=o.get("source_key"),
+                dedup=o.get("dedup", True),
             )
 
             # TODO: maybe fix

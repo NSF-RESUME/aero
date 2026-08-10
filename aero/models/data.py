@@ -18,6 +18,8 @@ from aero.models.data_file import DataFile
 
 from aero.models.flows import Flow
 
+from aero.models.source_type import SourceType
+
 from aero import GLOBUS_CLIENT
 
 if TYPE_CHECKING:
@@ -42,11 +44,16 @@ class Data(SQLModel, table=True):
     collection_uuid: UUID | None = Field(default=None)  # Column(String)
     collection_url: str | None = Field(default=None)  # Column(String)
     description: str | None = Field(default=None)  # Column(String)
+    # Reference-only source: notify records a new version from the event metadata and
+    # no bytes are copied into a Globus collection. Orthogonal to having a type.
+    no_copy: bool = Field(default=False)
     # Ensure to delete timer_job_id when either `verifier` or `modifier` is altered
     versions: list["DataVersion"] = Relationship(
         back_populates="data",
     )
     tags: list["Tag"] = Relationship(link_model=DataTagTable, back_populates="data")
+    # The FK lives on sourcetype, so this adds no column to `data`.
+    source_type: Optional["SourceType"] = Relationship(back_populates="data")
 
     def add_new_version(
         self,
@@ -57,32 +64,46 @@ class Data(SQLModel, table=True):
         size: int,
         created_at: datetime | None = None,
         encoding: str = "utf-8",
-    ) -> str:
+        source_key: str | None = None,
+        dedup: bool = True,
+    ) -> Optional["DataVersion"]:
         """Commit data to the database.
 
         Args:
             new_file (str): File path to the temporarily stored data.
             format (str): The extension of the file.
+            source_key (str | None): Normalized object key this version came from.
+                When set, change detection compares against the last version with the
+                *same* key rather than the tail of the version list — so one Data fed
+                by several URLs dedups per URL. When None, compares against the tail.
+            dedup (bool): When False, always create a version even if the checksum
+                matches. Driven by the notify payload's ``dedup`` flag.
+
+        Returns:
+            The new DataVersion, or **None** if the checksum was unchanged and no
+            version was created. Indexing the version in Globus Search is
+            best-effort and does not affect this result.
         """
-        if self.last_version() is None:
-            version_number = 1
-        else:
-            version_number = self.last_version().version + 1
+        last = self.last_version()
+        version_number = 1 if last is None else last.version + 1
 
         # compare checksums to see if new version
-        try:
-            old_checksum = self.last_version().checksum
-        except Exception:  # if source_file doesn't exist
-            old_checksum = None
+        if source_key is None:
+            previous = last
+        else:
+            previous = self._last_version_for(session, source_key)
 
-        if old_checksum == checksum:
-            return {"code": 201, "message": "Version already exists"}
+        old_checksum = previous.checksum if previous is not None else None
+
+        if dedup and old_checksum == checksum:
+            return None
 
         new_version = DataVersion(
             version=version_number,
             data_id=self.id,
             checksum=checksum,
             created_at=created_at,
+            source_key=source_key,
         )
 
         new_version.data_file = DataFile(
@@ -97,24 +118,53 @@ class Data(SQLModel, table=True):
         session.commit()
         session.refresh(new_version)
 
-        return GLOBUS_CLIENT.add_search_entry(entry=new_version._conf_search_entry())
+        # Best-effort: indexing is not what the caller asked for, and a Search
+        # outage or a missing role must not stop provenance or the dependent
+        # flows that hang off this version.
+        GLOBUS_CLIENT.add_search_entry(entry=new_version._conf_search_entry())
 
-    def rerun_flow(self, session: Session) -> int:
+        return new_version
+
+    def rerun_flow(
+        self,
+        session: Session,
+        trigger_url: str | None = None,
+        signed_url: str | None = None,
+    ) -> list[int]:  # one policy per dependent flow, not a single int
         # TODO: Fix implementation
         statement = select(Flow).where(Flow.derived_from.any(id=self.id))
         provenances = session.exec(statement).all()
 
         policies = []
         for prov in provenances:
-            policies.append(prov._run_flow(session=session))
+            policies.append(
+                prov._run_flow(
+                    session=session,
+                    trigger_url=trigger_url,
+                    signed_url=signed_url,
+                    source_data_id=self.id,
+                )
+            )
         return policies
 
+    def _last_version_for(
+        self, session: Session, source_key: str
+    ) -> Optional["DataVersion"]:
+        """The newest version produced by one particular object key."""
+        return session.exec(
+            select(DataVersion)
+            .where(DataVersion.data_id == self.id)
+            .where(DataVersion.source_key == source_key)
+            .order_by(DataVersion.version.desc())
+        ).first()
+
     def last_version(self) -> Optional["DataVersion"]:
-        try:
-            l_version = self.versions[len(self.versions) - 1]
-            return l_version
-        except IndexError:
+        # Pick by version number, not by position: `versions` comes back in whatever
+        # order SQLAlchemy loaded it, which is not necessarily version order — and a
+        # type accumulates versions from several URLs.
+        if not self.versions:
             return None
+        return max(self.versions, key=lambda v: v.version or 0)
 
 
 def create_data(

@@ -9,7 +9,25 @@ KEYS = sorted(
         "description",
         "id",
         "name",
+        "no_copy",
         "url",
+    ]
+)
+
+# /latest returns a VersionOut, which carries the DataVersion columns plus the
+# joined data/data_file and the fields a no-copy pull needs to locate the object.
+LATEST_KEYS = sorted(
+    [
+        "checksum",
+        "created_at",
+        "data",
+        "data_file",
+        "data_id",
+        "id",
+        "no_copy",
+        "source_key",
+        "trigger_url",
+        "version",
     ]
 )
 
@@ -57,7 +75,13 @@ def test_get_latest(client, mocker, data, noversion_data):
     version = dict(data.versions[0])
     resp_data = response.json()
     assert resp_data["id"] == str(version["id"])
-    assert sorted(resp_data.keys()) == sorted(version.keys())
+    assert sorted(resp_data.keys()) == LATEST_KEYS
+
+    # An untyped copy source: no source_key on the version, and trigger_url falls
+    # back to the registered Data.url.
+    assert resp_data["no_copy"] is False
+    assert resp_data["source_key"] is None
+    assert resp_data["trigger_url"] == data.url
 
     data_id = uuid4()
     response = client.get(f"{ROUTE}/{data_id}/latest", follow_redirects=True)

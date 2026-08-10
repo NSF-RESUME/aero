@@ -25,6 +25,8 @@ from aero.models.flows import create_flow
 from aero.models.flows import Flow
 from aero.models.function import Function
 from aero.models.data import Data
+from aero.models.source_type import SourceType
+from aero.routers.data import create_source_type
 
 router = APIRouter(
     prefix="/flow",
@@ -67,6 +69,22 @@ class FlowOut(BaseModel):
     contributed_to: list["Data"] = Field(default_factory=list)
 
 
+def _flow_out(f: Flow) -> FlowOut:
+    """Serialize a Flow with its two relationships.
+
+    ``dict(f)`` yields the instance ``__dict__``, which includes any relationship
+    SQLAlchemy has already loaded — so the two passed explicitly have to be
+    dropped from it, or whether this raises "multiple values for keyword
+    argument" depends on whether something upstream happened to touch them.
+    """
+    columns = {
+        k: v for k, v in dict(f).items() if k not in ("derived_from", "contributed_to")
+    }
+    return FlowOut(
+        **columns, contributed_to=f.contributed_to, derived_from=f.derived_from
+    )
+
+
 @router.get("/", response_model=list[FlowOut])
 # @authenticated
 def show_flows(
@@ -77,10 +95,7 @@ def show_flows(
     flows = session.exec(
         select(Flow).order_by(Flow.id.desc()).offset(offset).limit(limit)
     ).all()
-    return [
-        FlowOut(**dict(f), contributed_to=f.contributed_to, derived_from=f.derived_from)
-        for f in flows
-    ]
+    return [_flow_out(f) for f in flows]
 
 
 @router.get("/{flow_id}", response_model=FlowOut)
@@ -92,9 +107,7 @@ def get_flow(flow_id: uuid.UUID, session: Session = Depends(get_session)):
         raise HTTPException(
             status_code=404, detail=f"Flow with id {flow_id} was not found."
         )
-    return FlowOut(
-        **dict(f), contributed_to=f.contributed_to, derived_from=f.derived_from
-    )
+    return _flow_out(f)
 
 
 @router.post("/register", response_model=FlowOut)
@@ -154,6 +167,7 @@ def register(fi: FlowIn, session: Session = Depends(get_session)):
 
     if fl is None:  # flow does not already exist, so we can go ahead and register it
         contributed_to = []
+        new_types = []
 
         for name, md in fi.output_data.items():
             if "url" in md:
@@ -173,6 +187,25 @@ def register(fi: FlowIn, session: Session = Depends(get_session)):
             md["id"] = str(o.id)
             md["collection_url"] = o.collection_url
             md["collection_uuid"] = str(o.collection_uuid)
+
+            # A copy-mode source can still be typed: the Data is born here, so bind
+            # the type to it once the flow (and with it the Data) is committed. The
+            # key is popped so it never reaches the worker kwargs.
+            type_name = md.pop("type", None)
+            if type_name:
+                existing = session.exec(
+                    select(SourceType).where(SourceType.name == type_name)
+                ).first()
+                if existing is not None:
+                    raise HTTPException(
+                        status_code=409,
+                        detail=(
+                            f"Source type '{type_name}' already exists (data "
+                            f"{existing.data_id}). Add a url to it instead of "
+                            "registering another flow."
+                        ),
+                    )
+                new_types.append((type_name, o, url))
 
         derived_from = []
 
@@ -220,11 +253,25 @@ def register(fi: FlowIn, session: Session = Depends(get_session)):
             email=fi.email,
             arg_hash=arg_hash,
         )
+
+        # After create_flow, the output Data rows are persisted and can be bound to.
+        for type_name, data_obj, url in new_types:
+            create_source_type(
+                session=session, name=type_name, data=data_obj, url=url
+            )
     else:
         raise HTTPException(status_code=501, detail="Flow already exists")
 
+    # dict(fl) yields the instance __dict__, which includes any relationship
+    # SQLAlchemy has already loaded -- so drop the two passed explicitly rather
+    # than depending on whether something upstream happened to touch them.
+    columns = {
+        k: v
+        for k, v in dict(fl).items()
+        if k not in ("derived_from", "contributed_to")
+    }
     flow_o = FlowOut(
-        **dict(fl), derived_from=fl.derived_from, contributed_to=fl.contributed_to
+        **columns, derived_from=fl.derived_from, contributed_to=fl.contributed_to
     )
 
     return flow_o
