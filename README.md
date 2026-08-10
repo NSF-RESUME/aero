@@ -36,8 +36,11 @@ For object storage (S3, MinIO), a change notification drives ingestion instead o
 `/data/notify` with the object's identity and AERO resolves it to a source and takes it from there.
 Two variations are supported:
 
-- **Types** group several object URLs under one source, so a change to any of them drives the same
-  analysis, and the run is told which object triggered it.
+- **Types** group several objects under one source, so a change to any of them drives the same
+  analysis, and the run is told which object triggered it. Objects can be listed individually or
+  matched by a glob pattern — `'test-bucket/**/*.csv'` picks up every CSV at any depth, including
+  ones created after the type was registered. `*` stays within a path segment, `**` crosses them.
+  Quote the pattern so your shell doesn't expand it.
 - **No-copy sources** record a new version from the notification's metadata without moving any
   bytes — nothing is pulled and nothing is staged, and the analysis reads the object directly from
   its URL.

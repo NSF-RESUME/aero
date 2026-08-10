@@ -58,8 +58,36 @@ aero create -f source.yaml
 aero create -f source.yaml -n midwest-traffic-dev
 ```
 Accepted keys: `name`, `url`, `collection_url`, `collection_uuid`, `endpoint_uuid`,
-`verifier` (or `function_uuid`), `description`. Missing required values are reported before
-anything is registered.
+`verifier` (or `function_uuid`), `description`, `type`, `no_copy`. Missing required values are
+reported before anything is registered.
+
+### Matching many objects with one registration
+
+Give a `type` and the source can own several objects, all driving the same analysis. Register them
+individually:
+
+```sh
+aero create --type traffic --url https://minio.internal:9000/traffic/a.xml.gz
+aero create --type traffic --url https://minio.internal:9000/traffic/b.xml.gz
+```
+
+or match them with a glob, which also picks up objects created later:
+
+```sh
+# quote it -- otherwise the shell expands the pattern before aero sees it
+aero create --type traffic --no-copy \
+  --url 'https://minio.internal:9000/traffic/**/*.xml.gz'
+```
+
+`*` matches within one path segment and `**` crosses segments, so `traffic/*/x.gz` is exactly one
+level deep while `traffic/**/x.gz` is any depth. `?` is a single character.
+
+An exact registration always wins over a pattern, and among patterns the one with the longest
+literal prefix wins — so a broad rule plus a narrow exception for one object both work. Each
+version records the **concrete** object that changed, so change detection stays per object no
+matter which pattern matched it.
+
+`aero types` lists every type with its data id and whether each entry is an object or a pattern.
 
 ### Option C — Python
 ```python
