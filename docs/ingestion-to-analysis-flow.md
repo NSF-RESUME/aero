@@ -32,6 +32,22 @@ The cost is precisely the edge above: with no `Data` to contribute to, there is 
 another flow to depend on, so **nothing can be registered downstream of it**. Declare
 `output_data` if anything else needs to react to the result.
 
+### Removing the flows around a Data
+
+`DELETE /data/{id}/flows` (`aero delete-flows <data-id>`) removes both sides of the link at
+once: the flow that produces the Data and the flows that consume it. Handy when
+re-registering, since the dedup hash otherwise answers `501 Flow already exists`.
+
+It deletes their **provenance records too** — `Provenance.flow_id` is a non-nullable FK,
+so a flow that has ever run cannot go while its records remain — and cancels any Globus
+timer driving them. A timer left behind would keep firing at a flow row that no longer
+exists. If Globus refuses the cancellation the flow is still deleted and the response names
+the orphaned job id, which is the only way to then clear it by hand.
+
+The `Data`, its versions, and any source type/urls are kept, so the same UUID can be reused.
+It follows one level only: an analysis consuming this Data produces its own output Data, and
+flows consuming *that* are left alone.
+
 One sharp edge while output-less: the registration dedup hash covers `output_data`
 ([flow.py](../aero/routers/flow.py) — the comment there explains why it had to). Two
 *different* output-less analyses sharing a function, inputs and kwargs therefore hash the

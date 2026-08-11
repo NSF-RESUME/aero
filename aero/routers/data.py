@@ -33,6 +33,7 @@ from aero.models.data_file import DataFile
 from aero.models.data_version import DataVersion
 from aero.models.flows import Flow
 from aero.models.flows import TriggerEnum
+from aero.models.provenance import Provenance
 from aero.models.source_type import SourceType
 from aero.models.source_type import SourceUrl
 
@@ -305,6 +306,133 @@ def get_latest(id: UUID, session: Session = Depends(get_session)):
         no_copy=bool(d.no_copy),
         trigger_url=_resolve_trigger_url(session, d, version.source_key),
     )
+
+
+def _attached_flows(session: Session, data: Data) -> list[tuple[Flow, str]]:
+    """Every flow directly touching this Data, each with the role it plays.
+
+    "ingestion" produces the Data, "analysis" consumes it, "both" does each --
+    possible when a flow's output feeds back into its own input.
+    """
+    flows = session.exec(
+        select(Flow).where(
+            or_(
+                Flow.derived_from.any(id=data.id),
+                Flow.contributed_to.any(id=data.id),
+            )
+        )
+    ).all()
+
+    tagged = []
+    for f in flows:
+        produces = any(d.id == data.id for d in f.contributed_to)
+        consumes = any(d.id == data.id for d in f.derived_from)
+        role = "both" if produces and consumes else ("ingestion" if produces else "analysis")
+        tagged.append((f, role))
+    return tagged
+
+
+class AttachedFlowOut(BaseModel):
+    flow_id: UUID = Field()
+    role: str = Field()  # ingestion | analysis | both
+    policy: int | None = Field(default=None)
+    description: str | None = Field(default=None)
+    timer_job_id: UUID | None = Field(default=None)
+    last_executed: datetime | None = Field(default=None)
+
+
+class DeletedFlowOut(AttachedFlowOut):
+    provenance_deleted: int = Field(default=0)
+    timer: str | None = Field(default=None)  # cancelled | the failure, if any
+
+
+@router.get("/{id}/flows", response_model=list[AttachedFlowOut])
+def list_data_flows(id: UUID, session: Session = Depends(get_session)):
+    """The flows attached to this Data — what produces it and what consumes it."""
+    d = session.exec(select(Data).where(Data.id == id)).first()
+    if d is None:
+        raise HTTPException(status_code=404, detail=f"Data with id {id} not found.")
+
+    return [
+        AttachedFlowOut(
+            flow_id=f.id,
+            role=role,
+            policy=f.policy,
+            description=f.description,
+            timer_job_id=f.timer_job_id,
+            last_executed=f.last_executed,
+        )
+        for f, role in _attached_flows(session, d)
+    ]
+
+
+@router.delete("/{id}/flows", response_model=list[DeletedFlowOut])
+def delete_data_flows(id: UUID, session: Session = Depends(get_session)):
+    """Delete every flow attached to this Data, and their provenance records.
+
+    The Data itself, its versions and any source type/urls are left alone, so
+    flows can be re-registered against the same UUID.
+
+    Provenance goes too: ``Provenance.flow_id`` is a non-nullable foreign key, so
+    a flow that has ever run cannot be removed while its records remain. This
+    discards which input versions those runs consumed.
+    """
+    d = session.exec(select(Data).where(Data.id == id)).first()
+    if d is None:
+        raise HTTPException(status_code=404, detail=f"Data with id {id} not found.")
+
+    deleted = []
+    for flow, role in _attached_flows(session, d):
+        entry = DeletedFlowOut(
+            flow_id=flow.id,
+            role=role,
+            policy=flow.policy,
+            description=flow.description,
+            timer_job_id=flow.timer_job_id,
+            last_executed=flow.last_executed,
+        )
+
+        # Cancel the Globus timer first, but never let its failure block the
+        # delete: a timer whose flow row is gone keeps firing, and its worker
+        # posts to /prov/new against a flow_id that no longer exists. Reporting
+        # the job id is what lets an uncancellable one be cleaned up by hand.
+        if flow.timer_job_id is not None:
+            try:
+                GLOBUS_CLIENT.delete_job(str(flow.timer_job_id))
+                entry.timer = "cancelled"
+            except Exception as e:
+                entry.timer = f"NOT cancelled: {type(e).__name__}: {e}"
+                logger.warning(
+                    "could not cancel timer job %s for flow %s; it will keep "
+                    "firing against a deleted flow: %s",
+                    flow.timer_job_id,
+                    flow.id,
+                    e,
+                )
+
+        provenances = session.exec(
+            select(Provenance).where(Provenance.flow_id == flow.id)
+        ).all()
+        entry.provenance_deleted = len(provenances)
+        for p in provenances:
+            session.delete(p)
+        session.commit()
+
+        # The flowderivation/flowcontribution rows go with it: SQLAlchemy clears
+        # secondary-table rows when the parent is deleted.
+        session.delete(flow)
+        session.commit()
+
+        logger.info(
+            "deleted %s flow %s for data %s (%d provenance records)",
+            role,
+            flow.id,
+            d.id,
+            entry.provenance_deleted,
+        )
+        deleted.append(entry)
+
+    return deleted
 
 
 class NotifyIn(BaseModel):
