@@ -155,22 +155,33 @@ class Flow(SQLModel, table=True):
     def _has_new_input(self, require_all: bool) -> bool:
         """Whether the inputs have moved on since this flow last ran.
 
-        An input with no versions yet counts as not new, rather than being
-        dereferenced for a ``created_at`` it does not have — which is the state
-        of a source that has been registered but never notified.
+        ``require_all`` distinguishes ALL_INPUT from ANY_INPUT: every input must
+        be newer, rather than at least one.
+
+        Regardless of policy, **every** input must have a version. The run
+        resolves each one's latest through ``GET /data/{id}/latest``, which 404s
+        for a source that has been registered but never notified, failing the
+        whole run — and an analysis cannot be handed a file for an input that has
+        no data yet in any case.
         """
+        if not self.derived_from:
+            return False
+
+        versions = [s.last_version() for s in self.derived_from]
+        created = [
+            v.created_at for v in versions if v is not None and v.created_at is not None
+        ]
+        if len(created) != len(versions):
+            return False
+
+        # Never run before: every input has data, so all of it is new. This has
+        # to stay inside the has-a-version check above -- short-circuiting the
+        # whole method on `last_executed is None` makes the first trigger run
+        # unconditionally, which silently turns ALL_INPUT into ANY_INPUT.
         if self.last_executed is None:
             return True
 
-        fresh = []
-        for s in self.derived_from:
-            version = s.last_version()
-            fresh.append(
-                version is not None
-                and version.created_at is not None
-                and version.created_at > self.last_executed
-            )
-
+        fresh = [c > self.last_executed for c in created]
         return all(fresh) if require_all else any(fresh)
 
     def _run_flow(
