@@ -224,3 +224,32 @@ def test_register_analysis_without_output_data(client, data):
     assert response.status_code == 200, response.json()
     assert response.json()["contributed_to"] == []
     assert [d["id"] for d in response.json()["derived_from"]] == [str(data.id)]
+
+
+def test_unknown_input_data_keys_reach_the_worker(client, data, noversion_data):
+    """`fetch: false` is read on the endpoint, so it has to survive registration.
+
+    The register route only *adds* collection info to each input_data entry; if
+    it ever started filtering to known keys, the client-side opt-out would go
+    silently missing rather than fail.
+    """
+    flow_data = {
+        "input_data": {"in1": {"id": str(data.id), "version": 1, "fetch": False}},
+        "output_data": {},
+        "gc_endpoint": str(uuid4()),
+        "function_uuid": str(uuid4()),
+        "pull_function_uuid": str(uuid4()),
+        "commit_function_uuid": str(uuid4()),
+        "flow_kwargs": {},
+        "rule": models.flows.TriggerEnum.ANY_INPUT,
+    }
+
+    response = client.post(
+        f"{ROUTE}/register", json=flow_data, headers={"Content-Type": "application/json"}
+    )
+
+    assert response.status_code == 200, response.json()
+    stored = response.json()["function_args"]["kwargs"]["aero"]["input_data"]["in1"]
+    assert stored["fetch"] is False
+    # and the enrichment it does do is still applied
+    assert stored["collection_url"] == data.collection_url
