@@ -203,13 +203,39 @@ def test_a_real_change_to_the_same_url_versions(client, session):
     assert [v.version for v in sorted(d.versions, key=lambda v: v.version)] == [1, 2]
 
 
-def test_no_copy_notify_without_an_etag_is_rejected(client):
+@pytest.mark.parametrize("etag", [None, "", "   ", '""'])
+def test_no_copy_notify_without_a_usable_etag_is_rejected(client, session, etag):
+    """Blank counts as absent, not as a checksum of "".
+
+    A notify script with an unset ETAG variable sends an empty string rather
+    than omitting the field. Accepting it records a version whose checksum is
+    empty, and every later notify for that object then dedups against it and
+    silently stops triggering.
+    """
     _create_typed_source(client)
 
-    # unreachable host, so the HEAD fallback can't supply one either
-    resp = client.post(NOTIFY, json={"file_id": URL_A})
+    payload = {"file_id": URL_A}
+    if etag is not None:
+        payload["etag"] = etag
+
+    # unreachable host, so the HEAD fallback cannot supply one either
+    resp = client.post(NOTIFY, json=payload)
+
     assert resp.status_code == 400, resp.text
     assert "etag" in resp.json()["detail"]
+    d = session.exec(select(Data).where(Data.url == URL_A)).first()
+    assert d.versions == [], "a rejected notify must not leave a version behind"
+
+
+def test_a_quoted_etag_still_works(client, session):
+    """S3 wraps etags in quotes; only a *blank* one is treated as missing."""
+    body = _create_typed_source(client)
+
+    resp = client.post(NOTIFY, json={"file_id": URL_A, "etag": '"aaa"', "size": 1})
+
+    assert resp.status_code == 200, resp.text
+    d = session.exec(select(Data).where(Data.id == UUID(body["id"]))).first()
+    assert d.last_version().checksum == "aaa"
 
 
 def test_quoted_etag_is_unwrapped(client, session):

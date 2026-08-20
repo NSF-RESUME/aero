@@ -731,18 +731,33 @@ def _resolve_notify_target(session: Session, file_id: str) -> tuple[Data, str, s
     return matches[0], target, matches[0].url
 
 
+def _clean_etag(value: str | None) -> str | None:
+    """An etag with S3's quoting removed, or None if there isn't one.
+
+    Blank counts as absent. A notify script whose ETAG variable is unset sends
+    an empty string rather than omitting the field, and taking that as a
+    checksum records a version of `""` — after which every later notify for
+    that object dedups against it and silently stops triggering.
+    """
+    if value is None:
+        return None
+    return value.strip().strip('"') or None
+
+
 def _change_metadata(
     etag: str | None, size: int | None, url: str | None
 ) -> tuple[str, int]:
     """Checksum + size for a no-copy version, HEADing the object if not supplied."""
-    if etag is not None and size is not None:
-        return etag.strip('"'), size
+    etag = _clean_etag(etag)
+
+    if etag and size is not None:
+        return etag, size
 
     if url:
         try:
             resp = requests.head(url, allow_redirects=True, timeout=30)
             if resp.status_code < 400:
-                etag = etag or resp.headers.get("ETag")
+                etag = etag or _clean_etag(resp.headers.get("ETag"))
                 if size is None and resp.headers.get("Content-Length") is not None:
                     size = int(resp.headers["Content-Length"])
             else:
@@ -750,7 +765,7 @@ def _change_metadata(
         except requests.RequestException as e:  # network/DNS/timeout
             logger.warning("HEAD %s failed: %s", url, e)
 
-    if etag is None:
+    if not etag:
         raise HTTPException(
             status_code=400,
             detail=(
@@ -759,7 +774,7 @@ def _change_metadata(
             ),
         )
 
-    return etag.strip('"'), size if size is not None else 0
+    return etag, size if size is not None else 0
 
 
 def _run_event_ingestion(
